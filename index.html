@@ -187,7 +187,8 @@ const BG_FILES=["entrance","courtyard","engawa","kitchen","onsen","bedroom_on","
 function loadImages(){
   const bgs=BG_FILES.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{BGI[n]=im;res();};im.onerror=()=>res();im.src="assets/bg/"+n+".webp";}));
   const decs=Object.keys(DMETA).map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{DIMG[n]=im;res();};im.onerror=()=>res();im.src="assets/decor/"+n+".webp";}));
-  return Promise.all([...bgs,...decs,...STRIPS.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{IMG[n]=im;res();};im.onerror=()=>res();im.src="assets/"+n+"@2x.webp";}))]);
+  const kois=KOI_NAMES.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{KOI_IMG[n]=im;res();};im.onerror=()=>res();im.src="assets/koi/"+n+".webp";}));
+  return Promise.all([...bgs,...decs,...kois,...STRIPS.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{IMG[n]=im;res();};im.onerror=()=>res();im.src="assets/"+n+"@2x.webp";}))]);
 }
 const EMOJI='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 
@@ -1053,8 +1054,7 @@ function drawPlaces(t,dt){
     for(const l of fallLines){l.v+=dt*.55*l.sp;if(l.v>1.1){l.v=-.1;l.u=Math.random();}const [a,b,top]=FALLS[l.f],x=mix(a+20,b-20,l.u),y=mix(top,930,l.v),[sx,sy]=imgToStage(x,y),[,ey]=imgToStage(x,y+l.len*820);
       ctx.strokeStyle=`rgba(235,240,242,${.18+.2*Math.sin(l.u*20)})`;ctx.lineWidth=(2+l.sp*2)*BGM.k*2;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx,ey);ctx.stroke();}
     for(let i=0;i<7;i++){const ph=(t*.08+i/7)%1,[bx,by]=imgToStage(160+i*95+Math.sin(t*.3+i)*30,920-ph*220),r=(120+120*ph)*BGM.k;const gr=ctx.createRadialGradient(bx,by,0,bx,by,r);gr.addColorStop(0,`rgba(236,240,238,${.28*Math.sin(Math.PI*ph)})`);gr.addColorStop(1,"rgba(236,240,238,0)");ctx.fillStyle=gr;ctx.fillRect(bx-r,by-r,r*2,r*2);}
-    if(t<koiUntil){const al=clamp(Math.min((t-(koiUntil-9))/1.2,(koiUntil-t)/1.2),0,1);for(const f of koiFish){const a=t*.6*f.r+f.ph,[x,y]=imgToStage(1150+Math.cos(a)*300*f.r,1030+Math.sin(a*1.4)*40),dir=-Math.sin(a)>0?1:-1,k=BGM.k*2.2;
-      ctx.save();ctx.globalAlpha=al*.9;ctx.translate(x,y);ctx.scale(dir,1);ctx.fillStyle=f.c;ctx.beginPath();ctx.ellipse(0,0,18*k,7*k,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(-16*k,0);ctx.lineTo(-30*k,-9*k+Math.sin(t*8+f.ph)*3);ctx.lineTo(-30*k,9*k);ctx.fill();ctx.restore();}}
+    koiStep(t,dt);drawKoi(t);
     if(pebble){const e=t-pebble.t;if(e<.7){const u=e/.7,[x,y]=imgToStage(mix(900,pebble.x,u),mix(1150,1040,u)-Math.sin(u*Math.PI)*220);ctx.fillStyle="#8a8d86";ctx.beginPath();ctx.arc(x,y,5*view.s,0,Math.PI*2);ctx.fill();}
       else if(e<2.2){const u=(e-.7)/1.5,[x,y]=imgToStage(pebble.x,1040);ctx.strokeStyle=`rgba(220,230,232,${.7*(1-u)})`;ctx.lineWidth=1.5;for(const k of[1,.6]){ctx.beginPath();ctx.ellipse(x,y,(10+120*u*k)*BGM.k*2,(3+30*u*k)*BGM.k*2,0,0,Math.PI*2);ctx.stroke();}}
       else pebble=null;}
@@ -1086,9 +1086,56 @@ function placeAction(a){
   else if(a==="wash_paws"){S.needs.clean=clamp(S.needs.clean+15,0,100);sfx("splash");start("groom");react("😌",1.6);}
   else if(a==="omikuji"){omikuji();}
   else if(a==="lantern"){lanternOn=!lanternOn;tone(lanternOn?600:300,.08,"square",.04);react(lanternOn?"😸":"🙀",1.4);}
-  else if(a==="koi"){koiUntil=t+9;sfx("splash");react("😼",2);start("idle");const [kx,ky]=imgToStage(1150,1030);pointer.x=kx;pointer.y=ky;pointer.known=true;pet.gazeUntil=t+9;}
-  else if(a==="pebble"){pebble={t,x:rand(1000,1500)};setTimeout(()=>sfx("splash"),700);start("poke");}
+  else if(a==="koi"){feedKoi(t);sfx("splash");react("😼",2);start("idle");const [kx,ky]=imgToStage(1150,1030);pointer.x=kx;pointer.y=ky;pointer.known=true;pet.gazeUntil=t+14;}
+  else if(a==="pebble"){pebble={t,x:rand(1000,1450)};setTimeout(()=>{ripples.push({x:pebble?pebble.x:1200,z:30,t:now()});for(const k of koiPond){k.next=0;k.v=90;}},700);setTimeout(()=>sfx("splash"),700);start("poke");}
   else if(a==="meditate"){start("music");S.needs.energy=clamp(S.needs.energy+10,0,100);react("😌",2.5);}
+}
+
+
+// ───────────────────────── Koi pond (volumetric painted fish) ─────────────────────────
+const KOI_NAMES=["koi_kohaku","koi_showa","koi_ogon","koi_asagi","koi_kohaku2","koi_tancho"],KOI_IMG={};
+const POND={x0:880,x1:1460,y0:1035,zMax:220,flat:.36,fish:.62};                 // plane coords: x, z (depth into the pond)
+const koiPond=KOI_NAMES.map((n,i)=>({n,x:rand(900,1440),z:rand(40,280),h:rand(0,6.28),v:30,ph:rand(0,6),d:rand(.3,.9),dT:.6,wx:0,wz:0,next:0,size:rand(.8,1.08),on:i<3,fade:i<3?1:0,rip:0}));
+const pellets=[],ripples=[];
+function pondPt(x,z){return imgToStage(x,POND.y0+z*POND.flat);}
+function feedKoi(t){for(let i=0;i<12;i++)pellets.push({x:rand(920,1420),z:rand(30,200),t:t+i*.06,born:t+i*.06});koiUntil=t+22;}
+function koiStep(t,dt){
+  const feeding=t<koiUntil;
+  for(const k of koiPond){
+    k.fade=clamp(k.fade+(k.on||feeding?dt:-dt)*.6,0,1);if(k.fade<=0)continue;
+    let tx=k.wx,tz=k.wz,live=pellets.filter(p=>t>p.t);
+    if(live.length){const p=live.reduce((a,b)=>Math.hypot(a.x-k.x,a.z-k.z)<Math.hypot(b.x-k.x,b.z-k.z)?a:b);tx=p.x;tz=p.z;k.dT=0;
+      if(Math.hypot(p.x-k.x,p.z-k.z)<16){pellets.splice(pellets.indexOf(p),1);ripples.push({x:p.x,z:p.z,t});tone(520+Math.random()*200,.06,"sine",.03);}}
+    else{if(t>k.next||Math.hypot(tx-k.x,tz-k.z)<20){k.wx=rand(POND.x0+40,POND.x1-40);k.wz=rand(20,POND.zMax-20);k.next=t+rand(4,9);k.dT=rand(.25,1);}tx=k.wx;tz=k.wz;}
+    let want=Math.atan2(tz-k.z,tx-k.x),dh=((want-k.h+Math.PI*3)%(Math.PI*2))-Math.PI;k.h+=clamp(dh,-1.7*dt,1.7*dt);
+    const vT=live.length?85:30;k.v+=(vT-k.v)*Math.min(1,dt*1.5);
+    k.x=clamp(k.x+Math.cos(k.h)*k.v*dt,POND.x0,POND.x1);k.z=clamp(k.z+Math.sin(k.h)*k.v*dt,0,POND.zMax);
+    k.d+=(k.dT-k.d)*Math.min(1,dt*.8);
+    if(k.d<.15&&t>k.rip){k.rip=t+rand(.9,1.8);ripples.push({x:k.x+Math.cos(k.h)*60,z:k.z+Math.sin(k.h)*60,t});}
+  }
+  for(let i=ripples.length-1;i>=0;i--)if(t-ripples[i].t>2)ripples.splice(i,1);
+  for(let i=pellets.length-1;i>=0;i--)if(t-pellets[i].born>18)pellets.splice(i,1);
+}
+function drawRing(x,z,r,a){const [sx,sy]=pondPt(x,z),k=BGM.k;ctx.strokeStyle=`rgba(225,235,236,${a})`;ctx.lineWidth=1.2;ctx.beginPath();ctx.ellipse(sx,sy,r*k,r*k*POND.flat,0,0,Math.PI*2);ctx.stroke();}
+function drawKoi(t){
+  const k0=BGM.k;
+  for(const r of ripples){const e=(t-r.t)/2;drawRing(r.x,r.z,8+70*e,.55*(1-e));if(e>.25)drawRing(r.x,r.z,40*(e-.2),.4*(1-e));}
+  for(const p of pellets){if(t<p.t)continue;const [sx,sy]=pondPt(p.x,p.z),b=Math.sin(t*3+p.x)*1.2;ctx.fillStyle="#8a5a2a";ctx.beginPath();ctx.ellipse(sx,sy+b,3.2*k0*2,2*k0*2,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="rgba(255,230,190,.6)";ctx.beginPath();ctx.arc(sx-1,sy+b-1,1,0,Math.PI*2);ctx.fill();}
+  const list=koiPond.filter(k=>k.fade>0).sort((a,b)=>b.d-a.d||a.z-b.z);
+  for(const k of list){const im=KOI_IMG[k.n];if(!im)continue;const [sx,sy]=pondPt(k.x,k.z),sc=k0*1.05*k.size,al=k.fade*(.98-k.d*.5);
+    // soft shadow on the pond floor, further down when the fish swims near the surface
+    ctx.save();ctx.translate(sx+6*sc,sy+(14+26*(1-k.d))*sc);ctx.scale(1,POND.fish);ctx.rotate(k.h);ctx.scale(sc,sc);
+    const g=ctx.createRadialGradient(0,0,0,0,0,150);g.addColorStop(0,`rgba(0,8,8,${.32*k.fade})`);g.addColorStop(1,"rgba(0,8,8,0)");ctx.fillStyle=g;ctx.scale(1,.3);ctx.beginPath();ctx.arc(0,0,150,0,Math.PI*2);ctx.fill();ctx.restore();
+    // body: sliced into strips that follow a travelling wave — the tail swings, the head stays steady
+    ctx.save();ctx.globalAlpha=al;ctx.translate(sx,sy);ctx.scale(1,POND.fish);ctx.rotate(k.h);ctx.scale(sc,sc);
+    const N=15,sw=300/N,beat=t*(3+k.v*.07)+k.ph,amp=(k.v>50?15:10);
+    for(let i=0;i<N;i++){const u=1-i/N,off=Math.sin(beat-i*.5)*amp*Math.pow(u,1.7);ctx.drawImage(im,i*sw,0,sw+1,110,-150+i*sw,-55+off,sw+1.2,110);}
+    ctx.restore();
+    if(k.d>.35){const [wx,wy]=pondPt(k.x,k.z),r=100*sc;const gw=ctx.createRadialGradient(wx,wy,0,wx,wy,r);gw.addColorStop(0,`rgba(40,62,60,${(k.d-.35)*.55*k.fade})`);gw.addColorStop(1,"rgba(40,62,60,0)");ctx.fillStyle=gw;ctx.fillRect(wx-r,wy-r*POND.flat*1.4,r*2,r*POND.flat*2.8);}
+  }
+  {const [ax,ay]=pondPt(POND.x0-120,-30),[bx,by]=pondPt(POND.x1+120,POND.zMax+40),g=ctx.createLinearGradient(0,ay,0,by);g.addColorStop(0,"rgba(38,58,56,.22)");g.addColorStop(1,"rgba(38,58,56,.08)");ctx.fillStyle=g;ctx.fillRect(ax,ay,bx-ax,by-ay);}
+  // glints on the water surface
+  ctx.save();ctx.globalCompositeOperation="lighter";for(let i=0;i<14;i++){const x=POND.x0+((i*97+t*14)%(POND.x1-POND.x0)),z=(i*53)%POND.zMax,[sx,sy]=pondPt(x,z);ctx.fillStyle=`rgba(200,215,215,${.05+.05*Math.sin(t*2+i)})`;ctx.fillRect(sx,sy,18*k0*2,1.2);}ctx.restore();
 }
 
 // ───────────────────────── Mini-games ─────────────────────────
