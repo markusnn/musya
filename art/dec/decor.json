@@ -1,0 +1,157 @@
+{
+"d_bonsai": {
+"w": 320,
+"h": 340,
+"anchor": "bottom"
+},
+"d_ikebana": {
+"w": 340,
+"h": 460,
+"anchor": "bottom"
+},
+"d_kokedama": {
+"w": 260,
+"h": 260,
+"anchor": "bottom"
+},
+"d_bamboo": {
+"w": 260,
+"h": 460,
+"anchor": "bottom"
+},
+"d_zab_indigo": {
+"w": 320,
+"h": 120,
+"anchor": "bottom"
+},
+"d_zab_red": {
+"w": 320,
+"h": 120,
+"anchor": "bottom"
+},
+"d_zab_moss": {
+"w": 320,
+"h": 120,
+"anchor": "bottom"
+},
+"d_furin_glass": {
+"w": 110,
+"h": 300,
+"anchor": "top"
+},
+"d_furin_blue": {
+"w": 110,
+"h": 300,
+"anchor": "top"
+},
+"d_furin_iron": {
+"w": 110,
+"h": 300,
+"anchor": "top"
+},
+"d_chochin": {
+"w": 180,
+"h": 320,
+"anchor": "top"
+},
+"d_andon": {
+"w": 170,
+"h": 320,
+"anchor": "bottom"
+},
+"d_okeya": {
+"w": 260,
+"h": 230,
+"anchor": "bottom"
+},
+"d_shishi_base": {
+"w": 380,
+"h": 300,
+"anchor": "bottom"
+},
+"d_shishi_tube": {
+"w": 300,
+"h": 60,
+"anchor": "center"
+},
+"d_kaeru": {
+"w": 220,
+"h": 170,
+"anchor": "bottom"
+},
+"d_yukimi": {
+"w": 240,
+"h": 260,
+"anchor": "bottom"
+},
+"d_yuzu": {
+"w": 620,
+"h": 130,
+"anchor": "center"
+},
+"d_petals": {
+"w": 620,
+"h": 130,
+"anchor": "center"
+},
+"d_futon_waves": {
+"w": 900,
+"h": 150,
+"anchor": "bottom"
+},
+"d_futon_red": {
+"w": 900,
+"h": 150,
+"anchor": "bottom"
+},
+"d_futon_bamboo": {
+"w": 900,
+"h": 150,
+"anchor": "bottom"
+},
+"d_futon_moon": {
+"w": 900,
+"h": 150,
+"anchor": "bottom"
+},
+"d_scroll_moon": {
+"w": 180,
+"h": 580,
+"anchor": "top"
+},
+"d_scroll_koi": {
+"w": 180,
+"h": 580,
+"anchor": "top"
+},
+"d_scroll_neko": {
+"w": 180,
+"h": 580,
+"anchor": "top"
+},
+"d_scroll_mount": {
+"w": 180,
+"h": 580,
+"anchor": "top"
+},
+"d_daruma": {
+"w": 190,
+"h": 210,
+"anchor": "bottom"
+},
+"d_kokeshi": {
+"w": 110,
+"h": 250,
+"anchor": "bottom"
+},
+"d_maneki": {
+"w": 200,
+"h": 240,
+"anchor": "bottom"
+},
+"d_cranes": {
+"w": 280,
+"h": 460,
+"anchor": "top"
+}
+}
