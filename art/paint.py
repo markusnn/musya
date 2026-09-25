@@ -390,7 +390,7 @@ def ground(img, y0, y1, seed, base=hexc('#2b3326'), dark=hexc('#141911'), light=
     rnd = random.Random(seed); d = ImageDraw.Draw(img)
     for _ in range(pebbles):
         x = rnd.uniform(0, SW); y = rnd.uniform(y0, y1) * SS; r = rnd.uniform(1.5, 4) * SS
-        c = rnd.choice([hexc('#5a5c55'), hexc('#6d6e66'), hexc('#3e403a')]); d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=c)
+        c = mixc(rnd.choice([light, base, dark]), (0, 0, 0, 255), rnd.uniform(0, .25)); d.ellipse([x - r, y - r * 0.7, x + r, y + r * 0.7], fill=c)
 
 
 def forest_layers(img, y, fog, seeds, counts, hs, fogs, blurs, pal=None, bark=BARK):
@@ -760,6 +760,142 @@ def g_room_night():
     finish(img, 'g_room', lift=(4, 5, 8), sat=0.75, gamma=1.1, vignette=0.75)
 
 
+
+def rock_mass(img, poly, seed, base=hexc('#2c302c'), moss=True):
+    m = Image.new('L', (SW, SH), 0); ImageDraw.Draw(m).polygon([(x * SS, y * SS) for x, y in poly], fill=255)
+    box = m.getbbox(); sub = m.crop(box)
+    t = textured_fill(sub, base, mixc(base, (0, 0, 0, 255), .6), mixc(base, (255, 255, 255, 255), .12), 30 * SS, seed, (1, 2.2), 1.5)
+    a = np.asarray(t, np.float32)
+    if moss:
+        mn = fbm(a.shape[1], a.shape[0], 20 * SS, 4, seed + 3); mm = np.clip((mn - .55) * 3, 0, 1)[..., None] * .8
+        a[..., :3] = a[..., :3] * (1 - mm) + np.array([40, 56, 34], np.float32) * mm
+    img.alpha_composite(Image.fromarray(a.astype(np.uint8), 'RGBA'), (box[0], box[1]))
+
+
+def waterfall_sheet(img, x0, x1, y0, y1, seed, alpha=1.0):
+    """Falling water: streaky columns with gaps where dark rock shows, ragged lip and edges."""
+    w, h = int((x1 - x0) * SS), int((y1 - y0) * SS)
+    n = fbm(w, h, 7 * SS, 4, seed, (0.06, 7))
+    cols = fbm(w, 4, 30 * SS, 3, seed + 5)[0][None, :]
+    n2 = fbm(w, h, 40 * SS, 3, seed + 1, (0.3, 3))
+    v = np.clip(0.5 * n + 0.3 * n2 + 0.2 * cols, 0, 1)
+    xs = np.linspace(0, 1, w)[None, :]; ys = np.linspace(0, 1, h)[:, None]
+    wob = (fbm(4, h, 20 * SS, 3, seed + 9)[:, :1] - .5) * .12
+    edge = np.clip(np.minimum((xs - wob) / .1, (1 - xs + wob) / .1), 0, 1)
+    lip = np.clip((ys * h / SS - 18 * fbm(w, 4, 25 * SS, 3, seed + 7)[0][None, :]) / 12, 0, 1)
+    gaps = np.clip((cols - .28) * 5, .15, 1)
+    rgb = np.dstack([170 + 80 * v, 178 + 74 * v, 182 + 70 * v])
+    a = np.clip((0.35 + 0.65 * v) * edge * lip * gaps, 0, 1) * 255 * alpha
+    img.alpha_composite(Image.fromarray(np.dstack([rgb, a]).clip(0, 255).astype(np.uint8), 'RGBA'), (int(x0 * SS), int(y0 * SS)))
+
+
+def courtyard():
+    fog = hexc('#9aa29d')
+    img = gradient(hexc('#a3aaa6'), hexc('#6c746f'))
+    # far cliffs with a distant fall, lost in mist
+    far = layer(); r_ = random.Random(3); top = [(x, 360 + r_.uniform(-40, 40) + (x - 900) * .02) for x in range(900, 1801, 60)]
+    rock_mass(far, top + [(1800, 900), (900, 900)], 5, hexc('#4c524e'), False)
+    bushes(far, 380, 900, 1800, 12, PAL_BUSH, 10, 40, 80)
+    waterfall_sheet(far, 1500, 1720, 340, 820, 6, .7)
+    img.alpha_composite(atmos(far, fog, .62, 2))
+    img.alpha_composite(fog_layer(fog, 300, 800, .6, 3))
+    # main cliff and waterfall
+    cl = layer(); rock_mass(cl, [(0, 0), (880, 0), (910, 120), (850, 300), (905, 520), (860, 900), (0, 960)], 7, hexc('#262a27'))
+    bushes(cl, 110, 0, 900, 13, PAL_BUSH, 14, 40, 90)
+    for x in (90, 780): pine(cl, x * SS, 120 * SS, 300 * SS, 14 + x, PAL_PINE, BARK, lean=.4 if x < 400 else -.4, pads=4, spread=.8)
+    img.alpha_composite(cl)
+    fall = layer()
+    for i, (a, b, top) in enumerate([(110, 340, 105), (290, 580, 115), (540, 780, 130)]):
+        waterfall_sheet(fall, a, b, top, 930, 20 + i)
+    img.alpha_composite(fall)
+    bushes(img, 180, 380, 900, 8, PAL_BUSH, 6, 40, 80)
+    # pool, foam, mist
+    m = Image.new('L', (SW, int(330 * SS)), 255)
+    img.alpha_composite(textured_fill(m, hexc('#3a4642'), hexc('#1c2422'), hexc('#6a7a74'), 30 * SS, 8, (6, 1), 1.3), (0, int(880 * SS)))
+    img.alpha_composite(fog_layer(hexc('#eef1ef'), 760, 1080, 1.2, 9, 120))
+    img.alpha_composite(fog_layer(hexc('#e6eae8'), 560, 900, .8, 19, 160))
+    img.alpha_composite(fog_layer(hexc('#dfe4e1'), 700, 980, .7, 10, 200))
+    for i, (x, y, rx, ry) in enumerate([(1130, 930, 140, 50), (1320, 960, 110, 40), (1560, 945, 160, 54), (1000, 1000, 90, 30)]):
+        stone(img, x, y, rx, ry, 30 + i, hexc('#3a3f3b'))
+    # courtyard stone floor where the cat sits
+    ground(img, 1150, 1400, 11, hexc('#3a3d38'), hexc('#1c1e1b'), hexc('#555850'), pebbles=600)
+    for i, (x, y, rx, ry) in enumerate([(900, 1330, 260, 58), (520, 1300, 150, 40), (1300, 1310, 170, 44), (160, 1270, 130, 50), (1660, 1270, 140, 52)]):
+        stone(img, x, y, rx, ry, 60 + i, hexc('#4a4e48'))
+    # house frame: eave and posts
+    fr = layer()
+    wood_block(fr, (0, 0, 1800, 70), 71, hexc('#1f1712'), hexc('#0b0806'), hexc('#34281f'))
+    wood_block(fr, (0, 0, 44, 1400), 72, hexc('#18120e'), hexc('#080605'), hexc('#2a2019'), True)
+    wood_block(fr, (1756, 0, 1800, 1400), 73, hexc('#18120e'), hexc('#080605'), hexc('#2a2019'), True)
+    img.alpha_composite(fr)
+    finish(img, 'courtyard', lift=(10, 13, 12), sat=0.6, gamma=1.08, vignette=0.55)
+
+
+def entrance():
+    img = gradient(hexc('#141a17'), hexc('#070908'))
+    forest_layers(img, 800, hexc('#2a332e'), [901, 902], [9, 7], [(700, 900), (900, 1100)], [0.6, 0.35], [2.5, 1.2],
+                  pal=[hexc('#070a08'), hexc('#0c110d'), hexc('#121912'), hexc('#1a231a'), hexc('#243024')])
+    # big cedar trunks framing the path
+    tr = layer()
+    for x, w in ((120, 70), (330, 55), (1480, 60), (1700, 80)):
+        trunk(tr, [(x * SS, 1250 * SS), ((x + 6) * SS, -50 * SS)], [w * SS, w * .8 * SS], (hexc('#1f201c'), hexc('#3d3e37'), hexc('#6a6a5e')), x, moss=hexc('#3a4a30'))
+    img.alpha_composite(tr)
+    # stone torii
+    t = layer(); torii(t, 900, 1010, 720, 640, 13, hexc('#62645c'))
+    ta = np.asarray(t, np.float32); ln = fbm(SW, SH, 6 * SS, 3, 14); lm = (np.clip((ln - .6) * 4, 0, 1) * (ta[..., 3] > 0))[..., None]
+    ta[..., :3] = ta[..., :3] * (1 - lm * .6) + np.array([150, 158, 140], np.float32) * lm * .6; t = Image.fromarray(ta.astype(np.uint8), 'RGBA')
+    img.alpha_composite(atmos(t, hexc('#2a2f2c'), .12))
+    d = ImageDraw.Draw(img); d.rectangle([872 * SS, 450 * SS, 928 * SS, 530 * SS], fill=hexc('#4a4b45'))
+    glow(img, 880, 870, 90, hexc('#f0c070'), .5)
+    d.ellipse([872 * SS, 862 * SS, 888 * SS, 878 * SS], fill=hexc('#ffe3a8'))
+    # gravel and the stone path in perspective
+    ground(img, 960, 1400, 21, hexc('#34332e'), hexc('#161512'), hexc('#57554c'), pebbles=5000)
+    path = Image.new('L', (SW, SH), 0); ImageDraw.Draw(path).polygon([(560 * SS, 1400 * SS), (1240 * SS, 1400 * SS), (960 * SS, 990 * SS), (840 * SS, 990 * SS)], fill=255)
+    box = path.getbbox(); sub = path.crop(box)
+    img.alpha_composite(textured_fill(sub, hexc('#5a5a54'), hexc('#2c2c28'), hexc('#77776e'), 20 * SS, 22, contrast=1.2), (box[0], box[1]))
+    d = ImageDraw.Draw(img); rnd = random.Random(8); y = 990.0; k = 0
+    while y < 1400:
+        hgt = 10 + (y - 990) * 0.1; u = (y - 990) / 410; xl = 840 - 280 * u; xr = 960 + 280 * u; x = xl
+        while x < xr:
+            wdt = (xr - xl) * rnd.uniform(.18, .34); x2 = min(xr, x + wdt)
+            c = mixc(hexc('#5d5d56'), hexc('#3a3a35'), rnd.random()); d.rectangle([(x + 1.5) * SS, (y + 1.5) * SS, (x2 - 1.5) * SS, (y + hgt - 1.5) * SS], fill=c)
+            x = x2
+        y += hgt; k += 1
+    glow(img, 900, 1180, 360, hexc('#9aa0a0'), .12)
+    wet = layer(); wd = ImageDraw.Draw(wet)
+    for i in range(40):
+        yy = 1000 + i * 10; ww = 12 + i * 1.5; wd.rectangle([(890 - ww / 2) * SS, yy * SS, (890 + ww / 2) * SS, (yy + 4) * SS], fill=(240, 200, 130, max(0, 60 - i)))
+    img.alpha_composite(wet.filter(ImageFilter.GaussianBlur(4 * SS)))
+    # stone lantern (left), lit
+    toro(img, 330, 1260, 520, 31)
+    d.rectangle([(330 - 18) * SS, (1260 - 400) * SS, (330 + 18) * SS, (1260 - 350) * SS], fill=hexc('#f2cf8a'))
+    glow(img, 330, 885, 260, hexc('#f0c070'), .35)
+    # chōzuya pavilion (right)
+    for x in (1360, 1640): wood_block(img, (x, 700, x + 26, 1180), 40 + x, hexc('#2a2019'), hexc('#100c09'), hexc('#44362b'), True)
+    roof = layer(); rd = Image.new('L', (SW, SH), 0); pts = []
+    for i in range(21):
+        u = i / 20; pts.append(((1230 + 560 * u) * SS, (700 - 150 * math.sin(math.pi * u) ** .6 + 20 * (u - .5) ** 2 * 4) * SS))
+    pts += [(1780 * SS, 740 * SS), (1250 * SS, 740 * SS)]
+    ImageDraw.Draw(rd).polygon(pts, fill=255); bx = rd.getbbox()
+    rt = textured_fill(rd.crop(bx), hexc('#2e3a28'), hexc('#10150d'), hexc('#51623e'), 12 * SS, 41, (3, 1), 1.5)
+    ra = np.asarray(rt, np.float32); rows = np.arange(ra.shape[0]); ra[(rows // (9 * SS)) % 2 == 0, :, :3] *= .8
+    roof.alpha_composite(Image.fromarray(ra.astype(np.uint8), 'RGBA'), (bx[0], bx[1]))
+    ImageDraw.Draw(roof).rectangle([1240 * SS, 736 * SS, 1790 * SS, 752 * SS], fill=hexc('#1a130e'))
+    img.alpha_composite(roof)
+    d = ImageDraw.Draw(img)
+    d.line([(1330 * SS, 760 * SS), (1480 * SS, 790 * SS), (1660 * SS, 760 * SS)], fill=hexc('#b8a67a'), width=7 * SS)
+    for x in (1400, 1520, 1600):
+        pts = [(x, 785), (x + 10, 800), (x - 2, 812), (x + 10, 826), (x - 2, 840)]
+        d.line([(a * SS, b * SS) for a, b in pts], fill=hexc('#e8e4d8'), width=5 * SS)
+    basin = Image.new('L', (int(420 * SS), int(170 * SS)), 255)
+    img.alpha_composite(textured_fill(basin, hexc('#5a5c55'), hexc('#2c2e2a'), hexc('#7a7c72'), 16 * SS, 42, contrast=1.3), (int(1300 * SS), int(1030 * SS)))
+    d.rectangle([1320 * SS, 1030 * SS, 1700 * SS, 1052 * SS], fill=hexc('#1a2424'))
+    for x in (1380, 1450, 1520): d.line([(x * SS, 1040 * SS), ((x + 60) * SS, 1000 * SS)], fill=hexc('#9a8a5a'), width=3 * SS)
+    # stone marker pillar
+    stone(img, 1180, 1030, 34, 12, 43, hexc('#4a4b45'))
+    m = Image.new('L', (int(60 * SS), int(260 * SS)), 255)
+    img.alpha_composite(textured_fill(m, hexc('#6a6b63'), hexc('#34352f'), hexc('#8a8b80'), 12 * SS, 44, contrast=1.3), (int(1150 * SS), int(770 * SS)))
+    img.alpha_composite(fog_layer(hexc('#3a443e'), 820, 1080, .5, 45))
+    finish(img, 'entrance', lift=(5, 7, 6), sat=0.55, gamma=1.12, vignette=0.7)
 
 if __name__ == '__main__':
     which = sys.argv[2:] or ['engawa']

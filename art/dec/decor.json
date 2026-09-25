@@ -153,5 +153,130 @@
 "w": 280,
 "h": 460,
 "anchor": "top"
+},
+"d_bowl_red": {
+"w": 180,
+"h": 80,
+"anchor": "bottom"
+},
+"d_bowl_blue": {
+"w": 180,
+"h": 80,
+"anchor": "bottom"
+},
+"d_masu": {
+"w": 150,
+"h": 110,
+"anchor": "bottom"
+},
+"d_tetsubin": {
+"w": 230,
+"h": 210,
+"anchor": "bottom"
+},
+"d_donabe": {
+"w": 250,
+"h": 180,
+"anchor": "bottom"
+},
+"d_teru": {
+"w": 110,
+"h": 230,
+"anchor": "top"
+},
+"d_hoshigaki": {
+"w": 130,
+"h": 380,
+"anchor": "top"
+},
+"d_kingyo": {
+"w": 190,
+"h": 170,
+"anchor": "bottom"
+},
+"d_ume": {
+"w": 200,
+"h": 280,
+"anchor": "bottom"
+},
+"d_koi_pole": {
+"w": 120,
+"h": 760,
+"anchor": "bottom"
+},
+"d_koi_black": {
+"w": 300,
+"h": 90,
+"anchor": "left"
+},
+"d_koi_red": {
+"w": 300,
+"h": 90,
+"anchor": "left"
+},
+"d_koi_blue": {
+"w": 300,
+"h": 90,
+"anchor": "left"
+},
+"d_tsukubai": {
+"w": 300,
+"h": 230,
+"anchor": "bottom"
+},
+"d_sakura_tree": {
+"w": 420,
+"h": 520,
+"anchor": "bottom"
+},
+"d_sake": {
+"w": 230,
+"h": 130,
+"anchor": "center"
+},
+"d_towels": {
+"w": 200,
+"h": 110,
+"anchor": "bottom"
+},
+"d_teaset": {
+"w": 280,
+"h": 140,
+"anchor": "bottom"
+},
+"d_koro": {
+"w": 150,
+"h": 150,
+"anchor": "bottom"
+},
+"d_goban": {
+"w": 320,
+"h": 170,
+"anchor": "bottom"
+},
+"d_kimono_cranes": {
+"w": 380,
+"h": 540,
+"anchor": "bottom"
+},
+"d_kimono_sakura": {
+"w": 380,
+"h": 540,
+"anchor": "bottom"
+},
+"d_kimono_black": {
+"w": 380,
+"h": 540,
+"anchor": "bottom"
+},
+"d_kyodai": {
+"w": 260,
+"h": 340,
+"anchor": "bottom"
+},
+"d_kiku": {
+"w": 240,
+"h": 320,
+"anchor": "bottom"
 }
 }

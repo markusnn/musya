@@ -14,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Golos+Text:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500&text=%E7%B8%81%E5%81%B4%E5%8F%B0%E6%89%80%E6%B8%A9%E6%B3%89%E5%AF%9D%E5%AE%A4%E8%A1%A3%E8%A3%85%E9%81%8A%E3%81%B3%E7%8C%AB%E5%AE%B6&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500&text=%E7%B8%81%E5%81%B4%E5%8F%B0%E6%89%80%E6%B8%A9%E6%B3%89%E5%AF%9D%E5%AE%A4%E8%A1%A3%E8%A3%85%E9%81%8A%E3%81%B3%E7%8C%AB%E5%AE%B6%E9%96%80%E4%B8%AD%E5%BA%AD&display=swap">
 <style>
 :root{
   color-scheme:dark;
@@ -90,7 +90,7 @@ button:focus-visible{outline:2px solid var(--sakura);outline-offset:2px;border-r
 .item.wide{width:132px}
 
 /* Tabs */
-.tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--ink)}
+.tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(58px,1fr);overflow-x:auto;scrollbar-width:none;border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--ink)}
 .tabs button{min-width:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:10px;color:var(--muted);position:relative}
 .tabs button b{font-family:var(--jp);font-weight:500;font-size:17px;line-height:1.1}
 .tabs button span{font-size:10.5px;letter-spacing:.02em;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -135,6 +135,15 @@ button:focus-visible{outline:2px solid var(--sakura);outline-offset:2px;border-r
 .scard b{font-family:var(--display);font-size:20px}.scard span{font-size:12px;color:var(--muted)}
 .story .back{color:var(--muted);font-size:13px;padding:6px 0}
 .story .next{width:100%;margin-top:10px}
+.stamps{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.stamp{border:1px solid var(--line);border-radius:12px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;background:var(--ink-2);opacity:.55}
+.stamp .seal{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-family:var(--jp),"Hiragino Mincho ProN",serif;font-size:28px;color:var(--muted);border:2px dashed rgba(216,210,195,.2)}
+.stamp.on{opacity:1}.stamp.on .seal{color:#f3e6dc;background:radial-gradient(circle at 40% 35%,#c2453a,#8a2019);border:2px solid #6e1812;transform:rotate(-8deg)}
+.stamp b{font-size:13px;font-weight:600}.stamp small{font-size:11px;color:var(--muted);line-height:1.3}
+.fortune{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;padding-top:10px}
+.fortune .fk{font-family:var(--jp),"Hiragino Mincho ProN",serif;font-size:64px;color:#c2453a;border:2px solid #8a2019;border-radius:10px;padding:8px 22px;background:#e8e0cc;line-height:1.1}
+.fortune.bad .fk{color:#1b1510;border-color:#1b1510}
+.fortune p{max-width:26em}
 .loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--ink);z-index:50;font-family:var(--display);font-size:22px;color:var(--fog);transition:opacity .5s}
 @media (max-width:380px){.needs{gap:6px}.need label{font-size:10px}.tabs button span{font-size:9.5px}.brand i{display:none}}
 @media (prefers-reduced-motion:reduce){.need.low .bar i{animation:none}}
@@ -144,6 +153,7 @@ button:focus-visible{outline:2px solid var(--sakura);outline-offset:2px;border-r
   <header class="hud">
     <div class="brand"><b>Муся</b><i>猫の家</i></div>
     <div class="coins" title="Баланс бесконечный"><span class="mon"></span><span id="coinVal">∞</span></div>
+    <button class="iconbtn" id="albumBtn" aria-label="Альбом штампов" title="Альбом штампов" style="font-family:var(--jp)">印</button>
     <button class="iconbtn" id="weatherBtn" aria-label="Погода" title="Погода: авто">🌦</button>
     <button class="iconbtn" id="scaryBtn" aria-label="Страшилки" title="Страшилки включены">👻</button>
     <button class="iconbtn" id="soundBtn" aria-label="Звук">🔈</button>
@@ -162,7 +172,8 @@ button:focus-visible{outline:2px solid var(--sakura);outline-offset:2px;border-r
   <header><h2 id="gTitle"></h2><div class="stat" id="gStat"></div><button class="iconbtn" id="gClose" aria-label="Закрыть игру">✕</button></header>
   <div class="field" id="gField"><canvas id="gcv"></canvas><div class="result" id="gResult" hidden></div></div>
 </div>
-<div class="story" id="story" hidden><header><h2>Кайданы на ночь</h2><button class="iconbtn" id="storyClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="storyBody"></div></div>
+<div class="story" id="story" hidden><header><h2 id="storyTitle">Кайданы на ночь</h2><button class="iconbtn" id="storyClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="storyBody"></div></div>
+<div class="story" id="album" hidden><header><h2>Альбом штампов</h2><button class="iconbtn" id="albumClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="albumBody"></div></div>
 <div class="loading" id="loading">Муся просыпается…</div>
 
 <script>
@@ -172,7 +183,7 @@ button:focus-visible{outline:2px solid var(--sakura);outline-offset:2px;border-r
 const STRIPS=["rest","moveRight","moveLeft","sleep","play","purr","yarn","treat","highfive","stretch","groom","knead","house","butterfly","box","gift","hide","sulk","gaze9","gaze10"];
 const ANCH={"rest":[[98,32.5],[86.2,35],[94.8,35],[96.8,34.5],[99,33],[97.8,36],[92.8,33],[98.8,31]],"moveRight":[[146.8,67],[149.8,70.5],[139.5,72],[143.5,71.5],[151.2,72],[146.8,77],[146.8,74],[144.8,77.5]],"moveLeft":[[75.5,63.5],[65.2,62],[67.2,67.5],[75.2,63.5],[69,64],[65.5,61.5],[69.5,65],[71,63.5]],"sleep":[[94,27.5],[102.2,39.5],[98.2,77],[101.8,102.5],[96,85.5],[98.8,91.5],[101.5,93],[105,92]],"play":[[99.2,58],[97.5,56.5],[105,63],[102,58.5],[118,55],[105.5,60.5],[104.8,53],[103,58.5]],"purr":[[97.5,33],[96.2,35],[94.8,37.5],[96.5,38],[101.2,36.5],[97,34.5],[91,35.5],[96.5,33.5]],"yarn":[[102,26.5],[116.8,29.5],[110,44],[119.8,47],[98.2,30],[96.8,21.5],[96.2,44],[132.2,36.5]],"treat":[[101.5,29.5],[100.2,30.5],[101,34],[102.8,30.5],[102.8,30.5],[102,30],[98.5,29.5],[99.5,27]],"highfive":[[98.5,36],[97.2,34.5],[106.2,30],[106.8,34],[103.5,31],[104,32],[97.8,33],[98,37]],"stretch":[[96.2,45.5],[89.5,53.5],[110,55.5],[136.8,19],[67.8,24.5],[100.2,36.5],[95.5,47],[95.2,45.5]],"groom":[[97.2,36],[102.5,36.5],[105.2,39.5],[101.5,39.5],[94.8,32],[97.8,34.5],[101.5,34.5],[100,40]],"knead":[[105,25.5],[98.2,32],[89.8,29.5],[103.2,26],[110.8,32.5],[101,38],[100.8,37.5],[104.8,34.5]],"house":[[103.5,65],[105,77],[113.5,58],[104,71.5],[105.2,81.5],[105.2,78.5],[105.2,70],[105.8,73]],"butterfly":[[103.2,56],[92,55.5],[107.8,108],[115.8,64.5],[113,30],[103,56.5],[92.5,112],[94.2,61]],"box":[[101.2,49],[127.5,46.5],[118.2,75],[113,67],[117.5,111],[137.8,95],[118.5,116],[108.5,78.5]],"gift":[[105,57],[100.2,59.5],[96,66.5],[117.2,61.5],[108.5,68.5],[119.2,74.5],[103.2,61],[102.5,49.5]],"hide":[[99,29],[99.8,29.5],[96,33],[98,36.5],[96,29.5],[103,31],[100.5,29.5],[101.2,28.5]],"sulk":[[94.2,26.5],[92.8,31],[104.5,29.5],[100.8,37],[115.2,26],[88,27.5],[102,29.5],[112,32]],"gaze9":[[97.8,33.5],[93.2,36],[93.8,38],[95.8,39.5],[111.5,44],[108,43],[107,44],[104.8,48.5]],"gaze10":[[94.5,47],[94,47.5],[91.8,48.5],[82.5,47.5],[89.8,51.5],[90.8,50.5],[92.5,47.5],[101.5,45.5]]};
 const IMG={};
-const BG_FILES=["engawa","kitchen","onsen","bedroom_on","bedroom_off","wardrobe","games","g_forest","g_temple","g_river","g_field","g_room"];
+const BG_FILES=["entrance","courtyard","engawa","kitchen","onsen","bedroom_on","bedroom_off","wardrobe","games","g_forest","g_temple","g_river","g_field","g_room"];
 function loadImages(){
   const bgs=BG_FILES.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{BGI[n]=im;res();};im.onerror=()=>res();im.src="assets/bg/"+n+".webp";}));
   const decs=Object.keys(DMETA).map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{DIMG[n]=im;res();};im.onerror=()=>res();im.src="assets/decor/"+n+".webp";}));
@@ -224,7 +235,9 @@ function sfx(kind){
 
 // ───────────────────────── Data ─────────────────────────
 const ROOMS=[
-  {id:"engawa",jp:"縁側",ru:"Веранда",hint:"Гладь по голове — мурчит. Тап — играет, двойной тап — лапка. «Обстановка» — меняй вещи."},
+  {id:"entrance",jp:"門",ru:"Вход",hint:"Омой лапки, помолись и вытяни омикудзи. Фонарь можно погасить."},
+  {id:"engawa",jp:"縁側",ru:"Веранда",hint:"Гладь Мусю по голове. Вещи можно трогать и перетаскивать пальцем, «Обстановка» — менять."},
+  {id:"courtyard",jp:"中庭",ru:"Дворик",hint:"Покорми карпов у водопада, брось камешек или помедитируй."},
   {id:"kitchen",jp:"台所",ru:"Кухня",hint:"Выбери угощение внизу. Сытую Мусю не уговоришь."},
   {id:"onsen",jp:"温泉",ru:"Онсэн",hint:"Возьми мыло и потри Мусю пальцем, потом смой ковшом."},
   {id:"bedroom",jp:"寝室",ru:"Спальня",hint:"Погаси андон — Муся уснёт. «Кайдан на ночь» — страшные истории."},
@@ -252,7 +265,7 @@ const WEAR={
   neck:[{id:"suzu",n:"Колокольчик",p:70},{id:"omamori",n:"Омамори",p:95},{id:"scarf",n:"Шарф",p:85},{id:"juzu",n:"Чётки",p:90},{id:"obiage",n:"Розовый бант",p:75}]
 };
 const WEAR_SLOTS=[["head","Голова"],["eyes","Очки"],["neck","Шея"]];
-const DUR={cursor:12,firefly:12,petals:12.5,purr:8,yarn:10,gift:10,music:10,treat:5,peek:6.2,zoomies:9,box:13,highfive:3.8,stretch:9,hide:9,beg:9,groom:12,sulk:12,knead:14,house:14,butterfly:11,cucumber:7.6,meow:4.8,poke:1.6,refuse:2.2,washed:3.6};
+const DUR={walkto:8,cursor:12,firefly:12,petals:12.5,purr:8,yarn:10,gift:10,music:10,treat:5,peek:6.2,zoomies:9,box:13,highfive:3.8,stretch:9,hide:9,beg:9,groom:12,sulk:12,knead:14,house:14,butterfly:11,cucumber:7.6,meow:4.8,poke:1.6,refuse:2.2,washed:3.6};
 
 // ───────────────────────── State ─────────────────────────
 const saved=store.get()||{};
@@ -267,12 +280,13 @@ const S={
   tool:null, // onsen: "soap"
   wearTab:"head",
   decor:Object.assign({engawa:{plant:"d_bonsai",chime:"d_furin_glass"},onsen:{bucket:"d_okeya"},bedroom:{}},saved.decor||{}),
-  trayMode:{},weather:saved.weather||"auto",scary:saved.scary!==false
+  trayMode:{},weather:saved.weather||"auto",scary:saved.scary!==false,
+  dpos:saved.dpos||{},lightsOff:saved.lightsOff||{}
 };
 for(const id of ["d_bonsai","d_furin_glass","d_okeya"])S.owned.add(id);
 // Time away: needs fade a little, never below 15 on return.
 if(saved.t){const mins=clamp((Date.now()-saved.t)/60000,0,360);for(const k of ["food","clean","joy"])S.needs[k]=Math.max(Math.min(S.needs[k],15),S.needs[k]-mins*0.5);S.needs.energy=clamp(S.needs.energy+mins*0.8,0,100);}
-function save(){store.set({needs:S.needs,owned:[...S.owned],wear:S.wear,best:S.best,earned:S.earned,decor:S.decor,weather:S.weather,scary:S.scary,t:Date.now()});}
+function save(){store.set({needs:S.needs,owned:[...S.owned],wear:S.wear,best:S.best,earned:S.earned,decor:S.decor,dpos:S.dpos,lightsOff:S.lightsOff,weather:S.weather,scary:S.scary,stats:typeof ST!=="undefined"?ST:saved.stats,t:Date.now()});}
 setInterval(save,5000);
 addEventListener("pagehide",save);
 
@@ -294,7 +308,8 @@ function start(a,auto=false){
   if(games.includes(a)){n.joy=clamp(n.joy+10,0,100);n.energy=clamp(n.energy-6,0,100);n.food=clamp(n.food-3,0,100);}
   else if(["highfive","meow","music","knead","gift","box","house","peek"].includes(a))n.joy=clamp(n.joy+5,0,100);
   else if(a==="cucumber")n.joy=clamp(n.joy-6,0,100);
-  if(a==="purr")burst(8);
+  if(a==="purr"){burst(8);award("pet");}
+  if(a==="highfive")ST.paws++;if(a==="zoomies")award("zoom");if(a==="cucumber")award("cucumber");
   nextAuto=t+rand(14,30);
 }
 function react(face,sec){pet.face={face,at:now(),to:sec};}
@@ -361,6 +376,7 @@ function pose(t){
       if(e<1.2)lookPointer();else if(e<3.2)set("rest",1);else if(e<4)set("rest",idlePose("slow",(e-3.2)*1.5/.8));
       else if(e<4.8)set("highfive",Math.min(3,Math.floor((e-4)/.2)));else if(e<6.2)set("highfive",3);else if(e<6.8)set("highfive",Math.min(7,6+Math.floor((e-6.2)/.3)));
       else if(e<8.2)set("rest",1);else lookPointer();break;
+    case"walkto":if(pet.moving){set(pet.heading>0?"moveRight":"moveLeft",Math.floor(pet.walk)%8);p.fade=false;}else set("rest",0);break;
     case"wash":set("rest",pet.foam.length>12?(Math.floor(t/1.4)%4===0?5:4):idleFrame(t));break;
   }
   return p;
@@ -412,7 +428,7 @@ function emit(sp,t,dur){
 const sakura={until:0,next:now()+rand(12,30),list:[],acc:0};
 function burst(n){const [hx,hy]=cellToStage(97,160);for(let i=0;i<n;i++)sakura.list.push({x:hx+rand(-30,30)*view.s,y:hy+rand(-20,10)*view.s,vx:rand(-30,30),vy:rand(-60,-20),rot:rand(0,6),vr:rand(-3,3),size:rand(5,8)*view.s,ph:rand(0,6),life:rand(2.5,4)});}
 function updateSakura(t,dt){
-  if(t>sakura.next&&t>sakura.until){sakura.until=t+rand(9,15);sakura.next=sakura.until+rand(35,90);}
+  if(t>sakura.next&&t>sakura.until){sakura.until=t+rand(9,15);award("hanami");sakura.next=sakura.until+rand(35,90);}
   if(t<sakura.until){sakura.acc+=dt*7;while(sakura.acc>1){sakura.acc--;const fromTop=Math.random()<.65;
     sakura.list.push({x:fromTop?rand(-view.W*.2,view.W*.9):-10,y:fromTop?-10:rand(0,view.H*.6),vx:rand(25,60),vy:rand(20,45),rot:rand(0,6),vr:rand(-2.5,2.5),size:rand(4,8)*Math.max(.8,view.s),ph:rand(0,6),life:30});}}
   for(const p of sakura.list){p.ph+=dt;p.x+=(p.vx+Math.sin(p.ph*1.7)*18)*dt;p.y+=p.vy*dt;if(p.vy<40)p.vy+=40*dt;p.rot+=p.vr*dt;p.life-=dt;}
@@ -530,7 +546,7 @@ function resize(){
   paint();
 }
 function frameImg(st,f,g){const im=IMG[st];if(im)g.drawImage(im,f*384,0,384,416,0,0,384,416);}
-const TINT={engawa:"rgba(18,26,22,.2)",kitchen:"rgba(40,22,10,.2)",onsen:"rgba(20,28,26,.24)",bedroom:"rgba(12,14,22,.32)",wardrobe:"rgba(30,20,10,.18)",games:"rgba(18,24,22,.24)"};
+const TINT={courtyard:"rgba(20,28,26,.22)",entrance:"rgba(8,12,14,.42)",engawa:"rgba(18,26,22,.2)",kitchen:"rgba(40,22,10,.2)",onsen:"rgba(20,28,26,.24)",bedroom:"rgba(12,14,22,.32)",wardrobe:"rgba(30,20,10,.18)",games:"rgba(18,24,22,.24)"};
 function renderCat(p,t){
   const key=p.strip+":"+p.frame;
   if(key!==pet.curKey){if(p.fade&&pet.curKey){pet.prev=pet.cur;pet.fadeStart=t;pet.fadeLen=clamp((t-pet.lastChange)*.5,.06,.16);}else pet.prev=null;pet.cur={st:p.strip,f:p.frame};pet.curKey=key;pet.lastChange=t;}
@@ -565,13 +581,14 @@ function render(t,dt){
   if(["engawa","onsen","games"].includes(S.room)){ctx.save();ctx.globalAlpha=.55;const fw=900*s*1.3,fh=260*s*1.3,off=(t*9*s)%fw;for(let x=-off;x<W;x+=fw)ctx.drawImage(fogTex,x,H*.3,fw,fh);ctx.restore();}
   if(S.room==="kitchen"){const fl=.85+.1*Math.sin(t*7)+.06*Math.sin(t*13.3),[lx,ly]=imgToStage(1560,300),R=520*BGM.k;const gr=ctx.createRadialGradient(lx,ly,0,lx,ly,R);gr.addColorStop(0,`rgba(235,160,80,${.22*fl})`);gr.addColorStop(1,"rgba(235,160,80,0)");ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}
   if(S.room==="bedroom"&&!S.lampOff){const fl=.9+.07*Math.sin(t*5.3)+.04*Math.sin(t*11),[lx,ly]=imgToStage(330,1150),R=700*BGM.k;const gr=ctx.createRadialGradient(lx,ly,0,lx,ly,R);gr.addColorStop(0,`rgba(240,190,110,${.16*fl})`);gr.addColorStop(1,"rgba(240,190,110,0)");ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}
-  drawRain(t,false);drawSpook(t,false);drawDecor(t);
+  drawRain(t,false);drawPlaces(t,dt);drawSpook(t,false);drawDecor(t);
   const p=pose(t);
   // props behind/around the cat
   const e=t-pet.start;
   if(pet.action==="cucumber"){const al=clamp(Math.min(e/.6,(7.4-e)/.5),0,1);if(al>0){ctx.save();ctx.globalAlpha=al;const [cx,]=cellToStage(192,0);ctx.translate(cx,view.floor-10*s);ctx.rotate(-Math.PI/4.4);drawEmoji(ctx,"🥒",0,0,34*s);ctx.restore();}}
   renderCat(p,t);
   drawRain(t,true);
+  drawAmbient(t);
   if(S.room==="bedroom"&&S.lampOff){ctx.fillStyle="rgba(5,7,14,.12)";ctx.fillRect(0,0,W,H);}
   if(pet.action==="treat"&&pet.food&&e<.9){const u=e/.9;const [x,y]=cellToStage(mix(178,72,u),mix(186,101,u)+Math.sin(u*Math.PI)*20);drawEmoji(ctx,pet.food,x,y,20*s);}
   if(pet.action==="firefly"){const f=firefly(e);if(f){const [x,y]=cellToStage(f.x,f.y);const pul=.75+.25*Math.sin(t*9);const gr=ctx.createRadialGradient(x,y,0,x,y,16*s);gr.addColorStop(0,`rgba(214,242,122,${.8*pul})`);gr.addColorStop(1,"rgba(214,242,122,0)");ctx.fillStyle=gr;ctx.fillRect(x-16*s,y-16*s,32*s,32*s);ctx.fillStyle="#f4ffd0";ctx.beginPath();ctx.arc(x,y,2.4*s,0,Math.PI*2);ctx.fill();}}
@@ -595,7 +612,7 @@ function render(t,dt){
   // sakura petals drift over everything
   for(const q of sakura.list)drawPetal(ctx,q.x,q.y,q.size,q.rot,Math.min(1,q.life)*.92);
   if(t<sakura.until){const k=clamp(Math.min(t-(sakura.until-12),sakura.until-t),0,1);ctx.fillStyle=`rgba(238,163,187,${.06*k})`;ctx.fillRect(0,0,W,H);}
-  drawSpook(t,true);drawFlash(t);
+  drawFloatFx(t);drawSpook(t,true);drawFlash(t);
   // film grain
   ctx.save();ctx.globalAlpha=.5;ctx.translate((Math.random()*128)|0,(Math.random()*128)|0);ctx.fillStyle=grainPat;ctx.fillRect(-128,-128,W+256,H+256);ctx.restore();
 }
@@ -621,6 +638,8 @@ function update(t,dt){
   pet.moving=false;pet.lift=0;const s=view.s,minX=96*s,maxX=view.W-96*s;
   if(pet.action==="cursor"&&pointer.known){const dx=pointer.x-pet.x;if(Math.abs(dx)>90*s){const want=pointer.x-Math.sign(dx)*80*s,step=Math.sign(want-pet.x)*Math.min(Math.abs(want-pet.x),230*s*dt);if(Math.abs(step)>.3){pet.x=clamp(pet.x+step,minX,maxX);pet.walk+=Math.abs(step)/(26*s);pet.heading=Math.sign(dx);pet.moving=true;}}}
   if(pet.action==="zoomies"){const seg=clamp(view.W/(520*s),1,1.8),pts=[pet.home,maxX,minX,maxX,pet.home];if(e<seg*4){const i=Math.min(3,Math.floor(e/seg)),u=(e-i*seg)/seg,x=mix(pts[i],pts[i+1],u+(smooth(u)-u)*.65);const dx=x-pet.x;if(Math.abs(dx)>.2)pet.heading=Math.sign(dx);pet.walk+=Math.abs(dx)/(30*s);pet.x=x;pet.moving=true;}}
+  if(pet.action==="walkto"){const dx=(pet.walkTarget??pet.x)-pet.x;if(Math.abs(dx)>3){const st=Math.sign(dx)*Math.min(Math.abs(dx),210*s*dt);pet.x+=st;pet.walk+=Math.abs(st)/(26*s);pet.heading=Math.sign(dx);pet.moving=true;}
+    else{const a=pet.walkAfter||"idle";start(a);if(a==="sleep")pet.napUntil=now()+35;}}
   if(pet.action==="gift"&&e<2.6){const dir=pet.home+60*s<=maxX?1:-1;pet.x=clamp(pet.home+dir*60*s*smooth(e/2.6),minX,maxX);}
   if(pet.action==="cucumber")pet.lift=cucumberJump(e)*s;
   loop(pet.action==="purr"?"purr":pet.action==="sleep"&&e>2.8?"snore":null);
@@ -650,7 +669,8 @@ cv.addEventListener("pointerdown",ev=>{
   pointer.x=x;pointer.y=y;pointer.known=true;pet.gazeUntil=now()+2.8;pet.lastInput=now();
   drag.active=true;drag.sx=x;drag.sy=y;drag.px=x;drag.py=y;drag.dist=0;drag.startX=pet.x;
   if(S.room==="onsen"&&S.tool==="soap"&&hitCat(x,y)){drag.mode="soap";if(pet.action!=="wash")start("wash");}
-  else drag.mode=hitCat(x,y)?(onHead(x,y)&&ev.pointerType!=="mouse"?"pet":"cat"):"bg";
+  else if(hitCat(x,y))drag.mode=onHead(x,y)&&ev.pointerType!=="mouse"?"pet":"cat";
+  else{const dh=decorHit(x,y);if(dh){drag.mode="decor";drag.item=dh;drag.base=(S.dpos[dh.it0.id]||[0,0]).slice();}else drag.mode="bg";}
 });
 cv.addEventListener("pointermove",ev=>{
   const [x,y]=local(ev);const t=now();
@@ -660,12 +680,15 @@ cv.addEventListener("pointermove",ev=>{
   drag.dist+=Math.hypot(x-drag.px,y-drag.py);drag.px=x;drag.py=y;
   if(drag.mode==="soap"){if(hitCat(x,y)&&pet.foam.length<70){const [cx,cy]=stageToCell(x,y);const last=pet.foam[pet.foam.length-1];if(!last||Math.hypot(last.x-cx,last.y-cy)>9){pet.foam.push({x:cx,y:cy,r:rand(6,10),a:1});if(pet.foam.length%6===0)sfx("pop");}}pet.start=now()-1;}
   else if(drag.mode==="pet")stroke(x,y,px,py);
+  else if(drag.mode==="decor"&&drag.dist>8){const id=drag.item.it0.id,hang=DMETA[id][2]==="t"||DMETA[id][2]==="c",dx=(x-drag.sx)/BGM.k,dy=(y-drag.sy)/BGM.k;
+    S.dpos[id]=[clamp(drag.base[0]+dx,-560,560),hang?0:clamp(drag.base[1]+dy,-90,50)];wob[id]=now()-.25;}
   else if(drag.mode==="cat"&&drag.dist>8){if(pet.action!=="idle"&&pet.action!=="drag"){start("idle");}react("🙀",Infinity);pet.x=clamp(drag.startX+(x-drag.sx),96*view.s,view.W-96*view.s);pet.home=pet.x;}
 });
 function endDrag(ev){
   if(!drag.active)return;drag.active=false;const [x,y]=local(ev);
   if(drag.mode==="cat"&&drag.dist>8){react("😽",1.6);return;}
   if(drag.mode==="soap"){pet.start=now()-DUR.washed+0.1;pet.action="wash";return;}
+  if(drag.mode==="decor"){if(drag.dist>8){save();sfx("pop");}else decorTap(drag.item);return;}
   if(drag.dist>8)return;
   if(drag.mode==="cat"||drag.mode==="pet"){
     const t=now();
@@ -704,15 +727,17 @@ function ui(){
   $("roomTitle").innerHTML=`<b>${r.jp}</b><span>${r.ru}</span>`;const hn=$("hint");if(hn.textContent!==r.hint){hn.textContent=r.hint;hn.classList.remove("off");clearTimeout(hintTimer);hintTimer=setTimeout(()=>hn.classList.add("off"),7000);}
   for(const b of $("tabs").children)b.setAttribute("aria-selected",b.dataset.room===S.room);
   const tray=$("tray");
-  const modeSeg=DECOR[S.room]?`<div class="seg"><button data-mode="play" aria-pressed="${S.trayMode[S.room]!=="decor"}">Занятия</button><button data-mode="decor" aria-pressed="${S.trayMode[S.room]==="decor"}">🛋 Обстановка</button></div>`:"";
+  const modeSeg=DECOR[S.room]?`<div class="seg"><button data-mode="play" aria-pressed="${S.trayMode[S.room]!=="decor"}">${{engawa:"Занятия",kitchen:"Еда",onsen:"Мытьё",bedroom:"Сон",wardrobe:"Наряды"}[S.room]}</button><button data-mode="decor" aria-pressed="${S.trayMode[S.room]==="decor"}">🛋 Обстановка</button></div>`:"";
   if(DECOR[S.room]&&S.trayMode[S.room]==="decor"){const slots=DECOR[S.room],cur=S.dslot&&slots.find(q=>q.k===S.dslot)||slots[0];S.dslot=cur.k;const sel=S.decor[S.room]||{};
     tray.innerHTML=modeSeg+`<div class="seg">${slots.map(q=>`<button data-dslot="${q.k}" aria-pressed="${q.k===cur.k}">${q.n}</button>`).join("")}</div><div class="items">${cur.items.map(it=>{const own=S.owned.has(it.id),on=sel[cur.k]===it.id;return`<button class="item ${on?"on":""}" data-decor="${it.id}"><span class="ico"><img src="assets/decor/${it.id}.webp" alt="" style="max-height:30px;max-width:60px"></span><span class="nm">${it.n}</span><span class="pr">${on?"стоит":own?"куплено":`<span class="mon"></span>${it.p}`}</span></button>`;}).join("")}</div>`;return;}
+  if(S.room==="entrance"||S.room==="courtyard"){const A=S.room==="entrance"?[["wash_paws","💧","Омыть лапки"],["pray","🙏","Помолиться"],["omikuji","📜","Омикудзи"],["lantern","🏮",lanternOn?"Погасить фонарь":"Зажечь фонарь"]]:[["koi","🐟","Покормить карпов"],["pebble","🪨","Бросить камешек"],["meditate","🍃","Медитация"]];
+    tray.innerHTML=`<div class="items">${A.map(([k,i,n])=>`<button class="item wide" data-place="${k}"><span class="ico">${i}</span><span class="nm">${n}</span></button>`).join("")}${PLAY.slice(0,6).map(p=>`<button class="item" data-act="${p.a}"><span class="ico">${p.i}</span><span class="nm">${p.n}</span></button>`).join("")}</div>`;return;}
   if(S.room==="engawa"){tray.innerHTML=modeSeg+`<div class="items">${PLAY.map(p=>`<button class="item" data-act="${p.a}"><span class="ico">${p.i}</span><span class="nm">${p.n}</span></button>`).join("")}</div>`;}
-  else if(S.room==="kitchen"){tray.innerHTML=`<div class="items">${FOODS.map(f=>`<button class="item" data-food="${f.id}"><span class="ico">${f.i}</span><span class="nm">${f.n}</span><span class="pr"><span class="mon"></span>${f.p}</span></button>`).join("")}</div>`;}
+  else if(S.room==="kitchen"){tray.innerHTML=modeSeg+`<div class="items">${FOODS.map(f=>`<button class="item" data-food="${f.id}"><span class="ico">${f.i}</span><span class="nm">${f.n}</span><span class="pr"><span class="mon"></span>${f.p}</span></button>`).join("")}</div>`;}
   else if(S.room==="onsen"){tray.innerHTML=modeSeg+`<div class="items"><button class="item wide ${S.tool==="soap"?"on":""}" data-tool="soap"><span class="ico">🧼</span><span class="nm">Мыло — три Мусю</span></button><button class="item wide" data-tool="rinse"><span class="ico">🪣</span><span class="nm">Смыть из ковша</span></button><button class="item wide" data-tool="towel"><span class="ico">🧺</span><span class="nm">Вытереть полотенцем</span></button></div>`;}
   else if(S.room==="bedroom"){tray.innerHTML=modeSeg+`<div class="items"><button class="item wide" data-kaidan="1"><span class="ico">📜</span><span class="nm">Кайдан на ночь</span></button><button class="item wide ${S.lampOff?"on":""}" data-lamp="1"><span class="ico">🏮</span><span class="nm">${S.lampOff?"Зажечь андон":"Погасить андон"}</span></button><button class="item wide" data-act="stretch"><span class="ico">🥱</span><span class="nm">Потянуться</span></button><button class="item wide" data-act="knead"><span class="ico">🌙</span><span class="nm">Помять футон</span></button></div>`;}
   else if(S.room==="wardrobe"){
-    tray.innerHTML=`<div class="seg" role="tablist">${WEAR_SLOTS.map(([k,l])=>`<button data-slot="${k}" aria-pressed="${S.wearTab===k}">${l}</button>`).join("")}</div>
+    tray.innerHTML=modeSeg+`<div class="seg" role="tablist">${WEAR_SLOTS.map(([k,l])=>`<button data-slot="${k}" aria-pressed="${S.wearTab===k}">${l}</button>`).join("")}</div>
       <div class="items">${WEAR[S.wearTab].map(w=>{const own=S.owned.has(w.id),on=S.wear[S.wearTab]===w.id;return`<button class="item ${on?"on":""}" data-wear="${w.id}"><span class="ico"><canvas width="88" height="60" data-prev="${w.id}"></canvas></span><span class="nm">${w.n}</span><span class="pr">${on?"надето":own?"куплено":`<span class="mon"></span>${w.p}`}</span></button>`;}).join("")}</div>`;
     tray.querySelectorAll("canvas[data-prev]").forEach(c=>previewWear(c,c.dataset.prev));
   }
@@ -724,56 +749,69 @@ function previewWear(c,id){const g=c.getContext("2d");const slot=Object.keys(WEA
 $("tray").addEventListener("click",ev=>{
   const b=ev.target.closest("button");if(!b)return;audioInit();
   if(b.dataset.act){const a=b.dataset.act;if(a==="sleep"){start("sleep");pet.napUntil=now()+40;}else start(a);return;}
-  if(b.dataset.food){const f=FOODS.find(q=>q.id===b.dataset.food);if(S.needs.food>=95){start("refuse");return;}spend(f.p);start("treat");pet.food=f.i;setTimeout(()=>sfx("eat"),900);S.needs.food=clamp(S.needs.food+f.food,0,100);S.needs.joy=clamp(S.needs.joy+f.joy,0,100);return;}
+  if(b.dataset.food){const f=FOODS.find(q=>q.id===b.dataset.food);if(S.needs.food>=95){start("refuse");return;}spend(f.p);start("treat");pet.food=f.i;award("food1");stat("foods",f.id);setTimeout(()=>sfx("eat"),900);S.needs.food=clamp(S.needs.food+f.food,0,100);S.needs.joy=clamp(S.needs.joy+f.joy,0,100);return;}
   if(b.dataset.tool){const t=b.dataset.tool;
     if(t==="soap"){S.tool=S.tool==="soap"?null:"soap";ui();if(S.tool)toast("Три Мусю пальцем");return;}
     if(t==="rinse"){sfx("splash");for(let i=0;i<60;i++){const [x,y]=cellToStage(rand(40,160),240);pet.drops.push({x,y:y-rand(0,60),vx:rand(-20,20),vy:rand(80,200),a:1});}
-      const gain=Math.min(70,pet.foam.length*1.4);if(pet.foam.length){S.needs.clean=clamp(S.needs.clean+gain,0,100);pet.rinsing=true;start("washed");}else toast("Сначала намыль Мусю");return;}
+      const gain=Math.min(70,pet.foam.length*1.4);if(pet.foam.length){S.needs.clean=clamp(S.needs.clean+gain,0,100);pet.rinsing=true;start("washed");award("bath");}else toast("Сначала намыль Мусю");return;}
     if(t==="towel"){if(pet.foam.length){toast("Сначала смой пену");return;}S.needs.clean=clamp(S.needs.clean+6,0,100);S.needs.joy=clamp(S.needs.joy+4,0,100);start("purr");return;}}
-  if(b.dataset.lamp){S.lampOff=!S.lampOff;if(S.lampOff){start("sleep");pet.napUntil=0;}else if(pet.action==="sleep")start("stretch");paint();ui();return;}
+  if(b.dataset.lamp){S.lampOff=!S.lampOff;if(S.lampOff){start("sleep");pet.napUntil=0;award("sleep");}else if(pet.action==="sleep")start("stretch");paint();ui();return;}
   if(b.dataset.slot){S.wearTab=b.dataset.slot;ui();return;}
   if(b.dataset.wear){const id=b.dataset.wear,slot=S.wearTab,w=WEAR[slot].find(q=>q.id===id);
     if(!S.owned.has(id)){S.owned.add(id);spend(w.p);}
-    S.wear[slot]=S.wear[slot]===id?null:id;if(S.wear[slot]){burst(6);sfx("chime");react(pick(["😸","😻","😼"]),1.8);}save();ui();return;}
+    S.wear[slot]=S.wear[slot]===id?null:id;if(S.wear[slot]){stat("wears",id);burst(6);sfx("chime");react(pick(["😸","😻","😼"]),1.8);}save();ui();return;}
   if(b.dataset.game){openGame(b.dataset.game);return;}
+  if(b.dataset.place){placeAction(b.dataset.place);if(b.dataset.place==="lantern")ui();return;}
   if(b.dataset.mode){S.trayMode[S.room]=b.dataset.mode;ui();return;}
   if(b.dataset.dslot){S.dslot=b.dataset.dslot;ui();return;}
   if(b.dataset.kaidan){openStory(null);return;}
   if(b.dataset.decor){const id=b.dataset.decor,slot=DECOR[S.room].find(q=>q.items.some(i=>i.id===id)),it=slot.items.find(i=>i.id===id);S.decor[S.room]=S.decor[S.room]||{};
     if(!S.owned.has(id)){S.owned.add(id);spend(it.p);}
-    S.decor[S.room][slot.k]=S.decor[S.room][slot.k]===id?null:id;if(S.decor[S.room][slot.k]){sfx("chime");react(pick(["😸","😻","😺"]),1.6);S.needs.joy=clamp(S.needs.joy+3,0,100);}save();ui();return;}
+    S.decor[S.room][slot.k]=S.decor[S.room][slot.k]===id?null:id;if(S.decor[S.room][slot.k]){stat("decors",id);sfx("chime");react(pick(["😸","😻","😺"]),1.6);S.needs.joy=clamp(S.needs.joy+3,0,100);}save();ui();return;}
 });
 function weatherLabel(){$("weatherBtn").textContent={auto:"🌦",rain:"🌧",clear:"🌤"}[S.weather];$("weatherBtn").title="Погода: "+{auto:"сама меняется",rain:"дождь",clear:"ясно"}[S.weather];$("scaryBtn").textContent=S.scary?"👻":"🕯";$("scaryBtn").title=S.scary?"Страшилки включены":"Страшилки выключены";}
 $("weatherBtn").addEventListener("click",()=>{audioInit();S.weather={auto:"rain",rain:"clear",clear:"auto"}[S.weather];weatherLabel();toast({auto:"Погода меняется сама",rain:"Пошёл дождь",clear:"Ясно, без дождя"}[S.weather]);save();});
 $("scaryBtn").addEventListener("click",()=>{S.scary=!S.scary;weatherLabel();toast(S.scary?"Страшилки включены":"Страшилки выключены");if(S.scary)spook.next=now()+rand(15,30);save();});
 
 // ───────────────────────── Room decor (Angela-style furnishing) ─────────────────────────
-const DMETA={"d_bonsai":[320,340,"b"],"d_ikebana":[340,460,"b"],"d_kokedama":[260,260,"b"],"d_bamboo":[260,460,"b"],"d_zab_indigo":[320,120,"b"],"d_zab_red":[320,120,"b"],"d_zab_moss":[320,120,"b"],"d_furin_glass":[110,300,"t"],"d_furin_blue":[110,300,"t"],"d_furin_iron":[110,300,"t"],"d_chochin":[180,320,"t"],"d_andon":[170,320,"b"],"d_okeya":[260,230,"b"],"d_shishi_base":[380,300,"b"],"d_shishi_tube":[300,60,"c"],"d_kaeru":[220,170,"b"],"d_yukimi":[240,260,"b"],"d_yuzu":[620,130,"c"],"d_petals":[620,130,"c"],"d_futon_waves":[900,150,"b"],"d_futon_red":[900,150,"b"],"d_futon_bamboo":[900,150,"b"],"d_futon_moon":[900,150,"b"],"d_scroll_moon":[180,580,"t"],"d_scroll_koi":[180,580,"t"],"d_scroll_neko":[180,580,"t"],"d_scroll_mount":[180,580,"t"],"d_daruma":[190,210,"b"],"d_kokeshi":[110,250,"b"],"d_maneki":[200,240,"b"],"d_cranes":[280,460,"t"]};
+const DMETA={"d_bonsai":[320,340,"b"],"d_ikebana":[340,460,"b"],"d_kokedama":[260,260,"b"],"d_bamboo":[260,460,"b"],"d_zab_indigo":[320,120,"b"],"d_zab_red":[320,120,"b"],"d_zab_moss":[320,120,"b"],"d_furin_glass":[110,300,"t"],"d_furin_blue":[110,300,"t"],"d_furin_iron":[110,300,"t"],"d_chochin":[180,320,"t"],"d_andon":[170,320,"b"],"d_okeya":[260,230,"b"],"d_shishi_base":[380,300,"b"],"d_shishi_tube":[300,60,"c"],"d_kaeru":[220,170,"b"],"d_yukimi":[240,260,"b"],"d_yuzu":[620,130,"c"],"d_petals":[620,130,"c"],"d_futon_waves":[900,150,"b"],"d_futon_red":[900,150,"b"],"d_futon_bamboo":[900,150,"b"],"d_futon_moon":[900,150,"b"],"d_scroll_moon":[180,580,"t"],"d_scroll_koi":[180,580,"t"],"d_scroll_neko":[180,580,"t"],"d_scroll_mount":[180,580,"t"],"d_daruma":[190,210,"b"],"d_kokeshi":[110,250,"b"],"d_maneki":[200,240,"b"],"d_cranes":[280,460,"t"],"d_bowl_red":[180,80,"b"],"d_bowl_blue":[180,80,"b"],"d_masu":[150,110,"b"],"d_tetsubin":[230,210,"b"],"d_donabe":[250,180,"b"],"d_teru":[110,230,"t"],"d_hoshigaki":[130,380,"t"],"d_kingyo":[190,170,"b"],"d_ume":[200,280,"b"],"d_koi_pole":[120,760,"b"],"d_koi_black":[300,90,"l"],"d_koi_red":[300,90,"l"],"d_koi_blue":[300,90,"l"],"d_tsukubai":[300,230,"b"],"d_sakura_tree":[420,520,"b"],"d_sake":[230,130,"c"],"d_towels":[200,110,"b"],"d_teaset":[280,140,"b"],"d_koro":[150,150,"b"],"d_goban":[320,170,"b"],"d_kimono_cranes":[380,540,"b"],"d_kimono_sakura":[380,540,"b"],"d_kimono_black":[380,540,"b"],"d_kyodai":[260,340,"b"],"d_kiku":[240,320,"b"]};
 const DIMG={};
 const DECOR={
   engawa:[
     {k:"plant",n:"Растение",items:[{id:"d_bonsai",n:"Бонсай",p:140,x:520,y:1262},{id:"d_ikebana",n:"Икебана",p:120,x:520,y:1262},{id:"d_kokedama",n:"Кокедама",p:90,x:520,y:1262},{id:"d_bamboo",n:"Бамбук",p:110,x:520,y:1262}]},
     {k:"seat",n:"Подушка",items:[{id:"d_zab_indigo",n:"Синяя волна",p:60,x:900,y:1392},{id:"d_zab_red",n:"Алая асаноха",p:60,x:900,y:1392},{id:"d_zab_moss",n:"Моховая",p:60,x:900,y:1392}]},
     {k:"chime",n:"Фурин",items:[{id:"d_furin_glass",n:"Стеклянный",p:70,x:720,y:112,sway:1},{id:"d_furin_blue",n:"Синий",p:70,x:720,y:112,sway:1},{id:"d_furin_iron",n:"Чугунный",p:90,x:720,y:112,sway:1}]},
-    {k:"light",n:"Фонарь",items:[{id:"d_andon",n:"Андон",p:130,x:1310,y:1282},{id:"d_chochin",n:"Красный тётин",p:100,x:1300,y:112,sway:.4}]}
+    {k:"light",n:"Фонарь",items:[{id:"d_andon",n:"Андон",p:130,x:1310,y:1282},{id:"d_chochin",n:"Красный тётин",p:100,x:1300,y:112,sway:.4}]},
+    {k:"garden",n:"В саду",items:[{id:"d_koi_pole",n:"Коинобори",p:180,x:1150,y:1102,koi:1},{id:"d_tsukubai",n:"Цукубаи",p:150,x:1140,y:1108,drip:[160,80,150,172]},{id:"d_sakura_tree",n:"Сакура",p:200,x:1160,y:1106}]}
+  ],
+  kitchen:[
+    {k:"bowl",n:"Миска",items:[{id:"d_bowl_red",n:"Миска «猫»",p:40,x:640,y:1352},{id:"d_bowl_blue",n:"С рыбками",p:40,x:640,y:1352},{id:"d_masu",n:"Масу",p:30,x:640,y:1352}]},
+    {k:"stove",n:"Очаг",items:[{id:"d_tetsubin",n:"Тэцубин",p:160,x:1380,y:812,steam:[4,70]},{id:"d_donabe",n:"Донабэ",p:90,x:1380,y:812,steam:[125,30]}]},
+    {k:"hang",n:"На окне",items:[{id:"d_teru",n:"Тэру-тэру-бодзу",p:20,x:700,y:180,sway:1.2},{id:"d_hoshigaki",n:"Сушёная хурма",p:50,x:700,y:180,sway:.4}]},
+    {k:"sill",n:"Подоконник",items:[{id:"d_kingyo",n:"Золотые рыбки",p:120,x:470,y:642,fish:1},{id:"d_ume",n:"Ветка сливы",p:70,x:470,y:642}]}
+  ],
+  wardrobe:[
+    {k:"kimono",n:"Кимоно",items:[{id:"d_kimono_cranes",n:"Журавли",p:300,x:470,y:1262},{id:"d_kimono_sakura",n:"Сакура",p:300,x:470,y:1262},{id:"d_kimono_black",n:"Чёрное с гербами",p:350,x:470,y:1262}]},
+    {k:"vanity",n:"Столик",items:[{id:"d_kyodai",n:"Зеркало кёдай",p:180,x:1320,y:1264},{id:"d_kiku",n:"Хризантемы",p:90,x:1320,y:1264}]}
   ],
   onsen:[
-    {k:"bucket",n:"Ведро",items:[{id:"d_okeya",n:"Кэдровое окэ",p:50,x:540,y:1345}]},
+    {k:"bucket",n:"У купальни",items:[{id:"d_okeya",n:"Кедровое окэ",p:50,x:540,y:1345},{id:"d_towels",n:"Полотенца",p:40,x:540,y:1345}]},
     {k:"garden",n:"Сад",items:[{id:"d_shishi_base",n:"Сисиодоси",p:160,x:1250,y:1258,shishi:1},{id:"d_kaeru",n:"Каменная лягушка",p:70,x:1270,y:1266},{id:"d_yukimi",n:"Фонарь юкими",p:120,x:1270,y:1262}]},
-    {k:"water",n:"В воде",items:[{id:"d_yuzu",n:"Юдзу",p:40,x:900,y:1075,bob:1},{id:"d_petals",n:"Лепестки",p:30,x:900,y:1075,bob:1}]}
+    {k:"water",n:"В воде",items:[{id:"d_yuzu",n:"Юдзу",p:40,x:900,y:1075,bob:1},{id:"d_petals",n:"Лепестки",p:30,x:900,y:1075,bob:1},{id:"d_sake",n:"Сакэ на подносе",p:90,x:760,y:1070,bob:1}]}
   ],
   bedroom:[
     {k:"futon",n:"Футон",items:[{id:"d_futon_waves",n:"Сэйгайха",p:150,x:900,y:1382},{id:"d_futon_red",n:"Асаноха",p:150,x:900,y:1382},{id:"d_futon_bamboo",n:"Бамбук",p:150,x:900,y:1382},{id:"d_futon_moon",n:"Луны",p:170,x:900,y:1382}]},
     {k:"scroll",n:"Свиток",items:[{id:"d_scroll_moon",n:"Луна и сосна",p:120,x:270,y:206},{id:"d_scroll_koi",n:"Карпы",p:120,x:270,y:206},{id:"d_scroll_neko",n:"猫 «Кошка»",p:100,x:270,y:206},{id:"d_scroll_mount",n:"Горы в тумане",p:120,x:270,y:206}]},
     {k:"doll",n:"Кукла",items:[{id:"d_daruma",n:"Дарума",p:80,x:610,y:1262},{id:"d_kokeshi",n:"Кокэси",p:70,x:610,y:1262},{id:"d_maneki",n:"Манэки-нэко",p:110,x:610,y:1262}]},
-    {k:"mobile",n:"Над футоном",items:[{id:"d_cranes",n:"Журавлики",p:90,x:1180,y:70}]}
+    {k:"mobile",n:"Над футоном",items:[{id:"d_cranes",n:"Журавлики",p:90,x:1180,y:70}]},
+    {k:"table",n:"Столик",items:[{id:"d_teaset",n:"Чайный набор",p:110,x:1110,y:1232,steam:[95,20]},{id:"d_koro",n:"Курильница",p:80,x:1110,y:1232,smoke:[80,2]},{id:"d_goban",n:"Доска го",p:140,x:1110,y:1232}]}
   ]
 };
-const DTINT={engawa:"rgba(18,26,22,.22)",onsen:"rgba(20,28,26,.26)",bedroom_on:"rgba(40,25,10,.2)",bedroom_off:"rgba(8,10,26,.62)"};
+const DTINT={wardrobe:"rgba(30,20,10,.16)",kitchen:"rgba(40,22,10,.16)",engawa:"rgba(18,26,22,.22)",onsen:"rgba(20,28,26,.26)",bedroom_on:"rgba(40,25,10,.2)",bedroom_off:"rgba(8,10,26,.62)"};
 const tmpCv=document.createElement("canvas"),tmpCx=tmpCv.getContext("2d");
 function drawSprite(g,id,x,y,rot=0,pivot=null,alpha=1){
   const im=DIMG[id],m=DMETA[id];if(!im||!m)return;const k=BGM.k,w=m[0]*k,h=m[1]*k;
-  const x0=x-m[0]/2,y0=m[2]==="t"?y:m[2]==="c"?y-m[1]/2:y-m[1];const [sx,sy]=imgToStage(x0,y0);
+  const x0=m[2]==="l"?x:x-m[0]/2,y0=m[2]==="t"?y:m[2]==="c"||m[2]==="l"?y-m[1]/2:y-m[1];const [sx,sy]=imgToStage(x0,y0);
   const tint=DTINT[bgName()];
   tmpCv.width=Math.ceil(w*view.dpr)+2;tmpCv.height=Math.ceil(h*view.dpr)+2;tmpCx.setTransform(view.dpr,0,0,view.dpr,0,0);
   tmpCx.drawImage(im,0,0,w,h);if(tint){tmpCx.globalCompositeOperation="source-atop";tmpCx.fillStyle=tint;tmpCx.fillRect(0,0,w,h);tmpCx.globalCompositeOperation="source-over";}
@@ -784,20 +822,35 @@ function drawSprite(g,id,x,y,rot=0,pivot=null,alpha=1){
 let nextTinkle=now()+8,shishiClack=0;
 function drawDecor(t){
   const room=DECOR[S.room];if(!room)return;const sel=S.decor[S.room]||{};
-  for(const slot of room){const it=slot.items.find(i=>i.id===sel[slot.k]);if(!it)continue;
-    if(it.sway){const wind=weather.on?1.8:1;const a=(.07*Math.sin(t*1.6+it.x)+.035*Math.sin(t*3.7))*wind*it.sway;drawSprite(ctx,it.id,it.x,it.y,a,[it.x,it.y]);
-      if(it.id.startsWith("d_furin")&&t>nextTinkle){nextTinkle=t+rand(6,14)/wind;if(snd.on&&snd.ctx){tone(it.id==="d_furin_iron"?1320:2093,1.2,"sine",.025);setTimeout(()=>tone(it.id==="d_furin_iron"?1760:2637,1,"sine",.018),90);}}}
-    else if(it.bob){drawSprite(ctx,it.id,it.x,it.y+Math.sin(t*1.3)*3);}
-    else if(it.shishi){drawSprite(ctx,it.id,it.x,it.y);
-      const cyc=(t%6)/6,ang=cyc<.93?mix(-.28,.34,Math.pow(cyc/.93,2.2)):mix(.34,-.28,(cyc-.93)/.07);
+  for(const slot of room){const it0=slot.items.find(i=>i.id===sel[slot.k]);if(!it0)continue;const it=ipos(it0),w=wobAng(it.id,t);
+    if(it.sway){const wind=(weather.on?1.8:1)*(t-(wob[it.id]??-9)<2?2.5:1);const a=(.07*Math.sin(t*1.6+it.x)+.035*Math.sin(t*3.7))*wind*it.sway+w;drawSprite(ctx,it.id,it.x,it.y,a,[it.x,it.y]);
+      if(it.id.startsWith("d_furin")&&t>nextTinkle){nextTinkle=t+rand(6,14)/(weather.on?1.8:1);if(snd.on&&snd.ctx){tone(it.id==="d_furin_iron"?1320:2093,1.2,"sine",.025);setTimeout(()=>tone(it.id==="d_furin_iron"?1760:2637,1,"sine",.018),90);}}}
+    else if(it.bob){drawSprite(ctx,it.id,it.x,it.y+Math.sin(t*1.3+it.x)*3,w,[it.x,it.y]);}
+    else if(it.koi){drawSprite(ctx,it.id,it.x,it.y,w*.3,[it.x,it.y]);const top=it.y-DMETA[it.id][1]+30,wind=(weather.on?1.6:1)*(t-koiGust<3?3:1);
+      ["d_koi_black","d_koi_red","d_koi_blue"].forEach((c,i)=>{const ay=top+20+i*62,a=(.12*Math.sin(t*2.1*(t-koiGust<3?2:1)+i*1.3)+.06*Math.sin(t*5+i))*wind+.05;drawSprite(ctx,c,it.x+4,ay+Math.sin(t*3+i)*4,a,[it.x+4,ay]);});}
+    else if(it.shishi){drawSprite(ctx,it.id,it.x,it.y,w*.3,[it.x,it.y]);
+      const cyc=(((t-shishiOff)%6)+6)%6/6,ang=cyc<.93?mix(-.28,.34,Math.pow(cyc/.93,2.2)):mix(.34,-.28,(cyc-.93)/.07);
       if(cyc>.93&&t-shishiClack>1){shishiClack=t;if(snd.on&&snd.ctx){tone(420,.08,"square",.05);tone(210,.12,"triangle",.06);}}
       drawSprite(ctx,"d_shishi_tube",it.x+85,it.y-128,ang,[it.x+85,it.y-128]);}
-    else drawSprite(ctx,it.id,it.x,it.y);}
+    else drawSprite(ctx,it.id,it.x,it.y,w,[it.x,DMETA[it.id][2]==="t"?it.y:it.y]);
+    lightGlow(it,t);decorLife(it,t);}
+}
+function spritePt(it,sx,sy){const m=DMETA[it.id],x0=m[2]==="l"?it.x:it.x-m[0]/2,y0=m[2]==="t"?it.y:m[2]==="c"||m[2]==="l"?it.y-m[1]/2:it.y-m[1];return imgToStage(x0+sx,y0+sy);}
+function decorLife(it,t){
+  const k=BGM.k;
+  if(it.steam||it.smoke){const [ex,ey]=spritePt(it,...(it.steam||it.smoke)),sm=!!it.smoke;
+    const bst=t-(boost[it.id]??-9)<2.5?2.4:1;
+    for(let i=0;i<6;i++){const ph=(t*(sm?.18:.35)*(bst>1?1.6:1)+i/6)%1,x=ex+Math.sin(t*1.3+i*2+ph*5)*(sm?10:14)*k*3*ph,y=ey-ph*(sm?260:190)*k,r=(sm?6:12+30*ph)*k*2;
+      const gr=ctx.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,sm?`rgba(200,200,205,${Math.min(.8,.3*bst*(1-ph))})`:`rgba(230,232,235,${Math.min(.7,.22*bst*Math.sin(Math.PI*ph))})`);gr.addColorStop(1,"rgba(230,232,235,0)");ctx.fillStyle=gr;ctx.fillRect(x-r,y-r,r*2,r*2);}}
+  if(it.fish){const fb=t-(boost[it.id]??-9)<1.5?4:1;for(let i=0;i<2;i++){const a=t*(.7+i*.3)*fb+i*2,[x,y]=spritePt(it,95+Math.cos(a)*48,110+Math.sin(a*1.3)*16),dir=-Math.sin(a)>0?1:-1;ctx.save();ctx.translate(x,y);ctx.scale(dir,1);ctx.fillStyle="#e2522e";ctx.beginPath();ctx.ellipse(0,0,9*k*1.4,4.5*k*1.4,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(-8*k*1.4,0);ctx.lineTo(-16*k*1.4,-6*k*1.4+Math.sin(t*9)*2);ctx.lineTo(-16*k*1.4,6*k*1.4);ctx.fill();ctx.restore();}}
+  if(it.drip){const [sx,sy,bx,by]=it.drip,ph=(t%1.6)/1.6,[x0,y0]=spritePt(it,sx,sy),[x1,y1]=spritePt(it,bx,by);
+    if(ph<.5){const u=ph/.5;ctx.fillStyle="rgba(190,215,225,.8)";ctx.beginPath();ctx.ellipse(mix(x0,x1,u),mix(y0,y1,u*u),2.2,3.2,0,0,Math.PI*2);ctx.fill();}
+    else{const u=(ph-.5)/.5;ctx.strokeStyle=`rgba(190,215,225,${.6*(1-u)})`;ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(x1,y1,(4+26*u)*k*2,(1.5+6*u)*k*2,0,0,Math.PI*2);ctx.stroke();}}
 }
 
 // ───────────────────────── Weather: rain and thunder ─────────────────────────
 const weather={on:false,until:0,next:now()+rand(60,160),drops:[],splash:[],flash:-9,thunderAt:0,nextBolt:0,noise:null,gain:null};
-const RAIN_REGION={engawa:[[64,112,1380,1118],"garden"],onsen:[[0,0,1800,1400],"out"],games:[[0,0,1800,1400],"out"],kitchen:[[240,180,820,640],"window"]};
+const RAIN_REGION={courtyard:[[0,0,1800,1400],"out"],entrance:[[0,0,1800,1400],"out"],engawa:[[64,112,1380,1118],"garden"],onsen:[[0,0,1800,1400],"out"],games:[[0,0,1800,1400],"out"],kitchen:[[240,180,820,640],"window"]};
 function rainSound(on,loud){
   if(!snd.ctx)return;const c=snd.ctx;
   if(on&&snd.on){if(!weather.noise){const b=c.createBuffer(1,c.sampleRate*2,c.sampleRate),d=b.getChannelData(0);let last=0;for(let i=0;i<d.length;i++){last=(last+.02*(Math.random()*2-1))/1.02;d[i]=last*3+(Math.random()*2-1)*.25;}
@@ -812,7 +865,7 @@ function updateWeather(t,dt){
   if(mode==="rain")weather.on=true;else if(mode==="clear")weather.on=false;
   else{if(!weather.on&&t>weather.next){weather.on=true;weather.until=t+rand(80,200);}if(weather.on&&t>weather.until){weather.on=false;weather.next=t+rand(120,300);}}
   const reg=RAIN_REGION[S.room];rainSound(weather.on,!!reg&&reg[1]!=="window");
-  if(weather.on){if(!weather.nextBolt)weather.nextBolt=t+rand(8,20);if(t>weather.nextBolt){weather.flash=t;weather.thunderAt=t+rand(.5,1.6);weather.nextBolt=t+rand(14,40);if(pet.action!=="sleep"){react("🙀",1.6);if(pet.action==="idle")start("hide",true);}}}
+  if(weather.on){if(!weather.nextBolt)weather.nextBolt=t+rand(8,20);if(t>weather.nextBolt){weather.flash=t;weather.thunderAt=t+rand(.5,1.6);weather.nextBolt=t+rand(14,40);setTimeout(()=>award("thunder"),1500);if(pet.action!=="sleep"){react("🙀",1.6);if(pet.action==="idle")start("hide",true);}}}
   else weather.nextBolt=0;
   if(weather.thunderAt&&t>weather.thunderAt){weather.thunderAt=0;thunder();}
   const want=weather.on&&reg?(reg[1]==="window"?60:170):0;
@@ -835,7 +888,7 @@ function drawFlash(t){const a=t-weather.flash;if(a<0||a>.5)return;const k=a<.08?
 
 // ───────────────────────── Scary happenings in the rooms ─────────────────────────
 const spook={ev:null,next:now()+rand(40,90)};
-const SPOOKS={engawa:["eyes","shadow","kitsunebi","knock"],kitchen:["obake","eyes_win","flicker"],onsen:["hair","eyes","kitsunebi"],bedroom:["hands","shadow_bed","knock","flicker"],wardrobe:["screen_eyes","flicker"],games:["eyes","kitsunebi"]};
+const SPOOKS={entrance:["eyes","kitsunebi","torii","knock"],courtyard:["hair","eyes","kitsunebi"],engawa:["eyes","shadow","kitsunebi","knock"],kitchen:["obake","eyes_win","flicker"],onsen:["hair","eyes","kitsunebi"],bedroom:["hands","shadow_bed","knock","flicker"],wardrobe:["screen_eyes","flicker"],games:["eyes","kitsunebi"]};
 function knock(){if(!snd.on||!snd.ctx)return;[0,.28,.56].forEach(d=>setTimeout(()=>{tone(90,.18,"triangle",.14);tone(60,.22,"sine",.12);},d*1000));}
 function updateSpook(t){
   if(spook.ev&&t-spook.ev.t>spook.ev.dur)spook.ev=null;
@@ -843,7 +896,7 @@ function updateSpook(t){
   spook.next=t+rand(55,140)*(weather.on?.6:1);
   const kind=pick(SPOOKS[S.room]||["flicker"]),r=Math.random;
   spook.ev={kind,t,dur:kind==="knock"?2:kind==="flicker"?1.2:4.2,x:r(),y:r(),seed:r()*100};
-  if(kind==="knock")knock();else tone(55,1.4,"sawtooth",.05);
+  if(kind==="knock")knock();else tone(55,1.4,"sawtooth",.05);setTimeout(()=>award("brave"),4500);
   setTimeout(()=>{if(pet.action!=="sleep"){react("🙀",2);if(["idle","beg","music","knead","groom"].includes(pet.action))start("hide",true);}},kind==="knock"?300:900);
 }
 function silhouette(drawFn,w,h,alpha){tmpCv.width=Math.ceil(w);tmpCv.height=Math.ceil(h);tmpCx.setTransform(1,0,0,1,0,0);tmpCx.clearRect(0,0,w,h);drawFn(tmpCx);tmpCx.globalCompositeOperation="source-in";tmpCx.fillStyle="#050606";tmpCx.fillRect(0,0,w,h);tmpCx.globalCompositeOperation="source-over";return tmpCv;}
@@ -860,6 +913,7 @@ function drawSpook(t,front){
     case"hands":{const [bx0,by0]=imgToStage(640,150),[bx1,by1]=imgToStage(1560,1000),n=Math.min(7,Math.floor(e*2.2));const rr=rng(ev.seed|0);
       ctx.save();ctx.globalAlpha=.6*fade;ctx.fillStyle="#1a0e0c";for(let i=0;i<n;i++){const x=mix(bx0,bx1,.1+rr()*.8),y=mix(by0,by1,.15+rr()*.7),r=13*s,a=rr()*.6-.3;ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.beginPath();ctx.ellipse(0,0,r,r*1.15,0,0,Math.PI*2);ctx.fill();
         for(let f=0;f<5;f++){const fa=-Math.PI/2+(f-2)*.32+(f===0?-.5:0),fl=r*(f===0?1.1:f===2?1.9:1.6);ctx.beginPath();ctx.ellipse(Math.cos(fa)*fl*.9,Math.sin(fa)*fl*.9,r*.24,fl*.5,fa+Math.PI/2,0,Math.PI*2);ctx.fill();}ctx.restore();}ctx.restore();break;}
+    case"torii":{const [x,y]=imgToStage(900,1000),hh=260*BGM.k,ww=hh*.45;drawYurei(ctx,x,y-hh,hh,.6*fade,Math.sin(e)>0,e>2);break;}
     case"kitsunebi":{for(let i=0;i<3;i++){const [x,y]=imgToStage(mix(-100,1900,(e/ev.dur+i*.12)%1),860+Math.sin(e*2+i)*40+i*30);const gr=ctx.createRadialGradient(x,y,0,x,y,26*s);gr.addColorStop(0,`rgba(140,200,255,${.8*fade})`);gr.addColorStop(1,"rgba(80,140,220,0)");ctx.fillStyle=gr;ctx.fillRect(x-26*s,y-26*s,52*s,52*s);}break;}
     case"hair":{const [x,y]=imgToStage(700+ev.x*400,1060);ctx.save();ctx.globalAlpha=.8*fade;ctx.strokeStyle="#060606";ctx.lineWidth=1.4;for(let i=0;i<40;i++){ctx.beginPath();ctx.moveTo(x,y);for(let j=1;j<8;j++)ctx.lineTo(x+Math.cos(i*.16)*j*12*s+Math.sin(e*2+j+i)*4*s,y+Math.sin(i*.16)*j*3*s);ctx.stroke();}ctx.restore();break;}
     case"obake":{const [x,y]=imgToStage(1560,300),r=62*BGM.k;ctx.save();ctx.globalAlpha=fade;ctx.fillStyle="#f4efe2";ctx.beginPath();ctx.ellipse(x+r*.1,y-r*.35,r*.42,r*.3*Math.min(1,e*2),0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#140a08";ctx.beginPath();ctx.arc(x+r*.1+Math.sin(e*1.5)*r*.15,y-r*.35,r*.14,0,Math.PI*2);ctx.fill();
@@ -880,12 +934,162 @@ const KAIDAN=[
  {t:"Женщина в маске",src:"Городская легенда, паника 1979 года",p:["Весной 1979 года по японским школам поползли слухи: в сумерках к одиноким прохожим подходит высокая женщина в длинном плаще и марлевой маске. Она спрашивает: «Я красивая?»","Если ответить «нет» — беда. Если сказать «да», она медленно снимет маску: её рот разрезан от уха до уха. «А теперь?» — спросит она. Бежать бесполезно: она всегда оказывается впереди.","Говорили, что спастись можно, ответив «так себе», бросив ей леденцы бэккоамэ или трижды сказав слово «помада». Слухи были такими сильными, что в некоторых городах учителя провожали детей домой группами.","Похожие рассказы находят ещё в эпоху Эдо: там это была лиса-оборотень, прикидывающаяся красавицей."]}
 ];
 function openStory(i){
-  const st=$("story"),body=$("storyBody");st.hidden=false;
+  const st=$("story"),body=$("storyBody");st.hidden=false;$("storyTitle").textContent="Кайданы на ночь";
   if(i==null){body.innerHTML=`<p class="lead">Страшные истории Японии в пересказе. Муся слушает из-под одеяла.</p><div class="slist">${KAIDAN.map((k,j)=>`<button class="scard" data-story-i="${j}"><b>${k.t}</b><span>${k.src}</span></button>`).join("")}</div>`;}
-  else{const k=KAIDAN[i];body.innerHTML=`<button class="back" data-story-i="-1">← Все истории</button><h3>${k.t}</h3><p class="src">${k.src}</p>${k.p.map(x=>`<p>${x}</p>`).join("")}<button class="btn primary next" data-story-i="${(i+1)%KAIDAN.length}">Следующая история</button>`;body.scrollTop=0;tone(70,1.2,"sawtooth",.04);}
+  else{const k=KAIDAN[i];award("listener");stat("stories",i);body.innerHTML=`<button class="back" data-story-i="-1">← Все истории</button><h3>${k.t}</h3><p class="src">${k.src}</p>${k.p.map(x=>`<p>${x}</p>`).join("")}<button class="btn primary next" data-story-i="${(i+1)%KAIDAN.length}">Следующая история</button>`;body.scrollTop=0;tone(70,1.2,"sawtooth",.04);}
   if(pet.action!=="sleep")start("hide");
 }
 $("story").addEventListener("click",ev=>{const b=ev.target.closest("[data-story-i]");if(b){const i=+b.dataset.storyI;openStory(i<0?null:i);}if(ev.target.closest("#storyClose")){$("story").hidden=true;start("purr");}});
+
+
+// ───────────────────────── Album of stamps (hanko) ─────────────────────────
+const STAMPS=[
+ ["pet","撫","Первое поглаживание","Погладь Мусю по голове"],["food1","食","Первый обед","Накорми Мусю"],["gourmet","味","Гурман","Попробуй 8 разных блюд"],
+ ["bath","湯","Банный день","Намыль и смой пену в онсэне"],["sleep","眠","Сладкий сон","Погаси андон и уложи Мусю спать"],["fashion","装","Модница","Примерь 5 разных нарядов"],
+ ["designer","飾","Дизайнер","Поставь 10 разных предметов обстановки"],["collector","集","Коллекционер","Купи 40 вещей"],["listener","聴","Слушательница","Прочитай кайдан"],
+ ["bookworm","読","Знаток кайданов","Прочитай все 8 историй"],["rain","雨","Сезон дождей","Дождись дождя"],["thunder","雷","Гроза","Переживи удар молнии"],
+ ["brave","勇","Храбрая","Переживи страшилку в доме"],["gamer","遊","Игрок","Сыграй в 5 разных мини-игр"],["master","極","Мастер","Сыграй во все мини-игры"],
+ ["champ","勝","Чемпион","Набери 10 очков в любой мини-игре"],["hanami","桜","Ханами","Застань сакуропад"],["night","夜","Ночная","Играй ночью, после 22:00"],
+ ["joy","喜","Счастье","Доведи радость до 100"],["care","愛","Заботливая","Все потребности выше 80"],["paw","手","Дай пять","Дай лапку 5 раз"],
+ ["zoom","走","Тыгыдык","Устрой Мусе тыгыдык"],["cucumber","瓜","Ох уж этот огурец","Напугай Мусю огурцом"],["luck","福","На удачу","Поставь манэки-нэко"]
+];
+const ST=Object.assign({got:[],foods:[],wears:[],decors:[],stories:[],games:[],paws:0},saved.stats||{});
+function stat(key,val){if(val!==undefined){if(!ST[key].includes(val))ST[key].push(val);}}
+function award(id){if(ST.got.includes(id))return;ST.got.push(id);const st=STAMPS.find(x=>x[0]===id);if(!st)return;save();
+  setTimeout(()=>{toast(`印 Новый штамп: ${st[2]}`);sfx("chime");burst(10);},300);}
+function checkStamps(){
+  if(ST.foods.length>=8)award("gourmet");if(ST.wears.length>=5)award("fashion");if(ST.decors.length>=10)award("designer");if(S.owned.size>=40)award("collector");
+  if(ST.stories.length>=KAIDAN.length)award("bookworm");if(ST.games.length>=5)award("gamer");if(ST.games.length>=GAMES.length)award("master");
+  if(ST.paws>=5)award("paw");const n=S.needs;if(n.joy>=99)award("joy");if(n.food>80&&n.clean>80&&n.energy>80&&n.joy>80)award("care");
+  const h=new Date().getHours();if(h>=22||h<5)award("night");if(weather.on)award("rain");if(Object.values(S.decor).some(r=>r&&Object.values(r).includes("d_maneki")))award("luck");
+}
+setInterval(checkStamps,2000);
+function openAlbum(){const a=$("album");a.hidden=false;const got=ST.got.length;
+  $("albumBody").innerHTML=`<p class="lead">Штампы-ханко за заботу о Мусе. Собрано ${got} из ${STAMPS.length}.</p><div class="stamps">${STAMPS.map(([id,k,t,d])=>{const on=ST.got.includes(id);return`<div class="stamp ${on?"on":""}"><span class="seal">${k}</span><b>${t}</b><small>${d}</small></div>`;}).join("")}</div>`;}
+$("albumBtn").addEventListener("click",()=>{audioInit();openAlbum();});
+$("albumClose").addEventListener("click",()=>{$("album").hidden=true;});
+
+// ───────────────────────── Time of day, crows, frogs, fireflies ─────────────────────────
+function dayTint(){const h=new Date().getHours()+new Date().getMinutes()/60;
+  if(h>=21.5||h<4.5)return["rgba(6,10,30,.36)",true];if(h>=19)return[`rgba(40,26,60,${.12+.2*(h-19)/2.5})`,h>20.5];if(h>=17)return["rgba(90,50,30,.1)",false];if(h<7)return["rgba(60,55,70,.14)",false];return[null,false];}
+const crow={next:now()+rand(40,90),t:-9,dir:1,y:.2};
+const nightFlies=Array.from({length:10},()=>({u:Math.random(),v:Math.random(),ph:Math.random()*6}));
+let nextFrog=0;
+function drawAmbient(t){
+  const [tint,night]=dayTint(),out=["engawa","onsen","games","courtyard","entrance"].includes(S.room);
+  if(tint){ctx.fillStyle=tint;ctx.fillRect(0,0,view.W,view.H);}
+  if(night&&out&&!weather.on){const reg=S.room==="engawa"?[64,300,1380,1100]:[0,500,1800,1300],[x0,y0]=imgToStage(reg[0],reg[1]),[x1,y1]=imgToStage(reg[2],reg[3]);
+    for(const f of nightFlies){const x=mix(x0,x1,(f.u+.03*Math.sin(t*.4+f.ph))%1),y=mix(y0,y1,(f.v+.04*Math.sin(t*.5+f.ph*2))%1),a=.35+.65*Math.max(0,Math.sin(t*1.7+f.ph));
+      const gr=ctx.createRadialGradient(x,y,0,x,y,9*view.s);gr.addColorStop(0,`rgba(214,242,122,${.7*a})`);gr.addColorStop(1,"rgba(214,242,122,0)");ctx.fillStyle=gr;ctx.fillRect(x-9*view.s,y-9*view.s,18*view.s,18*view.s);}}
+  if(out&&t>crow.next){crow.t=t;crow.dir=Math.random()<.5?1:-1;crow.y=rand(.08,.25);crow.next=t+rand(70,160);if(snd.on&&snd.ctx){tone(640,.22,"sawtooth",.035);setTimeout(()=>tone(560,.3,"sawtooth",.035),260);}}
+  const ce=t-crow.t;if(out&&ce<4){const u=ce/4,x=crow.dir>0?mix(-40,view.W+40,u):mix(view.W+40,-40,u),y=view.H*crow.y+Math.sin(u*9)*6,w=Math.sin(t*12)*9*view.s,s2=view.s;
+    ctx.save();ctx.fillStyle="#0a0b0c";ctx.translate(x,y);ctx.scale(crow.dir,1);ctx.beginPath();ctx.ellipse(0,0,11*s2,4*s2,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(-4*s2,0);ctx.quadraticCurveTo(-10*s2,-w-6*s2,-22*s2,-w);ctx.lineTo(-2*s2,2*s2);ctx.fill();ctx.beginPath();ctx.moveTo(10*s2,-1*s2);ctx.lineTo(16*s2,1*s2);ctx.lineTo(10*s2,2*s2);ctx.fill();ctx.restore();}
+  if(S.room==="onsen"&&weather.on&&t>nextFrog){nextFrog=t+rand(2.5,6);if(snd.on&&snd.ctx){tone(190,.07,"square",.04);setTimeout(()=>tone(170,.09,"square",.04),110);}}
+}
+
+// ───────────────────────── Touchable, movable decor ─────────────────────────
+const wob={},boost={},floatFx=[];let koiGust=-9,shishiOff=0;
+function ipos(it){const d=S.dpos[it.id]||[0,0];return Object.assign({},it,{x:it.x+d[0],y:it.y+d[1]});}
+function wobAng(id,t){const e=t-(wob[id]??-9);return e<1.4?.14*Math.sin(e*16)*Math.exp(-e*3.2):0;}
+function spriteBox(it){const m=DMETA[it.id],x0=m[2]==="l"?it.x:it.x-m[0]/2,y0=m[2]==="t"?it.y:m[2]==="c"||m[2]==="l"?it.y-m[1]/2:it.y-m[1];return[x0,y0,m[0],m[1]];}
+function decorHit(x,y){const room=DECOR[S.room];if(!room)return null;const sel=S.decor[S.room]||{};let hit=null;
+  for(const slot of room){const it0=slot.items.find(i=>i.id===sel[slot.k]);if(!it0)continue;const it=ipos(it0),[x0,y0,w,h]=spriteBox(it);
+    const [ax,ay]=imgToStage(x0+w*.1,y0+h*.06),[bx,by]=imgToStage(x0+w*(it.koi?3.4:.9),y0+h*(it.koi?.45:.97));
+    if(x>=ax&&x<=bx&&y>=ay&&y<=by)hit={it0,it,slot};}
+  return hit;}
+function fxAt(it,glyphs,n=3){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.35),t=now();for(let i=0;i<n;i++)floatFx.push({g:pick(glyphs),x:sx+rand(-24,24)*view.s,y:sy+rand(-10,10)*view.s,t:t+i*.1});}
+function petalsAt(it,n=14){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.3);for(let i=0;i<n;i++)sakura.list.push({x:sx+rand(-40,40)*view.s,y:sy+rand(-20,20)*view.s,vx:rand(-40,40),vy:rand(-50,10),rot:rand(0,6),vr:rand(-3,3),size:rand(4,7)*view.s,ph:rand(0,6),life:rand(2.5,4)});}
+function splashAt(it,n=30){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.3);for(let i=0;i<n;i++)pet.drops.push({x:sx+rand(-30,30)*view.s,y:sy,vx:rand(-60,60),vy:rand(-260,-80),a:1});sfx("splash");}
+function walkTo(it,after,face){pet.walkTarget=clamp(imgToStage(it.x,0)[0],96*view.s,view.W-96*view.s);pet.walkAfter=after;start("walkto");if(face)react(face,1.6);}
+function chime(notes){notes.forEach((f,i)=>setTimeout(()=>tone(f,1.1,"sine",.03),i*120));}
+function decorTap(h){
+  const it=h.it,id=it.id,t=now();wob[id]=t;boost[id]=t;audioInit();S.needs.joy=clamp(S.needs.joy+1,0,100);
+  const P=id.replace(/^d_/,"");
+  if(P.startsWith("furin")){chime(P==="furin_iron"?[1320,1760,1568]:[2093,2637,2349]);fxAt(it,["♪","♫"],3);react("😺",1.4);}
+  else if(["andon","chochin","yukimi"].includes(P)){S.lightsOff[id]=!S.lightsOff[id];tone(S.lightsOff[id]?300:600,.08,"square",.04);react(S.lightsOff[id]?"🙀":"😸",1.2);save();}
+  else if(["ikebana","sakura_tree","ume"].includes(P)){petalsAt(it,16);tone(900,.4,"sine",.03);react("😻",1.6);}
+  else if(["bonsai","kokedama","bamboo","kiku"].includes(P)){fxAt(it,["🍃","🍂"],4);react("😼",1.2);}
+  else if(P.startsWith("zab")){walkTo(it,"knead","😽");}
+  else if(P.startsWith("futon")){walkTo(it,"sleep","😴");}
+  else if(P==="koi_pole"){koiGust=t;tone(200,.6,"triangle",.03);react("😺",1.4);}
+  else if(P==="tsukubai"||P==="okeya"){splashAt(it,24);react("😸",1.2);}
+  else if(P==="towels"){S.needs.clean=clamp(S.needs.clean+3,0,100);walkTo(it,"purr","😽");}
+  else if(P==="shishi_base"){shishiOff=t-5.55;}
+  else if(P==="kaeru"){tone(190,.07,"square",.05);setTimeout(()=>tone(170,.1,"square",.05),110);fxAt(it,["♪"],2);react("😹",1.3);}
+  else if(["yuzu","petals","sake"].includes(P)){splashAt(it,10);if(P==="sake")react("😹",1.4);}
+  else if(P.startsWith("scroll")){fxAt(it,P==="scroll_neko"?["😺","💗"]:["✨"],2);}
+  else if(P==="daruma"){wob[id]=t-.05;fxAt(it,["✨","🍀"],3);tone(160,.2,"triangle",.06);}
+  else if(P==="kokeshi"){tone(880,.12,"triangle",.05);tone(660,.15,"triangle",.04);}
+  else if(P==="maneki"){fxAt(it,["🪙","✨"],6);sfx("coin");S.needs.joy=clamp(S.needs.joy+3,0,100);react("😻",1.4);}
+  else if(P==="cranes"){fxAt(it,["✨"],3);chime([1568,2093]);}
+  else if(P==="teaset"){pet.food="🍵";walkTo(it,"treat","😌");}
+  else if(P==="koro"){react("😌",1.6);}
+  else if(P==="goban"){tone(1200,.05,"square",.05);setTimeout(()=>tone(1100,.05,"square",.05),160);if(pet.action==="idle")start("poke");}
+  else if(P.startsWith("kimono")){fxAt(it,["✨","🌸"],4);react("😻",1.4);}
+  else if(P==="kyodai"){walkTo(it,"groom","😼");}
+  else if(P.startsWith("bowl")){if(S.needs.food>=95){start("refuse");return;}pet.food=P==="bowl_red"?"🐟":"🥛";S.needs.food=clamp(S.needs.food+14,0,100);award("food1");walkTo(it,"treat","😋");}
+  else if(P==="masu"){walkTo(it,"box","😹");}
+  else if(P==="tetsubin"||P==="donabe"){tone(2400,.5,"sine",.012);react("😺",1.2);}
+  else if(P==="teru"){if(weather.on&&S.weather==="auto"){weather.until=t+4;toast("Тэру-тэру-бодзу прогоняет дождь");}else toast("Тэру-тэру-бодзу бережёт от дождя");react("😸",1.4);}
+  else if(P==="hoshigaki"){react("😋",1.4);}
+  else if(P==="kingyo"){walkTo(it,"poke","😼");}
+  else sfx("pop");
+}
+function drawFloatFx(t){for(let i=floatFx.length-1;i>=0;i--){const f=floatFx[i],a=(t-f.t)/1.3;if(a>1){floatFx.splice(i,1);continue;}if(a<0)continue;
+  if(f.g==="♪"||f.g==="♫"){ctx.save();ctx.globalAlpha=1-a;ctx.font=`800 ${18*view.s}px ${getComputedStyle(document.body).fontFamily}`;ctx.textAlign="center";ctx.fillStyle="#eea3bb";ctx.fillText(f.g,f.x+Math.sin(a*6)*6,f.y-a*50*view.s);ctx.restore();}
+  else drawEmoji(ctx,f.g,f.x+Math.sin(a*5)*6,f.y-a*50*view.s,18*view.s,1-a);}}
+const LIGHT_PT={d_andon:[85,160],d_chochin:[90,175],d_yukimi:[120,80]};
+function lightGlow(it,t){const p=LIGHT_PT[it.id];if(!p||S.lightsOff[it.id])return;const [x0,y0]=spriteBox(it),[sx,sy]=imgToStage(x0+p[0],y0+p[1]),fl=.9+.08*Math.sin(t*6.3+it.x)+.04*Math.sin(t*13),R=260*BGM.k;
+  const gr=ctx.createRadialGradient(sx,sy,0,sx,sy,R);gr.addColorStop(0,`rgba(245,185,105,${.3*fl})`);gr.addColorStop(1,"rgba(245,185,105,0)");ctx.fillStyle=gr;ctx.fillRect(sx-R,sy-R,R*2,R*2);}
+
+// ───────────────────────── Courtyard waterfall and shrine entrance ─────────────────────────
+const FALLS=[[110,340,105],[290,580,115],[540,780,130]];
+const fallLines=Array.from({length:70},()=>({f:Math.floor(Math.random()*3),u:Math.random(),v:Math.random(),sp:rand(.7,1.2),len:rand(.08,.2)}));
+const koiFish=Array.from({length:5},(_,i)=>({ph:i*1.3,r:rand(.6,1),c:["#e2522e","#f2efe6","#e8a13a","#e2522e","#f2efe6"][i]}));
+let koiUntil=0,pebble=null,lanternOn=true;
+function drawPlaces(t,dt){
+  if(S.room==="courtyard"){
+    ctx.save();ctx.lineCap="round";
+    for(const l of fallLines){l.v+=dt*.55*l.sp;if(l.v>1.1){l.v=-.1;l.u=Math.random();}const [a,b,top]=FALLS[l.f],x=mix(a+20,b-20,l.u),y=mix(top,930,l.v),[sx,sy]=imgToStage(x,y),[,ey]=imgToStage(x,y+l.len*820);
+      ctx.strokeStyle=`rgba(235,240,242,${.18+.2*Math.sin(l.u*20)})`;ctx.lineWidth=(2+l.sp*2)*BGM.k*2;ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(sx,ey);ctx.stroke();}
+    for(let i=0;i<7;i++){const ph=(t*.08+i/7)%1,[bx,by]=imgToStage(160+i*95+Math.sin(t*.3+i)*30,920-ph*220),r=(120+120*ph)*BGM.k;const gr=ctx.createRadialGradient(bx,by,0,bx,by,r);gr.addColorStop(0,`rgba(236,240,238,${.28*Math.sin(Math.PI*ph)})`);gr.addColorStop(1,"rgba(236,240,238,0)");ctx.fillStyle=gr;ctx.fillRect(bx-r,by-r,r*2,r*2);}
+    if(t<koiUntil){const al=clamp(Math.min((t-(koiUntil-9))/1.2,(koiUntil-t)/1.2),0,1);for(const f of koiFish){const a=t*.6*f.r+f.ph,[x,y]=imgToStage(1150+Math.cos(a)*300*f.r,1030+Math.sin(a*1.4)*40),dir=-Math.sin(a)>0?1:-1,k=BGM.k*2.2;
+      ctx.save();ctx.globalAlpha=al*.9;ctx.translate(x,y);ctx.scale(dir,1);ctx.fillStyle=f.c;ctx.beginPath();ctx.ellipse(0,0,18*k,7*k,0,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.moveTo(-16*k,0);ctx.lineTo(-30*k,-9*k+Math.sin(t*8+f.ph)*3);ctx.lineTo(-30*k,9*k);ctx.fill();ctx.restore();}}
+    if(pebble){const e=t-pebble.t;if(e<.7){const u=e/.7,[x,y]=imgToStage(mix(900,pebble.x,u),mix(1150,1040,u)-Math.sin(u*Math.PI)*220);ctx.fillStyle="#8a8d86";ctx.beginPath();ctx.arc(x,y,5*view.s,0,Math.PI*2);ctx.fill();}
+      else if(e<2.2){const u=(e-.7)/1.5,[x,y]=imgToStage(pebble.x,1040);ctx.strokeStyle=`rgba(220,230,232,${.7*(1-u)})`;ctx.lineWidth=1.5;for(const k of[1,.6]){ctx.beginPath();ctx.ellipse(x,y,(10+120*u*k)*BGM.k*2,(3+30*u*k)*BGM.k*2,0,0,Math.PI*2);ctx.stroke();}}
+      else pebble=null;}
+    ctx.restore();
+  }
+  if(S.room==="entrance"){const fl=.88+.08*Math.sin(t*5.7)+.05*Math.sin(t*12.3);
+    for(const [ix,iy,R,on] of [[330,880,380,lanternOn],[882,870,160,true]]){if(!on)continue;const [x,y]=imgToStage(ix,iy),r=R*BGM.k;const gr=ctx.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(245,190,110,${.32*fl})`);gr.addColorStop(1,"rgba(245,190,110,0)");ctx.fillStyle=gr;ctx.fillRect(x-r,y-r,r*2,r*2);}
+    if(!lanternOn){const [x,y]=imgToStage(330,885);ctx.fillStyle="rgba(8,8,8,.85)";ctx.fillRect(x-20*BGM.k,y-26*BGM.k,40*BGM.k,52*BGM.k);}
+    ctx.save();ctx.globalAlpha=.2;const fw=900*view.s*1.3,fh=260*view.s*1.3,off=(t*6*view.s)%fw;for(let x=-off;x<view.W;x+=fw)ctx.drawImage(fogTex,x,view.H*.45,fw,fh);ctx.restore();
+  }
+}
+const FORTUNES=[
+ ["大吉","Большая удача","Всё, что задумано, сбудется. Даже огурцы сегодня не страшны."],
+ ["吉","Удача","Хороший день для новых дел и долгого мурчания."],
+ ["中吉","Средняя удача","Удача придёт, если не торопиться. Сначала вкусняшка — потом подвиги."],
+ ["小吉","Малая удача","Маленькие радости: солнечное пятно, мягкая подушка, новый клубок."],
+ ["末吉","Удача придёт позже","Терпение. Под дождём тоже растут цветы сакуры."],
+ ["凶","Неудача","Будь осторожна у колодцев и фонарей. Бумажку привяжем к верёвке — пусть беда останется здесь."],
+ ["大凶","Большая неудача","Сегодня лучше не открывать двери после заката. Привяжи бумажку к верёвке у храма."]
+];
+function omikuji(){const i=Math.random()<.12?0:Math.floor(rand(0,FORTUNES.length)),[k,t1,t2]=FORTUNES[i],bad=i>=5;
+  const st=$("story");$("storyTitle").textContent="Омикудзи";st.hidden=false;
+  $("storyBody").innerHTML=`<div class="fortune ${bad?"bad":""}"><div class="fk">${k}</div><h3>${t1}</h3><p>${t2}</p><p class="src">${bad?"По обычаю плохое предсказание привязывают к верёвке у храма — и беда остаётся там.":"Хорошее предсказание забирают с собой."}</p><button class="btn primary" id="fortuneOk">${bad?"Привязать к верёвке":"Забрать с собой"}</button></div>`;
+  $("fortuneOk").onclick=()=>{st.hidden=true;react(bad?"😾":"😻",2);if(!bad)burst(10);};
+  tone(bad?110:880,.5,"sine",.05);if(bad)react("🙀",1.5);}
+function placeAction(a){
+  const t=now();
+  if(a==="pray"){start("hide");setTimeout(()=>{tone(174,2.4,"sine",.06);tone(349,2,"sine",.03);},200);S.needs.joy=clamp(S.needs.joy+8,0,100);react("🙏",2.4);}
+  else if(a==="wash_paws"){S.needs.clean=clamp(S.needs.clean+15,0,100);sfx("splash");start("groom");react("😌",1.6);}
+  else if(a==="omikuji"){omikuji();}
+  else if(a==="lantern"){lanternOn=!lanternOn;tone(lanternOn?600:300,.08,"square",.04);react(lanternOn?"😸":"🙀",1.4);}
+  else if(a==="koi"){koiUntil=t+9;sfx("splash");react("😼",2);start("idle");const [kx,ky]=imgToStage(1150,1030);pointer.x=kx;pointer.y=ky;pointer.known=true;pet.gazeUntil=t+9;}
+  else if(a==="pebble"){pebble={t,x:rand(1000,1500)};setTimeout(()=>sfx("splash"),700);start("poke");}
+  else if(a==="meditate"){start("music");S.needs.energy=clamp(S.needs.energy+10,0,100);react("😌",2.5);}
+}
 
 // ───────────────────────── Mini-games ─────────────────────────
 // Every game: init(G,t) · step(G,t,dt) · draw(G,g,t) · down(G,x,y,t) · up(G,t) · move(G,x,y,held)
@@ -1314,7 +1518,7 @@ G.cv.addEventListener("pointerdown",ev=>{audioInit();if(!G.running||G.over)retur
 G.cv.addEventListener("pointermove",ev=>{if(!G.running||G.over)return;const [x,y]=gLocal(ev);G.def.move&&G.def.move(G,x,y,G.held||ev.pointerType==="mouse");});
 const gUp=()=>{G.held=false;if(G.running&&G.def&&G.def.up)G.def.up(G);};G.cv.addEventListener("pointerup",gUp);G.cv.addEventListener("pointercancel",gUp);
 function gEnd(){
-  if(G.over)return;G.over=true;G.running=false;const id=G.id,sc=G.score,rec=sc>(S.best[id]||0);if(rec)S.best[id]=sc;const coins=sc*3;S.earned+=coins;
+  if(G.over)return;G.over=true;G.running=false;stat("games",G.id);if(G.score>=10)award("champ");const id=G.id,sc=G.score,rec=sc>(S.best[id]||0);if(rec)S.best[id]=sc;const coins=sc*3;S.earned+=coins;
   S.needs.joy=clamp(S.needs.joy+Math.min(30,8+sc),0,100);S.needs.energy=clamp(S.needs.energy-8,0,100);save();
   setTimeout(()=>{if(!G.id)return;const res=$("gResult");res.hidden=false;
     res.innerHTML=`<div class="card"><p class="tag">${G.def.tag}</p><h3>${rec&&sc>0?"Новый рекорд":G.lives!=null&&G.lives<=0?"Поймали…":"Готово"}</h3><div class="big">${sc}</div><p>+${coins} монет (баланс и так бесконечный). Рекорд: ${S.best[id]}.</p><div class="row"><button class="btn" id="gHome">Домой</button><button class="btn primary" id="gAgain">Ещё раз</button></div></div>`;

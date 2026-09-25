@@ -391,7 +391,260 @@ def scrolls():
     scroll('d_scroll_moon', 'moon'); scroll('d_scroll_koi', 'koi'); scroll('d_scroll_neko', 'neko'); scroll('d_scroll_mount', 'mountains')
 
 
+# ───────────── kitchen ─────────────
+def cat_bowl(name, glaze, rim, mark, food):
+    img = canvas(180, 80); d = ImageDraw.Draw(img)
+    fill_shape(img, [(10, 22), (170, 22), (150, 76), (30, 76)], glaze, mixc(glaze, (0, 0, 0, 255), .5), mixc(glaze, (255, 255, 255, 255), .2), 6, 3)
+    shade_round(img, (10, 22, 170, 78), .45)
+    fill_shape(img, (8, 8, 172, 38), rim, mixc(rim, (0, 0, 0, 255), .3), mixc(rim, (255, 255, 255, 255), .2), 6, 4, ellipse=True)
+    fill_shape(img, (20, 13, 160, 34), food, mixc(food, (0, 0, 0, 255), .4), mixc(food, (255, 255, 255, 255), .15), 3, 5, contrast=1.6, ellipse=True)
+    if mark == 'neko':
+        f = ImageFont.truetype(KANJI_FONT, px(26)); d.text((px(90), px(56)), '猫', font=f, fill=hexc('#efe6d2'), anchor='mm')
+    else:
+        for fx in (60, 110):
+            d.ellipse([px(fx - 12), px(50), px(fx + 8), px(60)], fill=hexc('#1f3c6b')); d.polygon([(px(fx + 7), px(55)), (px(fx + 16), px(49)), (px(fx + 16), px(61))], fill=hexc('#1f3c6b'))
+    save(img, name)
+
+
+def masu():
+    img = canvas(150, 110)
+    fill_shape(img, [(20, 30), (130, 30), (122, 106), (28, 106)], hexc('#b99366'), hexc('#7a5a36'), hexc('#d8b88a'), 12, 3, (0.3, 3), 1.1)
+    fill_shape(img, [(20, 30), (130, 30), (112, 14), (38, 14)], hexc('#d2b07e'), hexc('#8a6a40'), hexc('#e8cc9c'), 10, 4, (3, .3))
+    fill_shape(img, [(34, 18), (116, 18), (118, 28), (32, 28)], hexc('#e8e2d0'), hexc('#b8b09c'), hexc('#f7f2e4'), 4, 5)
+    save(img, 'd_masu')
+
+
+def tetsubin():
+    img = canvas(230, 210); d = ImageDraw.Draw(img)
+    d.arc([px(55), px(10), px(175), px(120)], 200, 340, fill=hexc('#15130f'), width=5 * S)
+    fill_shape(img, (30, 60, 200, 205), hexc('#2b2723'), hexc('#0e0c0a'), hexc('#4a433b'), 6, 3, contrast=1.3, ellipse=True)
+    for yy in range(80, 190, 14):
+        for xx in range(45, 190, 14):
+            if (xx - 115) ** 2 / 85 ** 2 + (yy - 132) ** 2 / 72 ** 2 < .82: d.ellipse([px(xx - 3), px(yy - 3), px(xx + 3), px(yy + 3)], fill=hexc('#3e3832'))
+    shade_round(img, (30, 60, 200, 205), .55)
+    fill_shape(img, [(34, 110), (4, 80), (0, 70), (12, 72), (42, 100)], hexc('#2b2723'), hexc('#0e0c0a'), hexc('#4a433b'), 5, 4)
+    fill_shape(img, (80, 50, 150, 72), hexc('#221e1b'), hexc('#0e0c0a'), hexc('#3a342e'), 4, 5, ellipse=True)
+    d.ellipse([px(107), px(40), px(123), px(56)], fill=hexc('#15130f'))
+    save(img, 'd_tetsubin')
+
+
+def donabe():
+    img = canvas(250, 180)
+    fill_shape(img, (15, 70, 235, 175), hexc('#7a5238'), hexc('#3a2418'), hexc('#a4775a'), 6, 3, contrast=1.1, ellipse=True)
+    shade_round(img, (15, 70, 235, 176), .5)
+    fill_shape(img, (30, 30, 220, 110), hexc('#5a3a28'), hexc('#2a1a10'), hexc('#8a6448'), 6, 4, contrast=1.1, ellipse=True)
+    d = ImageDraw.Draw(img); d.ellipse([px(108), px(20), px(142), px(46)], fill=hexc('#3a2418'))
+    for x in (60, 190): d.ellipse([px(x - 4), px(60), px(x + 4), px(68)], fill=hexc('#e8dcc4'))
+    save(img, 'd_donabe')
+
+
+def teru():
+    img = canvas(110, 230); d = ImageDraw.Draw(img)
+    d.line([(px(55), 0), (px(55), px(60))], fill=hexc('#2a1d14'), width=S)
+    cloth = hexc('#e9e6dc')
+    fill_shape(img, [(55, 95), (100, 215), (80, 200), (62, 222), (44, 204), (24, 222), (10, 212)], cloth, mixc(cloth, (60, 60, 70, 255), .3), (255, 255, 255, 255), 8, 4)
+    fill_shape(img, (22, 55, 88, 118), cloth, mixc(cloth, (60, 60, 70, 255), .3), (255, 255, 255, 255), 6, 5, ellipse=True)
+    shade_round(img, (22, 55, 88, 118), .4)
+    d.line([(px(24), px(112)), (px(86), px(112))], fill=hexc('#a8261c'), width=3 * S)
+    for x in (42, 68): d.ellipse([px(x - 3), px(82), px(x + 3), px(90)], fill=hexc('#15110f'))
+    d.arc([px(44), px(88), px(66), px(102)], 20, 160, fill=hexc('#15110f'), width=2 * S)
+    save(img, 'd_teru', 'top')
+
+
+def hoshigaki():
+    img = canvas(130, 380); d = ImageDraw.Draw(img)
+    d.line([(px(65), 0), (px(65), px(370))], fill=hexc('#6b5a3a'), width=2 * S)
+    for i in range(7):
+        y = 40 + i * 48; x = 65 + (8 if i % 2 else -8)
+        fill_shape(img, (x - 24, y - 20, x + 24, y + 22), hexc('#b8562a'), hexc('#5a2410'), hexc('#dc8a4a'), 4, 10 + i, contrast=1.3, ellipse=True)
+        shade_round(img, (x - 24, y - 20, x + 24, y + 22), .5)
+        d.polygon([(px(x - 8), px(y - 20)), (px(x), px(y - 26)), (px(x + 8), px(y - 20))], fill=hexc('#3a3a1c'))
+    save(img, 'd_hoshigaki', 'top')
+
+
+def kingyo():
+    img = canvas(190, 170)
+    m = Image.new('RGBA', img.size, (0, 0, 0, 0)); md = ImageDraw.Draw(m)
+    md.ellipse([px(10), px(20), px(180), px(168)], fill=(170, 200, 210, 70))
+    md.chord([px(10), px(20), px(180), px(168)], 10, 170, fill=(60, 110, 120, 120))
+    md.ellipse([px(30), px(34), px(70), px(60)], fill=(255, 255, 255, 110))
+    img.alpha_composite(m)
+    d = ImageDraw.Draw(img)
+    d.ellipse([px(30), px(16), px(160), px(34)], outline=(200, 225, 235, 180), width=2 * S)
+    for fx, fy in ((80, 120), (118, 104)):
+        d.ellipse([px(fx - 14), px(fy - 7), px(fx + 10), px(fy + 7)], fill=hexc('#d9452a')); d.polygon([(px(fx + 8), px(fy)), (px(fx + 22), px(fy - 10)), (px(fx + 20), px(fy + 10))], fill=hexc('#e8683e'))
+    for k in range(5): d.line([(px(60 + k * 16), px(165)), (px(56 + k * 16), px(140 - (k % 2) * 16))], fill=hexc('#2f5a2a'), width=2 * S)
+    save(img, 'd_kingyo')
+
+
+def ume():
+    img = canvas(200, 280)
+    P.maple(img, px(100), px(200), px(170), 21, [hexc('#7a5a5a'), hexc('#b58a8a'), hexc('#d9b8b8'), hexc('#efdada'), hexc('#fbf2f2')], (hexc('#1a120e'), hexc('#2c201a'), hexc('#46372c')), lean=.25)
+    m = Image.new('RGBA', img.size, (0, 0, 0, 0)); md = ImageDraw.Draw(m)
+    md.rectangle([px(72), px(200), px(128), px(278)], fill=(190, 210, 215, 90)); md.rectangle([px(72), px(240), px(128), px(278)], fill=(90, 120, 125, 110))
+    img.alpha_composite(m)
+    save(img, 'd_ume')
+
+
+# ───────────── veranda garden ─────────────
+def koinobori():
+    img = canvas(120, 760); d = ImageDraw.Draw(img)
+    fill_shape(img, [(55, 760), (65, 760), (63, 20), (57, 20)], hexc('#8a7a5a'), hexc('#4a3e2a'), hexc('#b0a07a'), 20, 3, (.2, 5), 1.1)
+    d.ellipse([px(48), px(4), px(72), px(28)], fill=hexc('#d9b04a'))
+    save(img, 'd_koi_pole')
+    for name, body, belly in (('d_koi_black', '#1e1f24', '#e9e2d0'), ('d_koi_red', '#b8322a', '#f0dcc8'), ('d_koi_blue', '#2c4a7a', '#dde6f0')):
+        img = canvas(300, 90); d = ImageDraw.Draw(img); c = hexc(body)
+        pts = [(0, 45)] + [(x, 45 - 34 * math.sin(math.pi * min(1, (x + 30) / 260)) - 3 * math.sin(x / 20)) for x in range(0, 300, 10)] + [(300, 20), (270, 45), (300, 72)] + [(x, 45 + 30 * math.sin(math.pi * min(1, (x + 30) / 260)) + 3 * math.sin(x / 22)) for x in range(290, -1, -10)]
+        fill_shape(img, pts, c, mixc(c, (0, 0, 0, 255), .5), mixc(c, (255, 255, 255, 255), .2), 10, 7, (3, 1))
+        for x in range(60, 250, 26):
+            for y in (36, 54): d.arc([px(x), px(y - 8), px(x + 22), px(y + 8)], 90, 270, fill=hexc(belly, 160), width=2 * S)
+        d.ellipse([px(4), px(28), px(40), px(62)], outline=hexc('#e9e2d0'), width=3 * S)
+        d.ellipse([px(26), px(32), px(40), px(46)], fill=hexc('#f5f0e4')); d.ellipse([px(30), px(36), px(37), px(43)], fill=hexc('#111111'))
+        save(img, name, 'left')
+
+
+def tsukubai():
+    img = canvas(300, 230); d = ImageDraw.Draw(img)
+    P.stone(img, 150, 190, 110, 40, 51, hexc('#51554e'))
+    d.ellipse([px(90), px(160), px(210), px(186)], fill=hexc('#122020'))
+    d.ellipse([px(110), px(166), px(170), px(176)], fill=(150, 180, 180, 90))
+    fill_shape(img, [(230, 60), (245, 60), (245, 230), (230, 230)], hexc('#6b6b44'), hexc('#34341f'), hexc('#8e8d5c'), 14, 52, (.2, 4))
+    fill_shape(img, [(160, 70), (245, 58), (247, 72), (162, 84)], hexc('#77784a'), hexc('#3a3a22'), hexc('#a0a068'), 14, 53, (4, .3))
+    d.ellipse([px(156), px(68), px(168), px(86)], fill=hexc('#1e1e12'))
+    P.stone(img, 60, 212, 44, 16, 54, hexc('#4a4d47'))
+    save(img, 'd_tsukubai')
+
+
+def sakura_tree():
+    img = canvas(420, 520)
+    P.maple(img, px(210), px(515), px(470), 61, P.PAL_SAKURA, (hexc('#1a120e'), hexc('#2c201a'), hexc('#46372c')), lean=.1)
+    save(img, 'd_sakura_tree')
+
+
+# ───────────── onsen extras ─────────────
+def sake_tray():
+    img = canvas(230, 130); d = ImageDraw.Draw(img)
+    fill_shape(img, [(10, 80), (220, 80), (205, 110), (25, 110)], hexc('#6d4a2a'), hexc('#3a2414'), hexc('#8e6a44'), 12, 3, (4, .3))
+    fill_shape(img, [(80, 20), (110, 20), (118, 40), (124, 86), (66, 86), (72, 40)], hexc('#e6ddc8'), hexc('#a89c80'), hexc('#f7f2e4'), 5, 4)
+    d.rectangle([px(86), px(12), px(104), px(22)], fill=hexc('#d8cdb4'))
+    d.line([(px(70), px(60)), (px(122), px(60))], fill=hexc('#2c4a7a'), width=3 * S)
+    for x in (150, 186):
+        fill_shape(img, [(x - 16, 62), (x + 16, 62), (x + 10, 84), (x - 10, 84)], hexc('#e6ddc8'), hexc('#a89c80'), hexc('#f7f2e4'), 4, x)
+        d.ellipse([px(x - 16), px(58), px(x + 16), px(66)], fill=hexc('#2c4a7a'))
+    save(img, 'd_sake', 'center')
+
+
+def towels():
+    img = canvas(200, 110)
+    for i, c in enumerate(('#e9e4d8', '#2c4a6b', '#e9e4d8')):
+        y = 90 - i * 26; col = hexc(c)
+        m = Image.new('L', (px(170), px(30)), 0); ImageDraw.Draw(m).rounded_rectangle([0, 0, m.width - 1, m.height - 1], px(12), fill=255)
+        img.alpha_composite(textured_fill(m, col, mixc(col, (0, 0, 0, 255), .3), mixc(col, (255, 255, 255, 255), .2), 4 * S, 20 + i, (4, 1), 1.2), (px(15 + i * 4), px(y - 12)))
+    save(img, 'd_towels')
+
+
+# ───────────── bedroom table ─────────────
+def teaset():
+    img = canvas(280, 140); d = ImageDraw.Draw(img)
+    fill_shape(img, [(10, 100), (270, 100), (255, 136), (25, 136)], hexc('#3a2418'), hexc('#1a0e08'), hexc('#5a3a26'), 12, 3, (4, .3))
+    fill_shape(img, (40, 30, 150, 104), hexc('#2b2723'), hexc('#0e0c0a'), hexc('#4a433b'), 5, 4, contrast=1.2, ellipse=True)
+    shade_round(img, (40, 30, 150, 104), .5)
+    d.arc([px(60), px(4), px(130), px(60)], 200, 340, fill=hexc('#6d4a2a'), width=4 * S)
+    fill_shape(img, [(40, 60), (16, 44), (22, 40), (46, 56)], hexc('#2b2723'), hexc('#0e0c0a'), hexc('#4a433b'), 4, 5)
+    for x in (190, 235):
+        fill_shape(img, [(x - 20, 66), (x + 20, 66), (x + 16, 100), (x - 16, 100)], hexc('#5a6b5a'), hexc('#2a352a'), hexc('#7d8e7a'), 4, x, contrast=1.2)
+        d.ellipse([px(x - 20), px(62), px(x + 20), px(72)], fill=hexc('#6f8a3a'))
+    save(img, 'd_teaset')
+
+
+def koro():
+    img = canvas(150, 150)
+    fill_shape(img, (15, 50, 135, 140), hexc('#8a6a3a'), hexc('#3a2a14'), hexc('#c9a060'), 5, 3, contrast=1.3, ellipse=True)
+    shade_round(img, (15, 50, 135, 140), .55)
+    d = ImageDraw.Draw(img); d.ellipse([px(28), px(44), px(122), px(70)], fill=hexc('#1a140c'))
+    for x in (40, 110): d.rectangle([px(x - 6), px(130), px(x + 6), px(148)], fill=hexc('#5a4424'))
+    d.line([(px(75), px(56)), (px(80), px(4))], fill=hexc('#6b2a1a'), width=2 * S)
+    d.ellipse([px(77), px(0), px(83), px(8)], fill=hexc('#ff7a3a'))
+    save(img, 'd_koro')
+
+
+def goban():
+    img = canvas(320, 170); d = ImageDraw.Draw(img)
+    fill_shape(img, [(30, 20), (290, 20), (316, 110), (4, 110)], hexc('#c9a060'), hexc('#8a6a3a'), hexc('#e0bc80'), 16, 3, (3, .5))
+    fill_shape(img, [(4, 110), (316, 110), (316, 140), (4, 140)], hexc('#a07a44'), hexc('#5a4424'), hexc('#c9a060'), 16, 4, (3, .5))
+    for i in range(10):
+        u = i / 9; d.line([(px(34 + 252 * u), px(24)), (px(10 + 300 * u), px(106))], fill=hexc('#3a2a14'), width=S)
+        y = 24 + 82 * u; xl = 34 - 24 * u; xr = 286 + 24 * u; d.line([(px(xl), px(y)), (px(xr), px(y))], fill=hexc('#3a2a14'), width=S)
+    rnd = random.Random(4)
+    for k in range(18):
+        u = rnd.randint(1, 8) / 9; v = rnd.randint(1, 8) / 9; y = 24 + 82 * v; x = (34 - 24 * v) + (252 + 48 * v) * u
+        c = hexc('#111111') if k % 2 else hexc('#efeae0'); d.ellipse([px(x - 7), px(y - 4), px(x + 7), px(y + 4)], fill=c)
+    for x in (40, 280): d.rectangle([px(x - 14), px(140), px(x + 14), px(168)], fill=hexc('#6b4a24'))
+    save(img, 'd_goban')
+
+
+# ───────────── wardrobe room ─────────────
+def kimono(name, base, pattern, seed):
+    img = canvas(380, 540); d = ImageDraw.Draw(img)
+    for x in (30, 350): fill_shape(img, [(x - 8, 540), (x + 8, 540), (x + 8, 40), (x - 8, 40)], hexc('#3a2418'), hexc('#1a0e08'), hexc('#5a3a26'), 20, x, (.2, 5))
+    fill_shape(img, [(0, 40), (380, 40), (380, 58), (0, 58)], hexc('#3a2418'), hexc('#1a0e08'), hexc('#5a3a26'), 20, 5, (5, .2))
+    fill_shape(img, [(20, 62), (360, 62), (360, 200), (290, 200), (285, 520), (95, 520), (90, 200), (20, 200)], base, mixc(base, (0, 0, 0, 255), .45), mixc(base, (255, 255, 255, 255), .15), 30, seed, (1, 3), .9)
+    rnd = random.Random(seed); lt = mixc(base, (240, 230, 215, 255), .55)
+    if pattern == 'cranes':
+        for _ in range(9):
+            x = rnd.uniform(110, 270); y = rnd.uniform(220, 480)
+            d.polygon([(px(x - 22), px(y - 8)), (px(x), px(y + 4)), (px(x + 22), px(y - 8)), (px(x + 4), px(y + 10))], fill=lt)
+            d.ellipse([px(x - 2), px(y - 2), px(x + 3), px(y + 3)], fill=hexc('#b8322a'))
+    elif pattern == 'sakura':
+        for _ in range(40):
+            x = rnd.uniform(40, 340); y = rnd.uniform(80, 500)
+            if 200 < y and (x < 95 or x > 285): continue
+            for p_ in range(5):
+                a = p_ / 5 * math.tau; d.ellipse([px(x + math.cos(a) * 5 - 4), px(y + math.sin(a) * 5 - 3), px(x + math.cos(a) * 5 + 4), px(y + math.sin(a) * 5 + 3)], fill=hexc('#f0c8d4'))
+    else:
+        for x, y in ((190, 110), (60, 130), (320, 130)):
+            d.ellipse([px(x - 14), px(y - 14), px(x + 14), px(y + 14)], outline=hexc('#e9e2d0'), width=2 * S)
+            for a in range(3): d.ellipse([px(x - 4 + 7 * math.cos(a * 2.1)), px(y - 4 + 7 * math.sin(a * 2.1)), px(x + 4 + 7 * math.cos(a * 2.1)), px(y + 4 + 7 * math.sin(a * 2.1))], fill=hexc('#e9e2d0'))
+        d.rectangle([px(95), px(470), px(285), px(520)], fill=mixc(base, (160, 40, 30, 255), .5))
+    obi = hexc('#c9a060') if pattern != 'black' else hexc('#8a2a22')
+    fill_shape(img, [(92, 250), (288, 250), (288, 300), (92, 300)], obi, mixc(obi, (0, 0, 0, 255), .4), mixc(obi, (255, 255, 255, 255), .2), 8, seed + 1, (3, 1))
+    d.line([(px(190), px(62)), (px(150), px(200)), (px(190), px(250))], fill=mixc(base, (255, 255, 255, 255), .4), width=3 * S)
+    save(img, name)
+
+
+def kyodai():
+    img = canvas(260, 340); d = ImageDraw.Draw(img)
+    fill_shape(img, [(20, 220), (240, 220), (240, 340), (20, 340)], hexc('#2a0e0c'), hexc('#120605'), hexc('#4a1a16'), 14, 3, (3, 1), 1.1)
+    for y in (250, 295): d.rectangle([px(115), px(y), px(145), px(y + 6)], fill=hexc('#c9a060'))
+    fill_shape(img, [(120, 220), (140, 220), (140, 150), (120, 150)], hexc('#2a0e0c'), hexc('#120605'), hexc('#4a1a16'), 8, 4)
+    fill_shape(img, (50, 10, 210, 170), hexc('#2a0e0c'), hexc('#120605'), hexc('#4a1a16'), 8, 5, ellipse=True)
+    m = Image.new('RGBA', img.size, (0, 0, 0, 0)); md = ImageDraw.Draw(m)
+    md.ellipse([px(62), px(22), px(198), px(158)], fill=(150, 160, 165, 255)); md.ellipse([px(80), px(36), px(140), px(80)], fill=(220, 225, 228, 120))
+    img.alpha_composite(m); shade_round(img, (62, 22, 198, 158), .5)
+    save(img, 'd_kyodai')
+
+
+def kiku():
+    img = canvas(240, 320)
+    P.maple(img, px(120), px(230), px(200), 71, [hexc('#6b5414'), hexc('#a8841e'), hexc('#d6ae36'), hexc('#ecd064'), hexc('#f7e8a4')], (hexc('#1f2a14'), hexc('#2c3a1e'), hexc('#3e5028')), lean=0)
+    fill_shape(img, [(80, 318), (160, 318), (168, 260), (150, 226), (90, 226), (72, 260)], hexc('#2c3a4a'), hexc('#121a22'), hexc('#4a5a6a'), 8, 72)
+    shade_round(img, (70, 224, 170, 318), .5)
+    save(img, 'd_kiku')
+
+
+def more():
+    cat_bowl('d_bowl_red', hexc('#9a2a22'), hexc('#c9433a'), 'neko', hexc('#6b4424'))
+    cat_bowl('d_bowl_blue', hexc('#e9e4d8'), hexc('#d8d2c3'), 'fish', hexc('#efe8da'))
+    masu(); tetsubin(); donabe(); teru(); hoshigaki(); kingyo(); ume()
+    koinobori(); tsukubai(); sakura_tree(); sake_tray(); towels(); teaset(); koro(); goban()
+    kimono('d_kimono_cranes', hexc('#223250'), 'cranes', 81); kimono('d_kimono_sakura', hexc('#6e2a34'), 'sakura', 82); kimono('d_kimono_black', hexc('#141416'), 'black', 83)
+    kyodai(); kiku()
+
 if __name__ == '__main__':
+    import os
+    if len(sys.argv) > 2 and sys.argv[2] == 'more':
+        if os.path.exists(f'{OUT}/decor.json'): META.update(json.load(open(f'{OUT}/decor.json')))
+        more(); json.dump(META, open(f'{OUT}/decor.json', 'w'), indent=0); sys.exit()
     for fn in [bonsai, ikebana, kokedama, bamboo_pot, zabutons, furins, chochin_red, andon, okeya, shishi, kaeru, yukimi, yuzu, petals_float,
                futons, scrolls, daruma, kokeshi, maneki, cranes]:
         fn()
