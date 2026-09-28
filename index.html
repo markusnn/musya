@@ -135,6 +135,13 @@ button:focus-visible{outline:2px solid var(--sakura);outline-offset:2px;border-r
 .scard b{font-family:var(--display);font-size:20px}.scard span{font-size:12px;color:var(--muted)}
 .story .back{color:var(--muted);font-size:13px;padding:6px 0}
 .story .next{width:100%;margin-top:10px}
+.bestiary{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.beast{border:1px solid var(--line);border-radius:12px;padding:10px;background:#07090a;display:flex;flex-direction:column;gap:5px;align-items:center;text-align:center;opacity:.6}
+.beast.on{opacity:1;border-color:rgba(194,106,90,.5)}
+.beast img{height:110px;max-width:100%;object-fit:contain;filter:drop-shadow(0 0 12px rgba(0,0,0,.8))}
+.beast .q{height:110px;display:grid;place-items:center;font-size:40px;color:var(--muted)}
+.beast b{font-family:var(--display);font-size:17px}.beast small{font-size:11.5px;color:var(--muted);line-height:1.35}
+.story-body .bh{margin-top:26px}
 .stamps{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
 .stamp{border:1px solid var(--line);border-radius:12px;padding:12px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;background:var(--ink-2);opacity:.55}
 .stamp .seal{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-family:var(--jp),"Hiragino Mincho ProN",serif;font-size:28px;color:var(--muted);border:2px dashed rgba(216,210,195,.2)}
@@ -190,7 +197,8 @@ function loadImages(){
   const decs=Object.keys(DMETA).map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{DIMG[n]=im;res();};im.onerror=()=>res();im.src="assets/decor/"+n+".webp";}));
   const kois=KOI_NAMES.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{KOI_IMG[n]=im;res();};im.onerror=()=>res();im.src="assets/koi/"+n+".webp";}));
   const lays=Object.entries(LAYERS).flatMap(([r,L])=>L.map(([ln])=>new Promise(res=>{const im=new Image();im.onload=()=>{LIMG[r+"_"+ln]=im;res();};im.onerror=()=>res();im.src="assets/layers/"+r+"_"+ln+".webp";})));
-  return Promise.all([...bgs,...lays,...decs,...kois,...STRIPS.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{IMG[n]=im;res();};im.onerror=()=>res();im.src="assets/"+n+"@2x.webp";}))]);
+  const mons=Object.keys(MON).map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{MIMG[n]=im;res();};im.onerror=()=>res();im.src="assets/mon/"+n+".webp";}));
+  return Promise.all([...bgs,...lays,...mons,...decs,...kois,...STRIPS.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{IMG[n]=im;res();};im.onerror=()=>res();im.src="assets/"+n+"@2x.webp";}))]);
 }
 const EMOJI='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 
@@ -936,21 +944,24 @@ function drawFlash(t){const a=t-weather.flash;if(a<0||a>.5)return;const k=a<.08?
 
 // ───────────────────────── Scary happenings in the rooms ─────────────────────────
 const spook={ev:null,next:now()+rand(40,90)};
-const SPOOKS={entrance:["eyes","kitsunebi","torii","knock"],courtyard:["hair","eyes","kitsunebi"],engawa:["eyes","shadow","kitsunebi","knock"],kitchen:["obake","eyes_win","flicker"],onsen:["hair","eyes","kitsunebi"],bedroom:["hands","shadow_bed","knock","flicker"],wardrobe:["screen_eyes","flicker"],games:["eyes","kitsunebi"]};
+const SPOOKS={entrance:["bettari","okubi","bettari","eyes","kitsunebi","torii","knock"],courtyard:["okubi","bettari","okubi","hair","eyes"],engawa:["bettari","rokuro","peek","eyes","shadow","kitsunebi","knock"],kitchen:["rokuro","onryo","peek","obake","eyes_win","flicker"],onsen:["okubi","peek","hair","eyes","kitsunebi"],bedroom:["onryo","peek","rokuro","hands","shadow_bed","knock","flicker"],wardrobe:["onryo","screen_eyes","flicker"],games:["bettari","okubi","eyes","kitsunebi"]};
+function ev_dur_ms(k){return(({bettari:5.2,rokuro:4.6,onryo:5,peek:4.2,okubi:6.5,face:1.1})[k]||3)*1000+400;}
 function knock(){if(!snd.on||!snd.ctx)return;[0,.28,.56].forEach(d=>setTimeout(()=>{tone(90,.18,"triangle",.14);tone(60,.22,"sine",.12);},d*1000));}
 function updateSpook(t){
   if(spook.ev&&t-spook.ev.t>spook.ev.dur)spook.ev=null;
   if(!S.scary||spook.ev||t<spook.next||!document.getElementById("game").hidden||!document.getElementById("story").hidden)return;
   spook.next=t+rand(55,140)*(weather.on?.6:1);
-  const kind=pick(SPOOKS[S.room]||["flicker"]),r=Math.random;
-  spook.ev={kind,t,dur:kind==="knock"?2:kind==="flicker"?1.2:4.2,x:r(),y:r(),seed:r()*100};
-  if(kind==="knock")knock();else tone(55,1.4,"sawtooth",.05);setTimeout(()=>award("brave"),4500);
+  let kind=pick(SPOOKS[S.room]||["flicker"]);if(Math.random()<.12)kind="face";const r=Math.random;
+  spook.ev={kind,t,dur:{knock:2,flicker:1.2,bettari:5.2,rokuro:4.6,onryo:5,peek:4.2,okubi:6.5,face:1.1}[kind]||4.2,x:r(),y:r(),seed:r()*100};
+  if(SEEN_OF[kind]&&!ST.seen.includes(SEEN_OF[kind])){ST.seen.push(SEEN_OF[kind]);setTimeout(()=>toast("Новая запись в бестиарии"),ev_dur_ms(kind));save();}
+  if(kind==="knock")knock();else if(kind==="face")scareSound();else monSound(kind);setTimeout(()=>award("brave"),4500);
   setTimeout(()=>{if(pet.action!=="sleep"){react("🙀",2);if(["idle","beg","music","knead","groom"].includes(pet.action))start("hide",true);}},kind==="knock"?300:900);
 }
 function silhouette(drawFn,w,h,alpha){tmpCv.width=Math.ceil(w);tmpCv.height=Math.ceil(h);tmpCx.setTransform(1,0,0,1,0,0);tmpCx.clearRect(0,0,w,h);drawFn(tmpCx);tmpCx.globalCompositeOperation="source-in";tmpCx.fillStyle="#050606";tmpCx.fillRect(0,0,w,h);tmpCx.globalCompositeOperation="source-over";return tmpCv;}
 function drawSpook(t,front){
-  const ev=spook.ev;if(!ev||front!==(ev.kind==="flicker"))return;const e=t-ev.t,k=BGM.k,s=view.s,fade=clamp(Math.min(e/.6,(ev.dur-e)/.8),0,1);
+  const ev=spook.ev;if(!ev||front!==(ev.kind==="flicker"||ev.kind==="face"))return;const e=t-ev.t,k=BGM.k,s=view.s,fade=clamp(Math.min(e/.6,(ev.dur-e)/.8),0,1);
   const eyes=(x,y,r,col="230,40,30")=>{const bl=Math.sin(e*3)>.93?.1:1;for(const d of[-1,1]){const gx=x+d*r*1.6,gr=ctx.createRadialGradient(gx,y,0,gx,y,r*2.4);gr.addColorStop(0,`rgba(${col},${.9*fade})`);gr.addColorStop(1,`rgba(${col},0)`);ctx.fillStyle=gr;ctx.fillRect(gx-r*2.4,y-r*2.4,r*4.8,r*4.8);ctx.fillStyle=`rgba(255,220,200,${fade})`;ctx.beginPath();ctx.ellipse(gx,y,r*.7,r*.45*bl,0,0,Math.PI*2);ctx.fill();}};
+  if(ev.kind==="face"||(MON_SPOTS[ev.kind]&&MON_SPOTS[ev.kind][S.room])){drawMonsters(ev,e,fade);return;}
   switch(ev.kind){
     case"eyes":{const [x,y]=imgToStage(200+ev.x*1100,S.room==="engawa"?1000+ev.y*70:700+ev.y*300);eyes(x,y,4*s);break;}
     case"eyes_win":{const [x,y]=imgToStage(300+ev.x*460,300+ev.y*250);eyes(x,y,3.5*s,"200,220,255");break;}
@@ -970,6 +981,58 @@ function drawSpook(t,front){
   }
 }
 
+
+// ───────────────────────── Yōkai (painted monsters for the scary happenings) ─────────────────────────
+const MON={"m_bettari":[460,960],"m_bettari_open":[460,960],"m_rokuro":[260,300],"m_onryo":[320,860],"m_peek":[420,300],"m_okubi":[760,660],"m_onryo_face":[800,800]},MIMG={};
+const BESTIARY=[
+ ["bettari","m_bettari_open","Охагуро-бэттари","Женщина в нарядном кимоно без лица — только огромный рот с чернёными зубами. Из «Эхон хякумоногатари», 1841."],
+ ["rokuro","m_rokuro","Рокурокуби","Днём обычная женщина, ночью её шея тянется бесконечно, а голова бродит по дому."],
+ ["onryo","m_onryo","Онрё","Мстительный дух в белом, с распущенными волосами. Всегда стоит спиной."],
+ ["peek","m_peek","Голова под дверью","Выглядывает из-под двери или настила. Из школьных легенд вроде истории о Ханако-сан."],
+ ["okubi","m_okubi","Оокуби","Огромная голова, что всплывает в небе и тумане. Нарисована Ториямой Сэкиэном в 1781 году."],
+ ["face","m_onryo_face","Лицо в волосах","Когда слишком близко — видно только один глаз."],
+ ["yurei","","Юрэй за сёдзи","Тень призрака, что проходит за бумажной стеной."],
+ ["obake","","Тётин-обакэ","Старый фонарь, у которого прорезался глаз и язык."],
+ ["kitsunebi","","Кицунэ-би","Лисьи огни, уводящие путников с дороги."]
+];
+const SEEN_OF={bettari:"bettari",rokuro:"rokuro",onryo:"onryo",peek:"peek",okubi:"okubi",face:"face",shadow:"yurei",shadow_bed:"yurei",torii:"yurei",obake:"obake",kitsunebi:"kitsunebi"};
+function drawMon(id,ix,iy,hImg,d,alpha,anchor="b",rot=0,flipX=false){
+  const im=MIMG[id],m=MON[id];if(!im||!m||alpha<=0)return;const sc=hImg/m[1]*BGM.k,w=m[0]*sc,h=m[1]*sc,[x,y]=imgToStage(ix,iy,d);
+  ctx.save();ctx.globalAlpha=Math.min(1,alpha);ctx.translate(x,y);if(rot)ctx.rotate(rot);if(flipX)ctx.scale(-1,1);ctx.drawImage(im,-w/2,anchor==="b"?-h:anchor==="c"?-h/2:0,w,h);ctx.restore();}
+function bez(p0,p1,p2,u){const a=1-u;return[a*a*p0[0]+2*a*u*p1[0]+u*u*p2[0],a*a*p0[1]+2*a*u*p1[1]+u*u*p2[1]];}
+function drawNeck(pts,wid,alpha){ctx.save();ctx.globalAlpha=alpha;ctx.lineCap="round";ctx.lineJoin="round";
+  for(const [col,k] of [["#8f877c",1],["#c9c2b5",.78],["#e2ddd2",.4]]){ctx.strokeStyle=col;ctx.lineWidth=wid*k;ctx.beginPath();pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();}ctx.restore();}
+const MON_SPOTS={
+  bettari:{entrance:[900,1020,1150,380,560,.38,.7],engawa:[1080,1085,1110,340,420,.42,.5],games:[900,1180,1300,360,520,.45,.8],courtyard:[1300,1010,1120,330,440,.55,.8]},
+  rokuro:{kitchen:[[760,-80],[220,260],[600,480],.5,300],bedroom:[[1560,150],[1500,560],[1120,520],.4,320],engawa:[[1400,112],[1300,500],[1100,470],.6,260]},
+  onryo:{bedroom:[1010,1215,520,.5],wardrobe:[1440,1160,560,.5],kitchen:[180,1170,560,.5]},
+  peek:{bedroom:[1700,1330,.8,1],kitchen:[1720,1335,.8,1],engawa:[1380,1112,.92,1],onsen:[1760,1330,.82,1]},
+  okubi:{courtyard:[1080,520,540,.3],games:[900,640,600,.22],entrance:[900,760,420,.38],onsen:[900,560,560,.2]}
+};
+function monSound(kind){if(!snd.on||!snd.ctx)return;
+  if(kind==="rokuro"){tone(120,1.2,"sawtooth",.04);tone(90,1.6,"sine",.05);}
+  else if(kind==="onryo"){const c=snd.ctx,b=c.createBuffer(1,c.sampleRate*2,c.sampleRate),dd=b.getChannelData(0);for(let i=0;i<dd.length;i++)dd[i]=(Math.random()*2-1)*.25*Math.sin(Math.PI*i/dd.length);const src=c.createBufferSource();src.buffer=b;const f=c.createBiquadFilter();f.type="bandpass";f.frequency.value=3000;f.Q.value=2;src.connect(f);f.connect(c.destination);src.start();}
+  else if(kind==="okubi"){tone(55,4,"sine",.08);tone(58,4,"sine",.05);}
+  else if(kind==="peek"){tone(900,.05,"square",.02);}
+  else tone(55,1.4,"sawtooth",.05);}
+function drawMonsters(ev,e,fade){
+  const k=ev.kind,room=S.room,sp=(MON_SPOTS[k]||{})[room];
+  if(k==="bettari"&&sp){const [x,y0,y1,h0,h1,d0,d1]=sp,u=smooth(clamp((e-1)/2.4,0,1)),open=e>3.4;const d=mix(d0,d1,u);
+    if(open&&!ev.shriek){ev.shriek=1;scareSound();pet.gazeUntil=0;}
+    const sh=open?Math.sin(e*60)*4:0;drawMon(open?"m_bettari_open":"m_bettari",x+sh,mix(y0,y1,u),mix(h0,h1,u)*(open?1.08:1),d,fade*(e<.9?e/.9:1));}
+  else if(k==="rokuro"&&sp){const [a,b,c,d,hh]=sp,u=e<1.6?smooth(e/1.6):e<3.6?1:1-smooth((e-3.6)/1);
+    const sway=Math.sin(e*2.2)*30*u,c2=[c[0]+sway,c[1]+Math.cos(e*1.7)*14*u],N=24,pts=[];for(let i=0;i<=N;i++){const q=bez(a,b,c2,i/N*u);pts.push(imgToStage(q[0],q[1],d));}
+    drawNeck(pts,34*BGM.k*2.2,fade);const hp=bez(a,b,c2,u);drawMon("m_rokuro",hp[0],hp[1]+hh*.45,hh,d,fade,"b",Math.sin(e*1.5)*.18);}
+  else if(k==="onryo"&&sp){const [x,y,h,d]=sp,fl=(Math.sin(e*23)>.2||e>1.2)?1:.25;drawMon("m_onryo",x,y,h,d,fade*fl*(e>4.4?Math.max(0,1-(e-4.4)*3):1));}
+  else if(k==="peek"&&sp){const [x,y,d,dir]=sp,u=e<1?smooth(e):e<3.4?1:1-smooth((e-3.4)/.5);drawMon("m_peek",x+(1-u)*260*dir,y,230,d,fade);}
+  else if(k==="okubi"&&sp){const [x,y,h,d]=sp,al=clamp(Math.min(e/2.2,(ev.dur-e)/1.4),0,1)*.68;drawMon("m_okubi",x+Math.sin(e*.5)*20,y+Math.sin(e*.7)*12,h*(1+e*.02),d,al,"c");
+    ctx.save();ctx.globalAlpha=.3*al;const fw=900*view.s*1.3,fh=260*view.s*1.3;ctx.drawImage(fogTex,-((e*20)%fw),view.H*.25,fw,fh);ctx.drawImage(fogTex,fw-((e*20)%fw),view.H*.25,fw,fh);ctx.restore();}
+  else if(k==="face"){const im=MIMG.m_onryo_face;if(!im)return;const a=e/ev.dur,sz=Math.max(view.W,view.H)*(.75+.5*a),al=a<.12?a/.12:a>.75?(1-a)/.25:1;
+    ctx.fillStyle=`rgba(0,0,0,${.85*al})`;ctx.fillRect(0,0,view.W,view.H);ctx.globalAlpha=al;ctx.drawImage(im,view.W/2-sz/2+Math.sin(e*50)*6,view.H/2-sz/2,sz,sz);ctx.globalAlpha=1;}
+}
+function scareSound(){if(!snd.on||!snd.ctx)return;const c=snd.ctx,n=c.currentTime,b=c.createBuffer(1,c.sampleRate*.7,c.sampleRate),dd=b.getChannelData(0);for(let i=0;i<dd.length;i++)dd[i]=(Math.random()*2-1)*Math.pow(1-i/dd.length,1.2);
+  const src=c.createBufferSource();src.buffer=b;const f=c.createBiquadFilter();f.type="highpass";f.frequency.value=1200;const g=c.createGain();g.gain.value=.3;src.connect(f);f.connect(g);g.connect(c.destination);src.start(n);tone(1400,.6,"sawtooth",.04);tone(70,.7,"sawtooth",.09);}
+
 // ───────────────────────── Kaidan reader ─────────────────────────
 const KAIDAN=[
  {t:"Безликая у рва",src:"«Мудзина», Лафкадио Хирн, «Кайдан», 1904",p:["В Токио есть склон Кии-но-куни-дзака. С одной его стороны — старый глубокий ров, с другой — высокие стены княжеской усадьбы. В те времена, когда ещё не было уличных фонарей, после заката здесь старались не ходить.","Однажды поздно вечером по склону торопился купец и увидел у рва девушку. Она сидела одна и горько плакала, закрыв лицо рукавом. Купец испугался, что она задумала броситься в воду, и заговорил с ней ласково: «Не плачьте, расскажите, что случилось». Девушка всхлипывала и не отвечала. Он тронул её за плечо.","Тогда она опустила рукав и медленно повернулась. У неё не было лица: ни глаз, ни носа, ни рта — только гладкая кожа, как яичная скорлупа.","Купец с криком бросился бежать и бежал, пока не увидел огонёк. Это был фонарь ночного продавца лапши. «Там… у рва… девушка… у неё лицо…» — задыхался купец. «Вот такое?» — спросил продавец и провёл ладонью по своему лицу. Оно стало гладким, как яйцо. И фонарь погас."]},
@@ -979,6 +1042,9 @@ const KAIDAN=[
  {t:"Лицо в фонаре",src:"«Ёцуя-кайдан», пьеса кабуки Цуруи Намбоку IV, 1825",p:["Ронин Тамия Иэмон был женат на кроткой О-Иве, но захотел жениться на богатой соседке. Её семья прислала О-Иве «лекарство» — на самом деле яд. Волосы О-Ивы стали выпадать клоками, один глаз опух и закрылся. Увидев себя в зеркале, она поняла, что её предали, и умерла, проклиная мужа.","Иэмон женился на богатой невесте. Но в первую же ночь он поднял покрывало — и увидел изуродованное лицо О-Ивы. Он выхватил меч и ударил — а на полу лежала его невеста.","С тех пор лицо О-Ивы смотрело на Иэмона из бумажных фонарей, выплывало из дыма, шептало из воды. Он потерял рассудок.","Эту историю считают самым страшным японским кайданом. Актёры до сих пор перед постановкой приходят к святилищу О-Ивы в Ёцуе просить прощения — говорят, иначе беды не миновать."]},
  {t:"Летающие головы",src:"«Рокурокуби», Лафкадио Хирн, «Кайдан», 1904",p:["Монах Кайрё, в прошлом храбрый самурай, странствовал по горам провинции Каи. Лесоруб пригласил его переночевать в хижине, где жили ещё четверо. Все были очень учтивы.","Ночью Кайрё вышел попить воды и увидел в комнате пять тел — без голов. Ран на шеях не было: головы просто отделились. Монах понял, что это рокурокуби — существа, чьи головы по ночам улетают охотиться. А если спрятать тело, голова не сможет вернуться.","Он вытащил тело хозяина наружу. Из леса донеслись голоса: головы летали среди деревьев, ловили насекомых и спорили, как бы съесть толстого монаха. Когда они нашли Кайрё, началась битва. Монах отбивался молодым деревцем, пока головы не пали. Лишь голова хозяина вцепилась зубами в его рукав и так и умерла.","Кайрё продолжил путь с головой, висящей на рукаве. В соседней деревне его чуть не схватили как убийцу, пока судья не разглядел на шее головы красные знаки — метки рокурокуби."]},
  {t:"Кошка из Набэсимы",src:"Легенда эпохи Эдо о княжеском роде Набэсима",p:["Князь Набэсима из Хидзэна любил красавицу О-Тоё. Однажды ночью в её покои пробралась огромная кошка-оборотень. Она погубила девушку и приняла её облик.","С тех пор князь начал чахнуть. Каждую ночь его мучили кошмары, и никакие лекари не помогали. Сотня стражников дежурила у его постели, но к полуночи всех их одолевал непреодолимый сон.","Молодой воин Ито Сода вызвался сторожить. Когда накатила сонливость, он вонзил нож себе в бедро, чтобы боль не давала уснуть. В полночь дверь бесшумно открылась, и вошла «О-Тоё». Увидев неспящего Ито, она отступила. Так было несколько ночей, и князь начал поправляться.","Тогда Ито пришёл к «О-Тоё» с копьём. Она прыгнула на крышу и обернулась огромной кошкой. Её загнали в горы, и князь выздоровел. Муся уверяет, что эта история не про неё."]},
+ {t:"Рот без лица",src:"Охагуро-бэттари, «Эхон хякумоногатари» Такэхары Сюнсэна, 1841",p:["Поздно вечером у ворот старого храма стоит молодая женщина в дорогом кимоно. Она стоит спиной к дороге, и высокая причёска гейши чуть покачивается, будто она плачет.","Прохожий, пожалев её, подходит и спрашивает, не нужна ли помощь. Женщина медленно поворачивается. У неё нет ни глаз, ни носа, ни бровей — только гладкая белая кожа. А потом открывается рот: огромный, от уха до уха, полный чёрных зубов.","Чернить зубы — охагуро — когда-то было обычаем замужних женщин в Японии. Поэтому чёрный оскал на пустом лице казался людям особенно жутким. Одни говорили, что это проделки лисы или тануки, другие — что это дух невесты, не дождавшейся свадьбы.","Кто видел её, обычно бежал без оглядки. А она ещё долго смеялась своим чёрным ртом ему вслед."]},
+ {t:"Голова в облаках",src:"Оокуби, «Кондзяку хякки сюи» Ториямы Сэкиэна, 1781",p:["Художник Торияма Сэкиэн, собиравший ёкаев в иллюстрированные книги, нарисовал и Оокуби — «большую голову». Она появляется в небе над крышами, в тумане или в окне второго этажа.","Голова бывает огромной, во всё небо, часто это женское лицо с чернёными зубами. Она ничего не делает: просто висит и смотрит — или медленно улыбается.","Говорили, что Оокуби видят те, кто затаил в сердце дурное, или что она предвещает беду в доме. Если голова показалась в облаках над деревней — ночью люди не открывали ставен.","Муся, кажется, уже видела её над водопадом во дворике."]},
+ {t:"Ханако из третьей кабинки",src:"Городская легенда японских школ, популярна с 1980-х",p:["В каждой японской школе рассказывают про Ханако-сан — девочку в красной юбке, которая живёт в туалете третьего этажа, в третьей кабинке.","Чтобы её позвать, нужно постучать в дверь три раза и спросить: «Ханако-сан, ты здесь?» Если в ответ раздастся тихое «Да…», лучше сразу бежать. Говорят, некоторые видели, как из-под двери на них смотрит бледное лицо — перевёрнутое, с волосами, разлитыми по полу.","Кто она — никто точно не знает. По одной версии, девочка погибла в школе во время войны, по другой — пряталась в туалете в игре в прятки и так и не нашлась.","Легенда стала такой популярной, что в 1990-х о ней сняли несколько фильмов. А школьники до сих пор обходят третью кабинку стороной."]},
  {t:"Женщина в маске",src:"Городская легенда, паника 1979 года",p:["Весной 1979 года по японским школам поползли слухи: в сумерках к одиноким прохожим подходит высокая женщина в длинном плаще и марлевой маске. Она спрашивает: «Я красивая?»","Если ответить «нет» — беда. Если сказать «да», она медленно снимет маску: её рот разрезан от уха до уха. «А теперь?» — спросит она. Бежать бесполезно: она всегда оказывается впереди.","Говорили, что спастись можно, ответив «так себе», бросив ей леденцы бэккоамэ или трижды сказав слово «помада». Слухи были такими сильными, что в некоторых городах учителя провожали детей домой группами.","Похожие рассказы находят ещё в эпоху Эдо: там это была лиса-оборотень, прикидывающаяся красавицей."]}
 ];
 function openStory(i){
@@ -1001,7 +1067,7 @@ const STAMPS=[
  ["joy","喜","Счастье","Доведи радость до 100"],["care","愛","Заботливая","Все потребности выше 80"],["paw","手","Дай пять","Дай лапку 5 раз"],
  ["zoom","走","Тыгыдык","Устрой Мусе тыгыдык"],["cucumber","瓜","Ох уж этот огурец","Напугай Мусю огурцом"],["luck","福","На удачу","Поставь манэки-нэко"]
 ];
-const ST=Object.assign({got:[],foods:[],wears:[],decors:[],stories:[],games:[],paws:0},saved.stats||{});
+const ST=Object.assign({got:[],foods:[],wears:[],decors:[],stories:[],games:[],paws:0,seen:[]},saved.stats||{});ST.seen=ST.seen||[];
 function stat(key,val){if(val!==undefined){if(!ST[key].includes(val))ST[key].push(val);}}
 function award(id){if(ST.got.includes(id))return;ST.got.push(id);const st=STAMPS.find(x=>x[0]===id);if(!st)return;save();
   setTimeout(()=>{toast(`印 Новый штамп: ${st[2]}`);sfx("chime");burst(10);},300);}
@@ -1013,7 +1079,9 @@ function checkStamps(){
 }
 setInterval(checkStamps,2000);
 function openAlbum(){const a=$("album");a.hidden=false;const got=ST.got.length;
-  $("albumBody").innerHTML=`<p class="lead">Штампы-ханко за заботу о Мусе. Собрано ${got} из ${STAMPS.length}.</p><div class="stamps">${STAMPS.map(([id,k,t,d])=>{const on=ST.got.includes(id);return`<div class="stamp ${on?"on":""}"><span class="seal">${k}</span><b>${t}</b><small>${d}</small></div>`;}).join("")}</div>`;}
+  const best=BESTIARY.map(([id,img,n,d])=>{const on=ST.seen.includes(id);return`<div class="beast ${on?"on":""}">${on&&img?`<img src="assets/mon/${img}.webp" alt="">`:`<span class="q">${on?"👁":"?"}</span>`}<b>${on?n:"???"}</b><small>${on?d:"Ещё не встречалось. Включи страшилки 👻 и жди."}</small></div>`;}).join("");
+  $("albumBody").innerHTML=`<p class="lead">Штампы-ханко за заботу о Мусе. Собрано ${got} из ${STAMPS.length}.</p><div class="stamps">${STAMPS.map(([id,k,t,d])=>{const on=ST.got.includes(id);return`<div class="stamp ${on?"on":""}"><span class="seal">${k}</span><b>${t}</b><small>${d}</small></div>`;}).join("")}</div>
+  <h3 class="bh">Бестиарий</h3><p class="lead">Ёкаи, которых вы встретили в доме: ${ST.seen.length} из ${BESTIARY.length}.</p><div class="bestiary">${best}</div>`;}
 $("albumBtn").addEventListener("click",()=>{audioInit();openAlbum();});
 $("albumClose").addEventListener("click",()=>{$("album").hidden=true;});
 
@@ -1202,7 +1270,7 @@ const G={id:null,def:null,st:{},raf:0,cv:$("gcv"),ctx:null,W:0,H:0,s:1,score:0,l
 G.ctx=G.cv.getContext("2d");
 const hearts=()=>G.lives==null?"":" · "+"♥".repeat(Math.max(0,G.lives))+"♡".repeat(Math.max(0,(G.def.lives||0)-Math.max(0,G.lives)));
 function tone(freq,d=.35,type="sine",vol=.08){if(!snd.on||!snd.ctx)return;const c=snd.ctx,t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.02);}
-function scare(t,kind="yurei"){G.scareT=t;G.scareKind=kind;if(!snd.on||!snd.ctx)return;const c=snd.ctx,n=c.currentTime,b=c.createBuffer(1,c.sampleRate*.6,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);const s=c.createBufferSource();s.buffer=b;const f=c.createBiquadFilter();f.type="lowpass";f.frequency.value=900;const g=c.createGain();g.gain.value=.35;s.connect(f);f.connect(g);g.connect(c.destination);s.start(n);tone(70,.6,"sawtooth",.09);}
+function scare(t,kind="yurei"){G.scareT=t;G.scareKind=kind;G.scareImg=pick(["m_onryo_face","m_bettari_open","m_okubi","m_peek"]);if(!snd.on||!snd.ctx)return;const c=snd.ctx,n=c.currentTime,b=c.createBuffer(1,c.sampleRate*.6,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);const s=c.createBufferSource();s.buffer=b;const f=c.createBiquadFilter();f.type="lowpass";f.frequency.value=900;const g=c.createGain();g.gain.value=.35;s.connect(f);f.connect(g);g.connect(c.destination);s.start(n);tone(70,.6,"sawtooth",.09);}
 function hurt(t,kind){G.lives--;scare(t,kind);}
 function drawCatG(g,st,f,x,floor,sc,alpha=1){const im=IMG[st];if(!im)return;g.save();g.globalAlpha=alpha;g.drawImage(im,f*384,0,384,416,x-96*sc,floor-195*sc,192*sc,208*sc);g.restore();}
 function textC(g,txt,x,y,size,color="#d8d2c3",font){g.save();g.font=`${font||600} ${size}px ${getComputedStyle(document.body).fontFamily}`;g.textAlign="center";g.textBaseline="middle";g.fillStyle=color;g.fillText(txt,x,y);g.restore();}
@@ -1233,6 +1301,7 @@ function drawScare(g,t){
   else if(G.scareKind==="mouth"){const r=Math.min(W,H)*.34;g.globalAlpha=al;g.fillStyle="#dcd9d2";g.beginPath();g.ellipse(W/2,H*.48,r*.72,r,0,0,Math.PI*2);g.fill();g.fillStyle="#0b0a0a";g.beginPath();g.ellipse(W/2,H*.3,r*.85,r*.55,0,Math.PI,0);g.fill();
     g.fillStyle="#140c0c";for(const sd of[-1,1]){g.beginPath();g.ellipse(W/2+sd*r*.28,H*.42,r*.12,r*.07,0,0,Math.PI*2);g.fill();}
     g.strokeStyle="#8f1414";g.lineWidth=r*.06;g.beginPath();g.moveTo(W/2-r*.68,H*.5);g.quadraticCurveTo(W/2,H*.68,W/2+r*.68,H*.5);g.stroke();g.lineWidth=r*.015;for(let i=-5;i<=5;i++){g.beginPath();g.moveTo(W/2+i*r*.1,H*.555+Math.abs(i)*-r*.012);g.lineTo(W/2+i*r*.1,H*.595-Math.abs(i)*r*.02);g.stroke();}}
+  else if(MIMG[G.scareImg]){const im=MIMG[G.scareImg],r=im.width/im.height,sz=Math.max(W/r,H)*(.85+.35*a);g.globalAlpha=al;g.drawImage(im,W/2-sz*r/2+(Math.random()-.5)*8,H/2-sz/2,sz*r,sz);}
   else drawYurei(g,W/2,H*.02,H*1.6,al,true,true);
   g.restore();
 }
