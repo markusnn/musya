@@ -154,6 +154,25 @@ button:focus-visible{outline:2px solid var(--sakura);outline-offset:2px;border-r
 .loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--ink);z-index:50;font-family:var(--display);font-size:22px;color:var(--fog);transition:opacity .5s}
 @media (max-width:380px){.needs{gap:6px}.need label{font-size:10px}.tabs button span{font-size:9.5px}.brand i{display:none}}
 @media (prefers-reduced-motion:reduce){.need.low .bar i{animation:none}}
+.seg.scroll{overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap}.seg.scroll::-webkit-scrollbar{display:none}.seg button{white-space:nowrap;flex:none}
+.quest{position:absolute;left:10px;bottom:10px;max-width:calc(100% - 20px);display:flex;gap:8px;align-items:flex-start;text-align:left;background:rgba(10,13,12,.82);border:1px solid rgba(238,163,187,.35);border-radius:12px;padding:7px 11px;font-size:12px;line-height:1.35;color:var(--paper);box-shadow:0 4px 18px rgba(0,0,0,.4);z-index:2}
+.quest b{font-family:var(--display);font-size:14px;font-weight:700;color:var(--sakura)}.quest .qi{font-size:16px;line-height:1.2}
+.scene{position:absolute;left:0;right:0;top:0;z-index:4;padding:14px 16px 46px;background:linear-gradient(rgba(6,8,7,.96),rgba(6,8,7,.9) 68%,rgba(6,8,7,0));cursor:pointer}
+body.cine .tray,body.cine .tabs{display:none}
+.scene .sc-head{font-family:var(--display);font-size:15px;font-weight:700;color:var(--sakura);letter-spacing:.02em;margin-bottom:6px}
+.scene .sc-text{font-family:var(--display);font-size:18px;line-height:1.45;color:#ece5d4;max-width:34em;text-wrap:pretty}
+.scene .sc-text.in{animation:scin .9s ease}@keyframes scin{from{opacity:.2;transform:translateY(6px)}to{opacity:1;transform:none}}
+.scene .sc-row{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:10px}.scene .sc-row img{height:56px;margin-right:auto;filter:drop-shadow(0 0 12px rgba(238,163,187,.45))}
+.scene .btn{flex:none;padding:8px 18px}
+.stage.cine::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5%;background:#000;z-index:3;pointer-events:none}
+.stage.cine .room-title,.stage.cine .hint{opacity:0;transition:opacity .6s}
+.qch{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:var(--ink-2)}.qch.lock{opacity:.45}.qch.cur{border-color:rgba(238,163,187,.55)}
+.qch .qh{display:flex;gap:10px;align-items:center}.qch .qh img{height:44px}.qch b{font-family:var(--display);font-size:19px;display:block}
+.qtasks{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:5px;font-size:14px}.qtasks li.ok{color:var(--muted);text-decoration:line-through}.qtasks em{font-style:normal;color:var(--sakura)}
+.coll{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;margin-bottom:12px}.ci{display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;padding:6px 4px;border-radius:10px;background:#0a0d0c;border:1px solid var(--line)}
+.ci img{height:52px;max-width:100%;object-fit:contain;filter:brightness(0) opacity(.35)}.ci.on img{filter:none}.ci small{font-size:10px;line-height:1.2;color:var(--muted)}.ci.on small{color:var(--paper)}
+.story-body h4.ch{font-family:var(--display);font-size:17px;margin:12px 0 6px;color:var(--sakura)}
+.story-body .jbtn{margin:0 0 14px}
 </style>
 
 <div id="app">
@@ -171,6 +190,8 @@ button:focus-visible{outline:2px solid var(--sakura);outline-offset:2px;border-r
     <div class="room-title" id="roomTitle"></div>
     <div class="toast" id="toast"></div>
     <div class="hint" id="hint"></div>
+    <button class="quest" id="quest" hidden></button>
+    <div class="scene" id="scene" hidden><div class="sc-head" id="scHead"></div><div class="sc-text" id="scText"></div><div class="sc-row"><img id="scImg" alt="" hidden><button class="btn primary" id="scNext">Дальше</button></div></div>
   </main>
   <section class="tray" id="tray"></section>
   <nav class="tabs" id="tabs" role="tablist"></nav>
@@ -180,6 +201,7 @@ button:focus-visible{outline:2px solid var(--sakura);outline-offset:2px;border-r
   <div class="field" id="gField"><canvas id="gcv"></canvas><div class="result" id="gResult" hidden></div></div>
 </div>
 <div class="story" id="story" hidden><header><h2 id="storyTitle">Кайданы на ночь</h2><button class="iconbtn" id="storyClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="storyBody"></div></div>
+<div class="story" id="journal" hidden><header><h2>Дневник Муси</h2><button class="iconbtn" id="journalClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="journalBody"></div></div>
 <div class="story" id="album" hidden><header><h2>Альбом штампов</h2><button class="iconbtn" id="albumClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="albumBody"></div></div>
 <div class="loading" id="loading">Муся просыпается…</div>
 
@@ -300,7 +322,7 @@ const S={
 for(const id of ["d_bonsai","d_furin_glass","d_okeya"])S.owned.add(id);
 // Time away: needs fade a little, never below 15 on return.
 if(saved.t){const mins=clamp((Date.now()-saved.t)/60000,0,360);for(const k of ["food","clean","joy"])S.needs[k]=Math.max(Math.min(S.needs[k],15),S.needs[k]-mins*0.5);S.needs.energy=clamp(S.needs.energy+mins*0.8,0,100);}
-function save(){store.set({needs:S.needs,owned:[...S.owned],wear:S.wear,best:S.best,earned:S.earned,decor:S.decor,dpos:S.dpos,lightsOff:S.lightsOff,weather:S.weather,scary:S.scary,stats:typeof ST!=="undefined"?ST:saved.stats,t:Date.now()});}
+function save(){store.set({needs:S.needs,owned:[...S.owned],wear:S.wear,best:S.best,earned:S.earned,decor:S.decor,dpos:S.dpos,lightsOff:S.lightsOff,weather:S.weather,scary:S.scary,stats:typeof ST!=="undefined"?ST:saved.stats,placed:S.placed,story:typeof QS!=="undefined"?{ch:QS.ch,prog:QS.prog,started:QS.started,done:QS.done}:saved.story,t:Date.now()});}
 setInterval(save,5000);
 addEventListener("pagehide",save);
 
@@ -312,7 +334,7 @@ const pointer={x:0,y:0,known:false,moved:0};
 
 // ───────────────────────── Pet behaviour ─────────────────────────
 function start(a,auto=false){
-  const t=now();
+  const t=now();if(!auto)try{qev("act",a);}catch(e){}
   pet.action=a;pet.start=t;pet.auto=auto;pet.home=pet.x;pet.walk=0;pet.napUntil=0;pet.variant=Math.floor(Math.random()*1000);
   pet.idle.kind="none";pet.idle.next=t+1.2;
   if(!auto)pet.lastInput=t;
@@ -715,8 +737,10 @@ function render(t,dt){
   // props behind/around the cat
   const e=t-pet.start;
   if(pet.action==="cucumber"){const al=clamp(Math.min(e/.6,(7.4-e)/.5),0,1);if(al>0){ctx.save();ctx.globalAlpha=al;const [cx,]=cellToStage(192,0);ctx.translate(cx,view.floor-10*s);ctx.rotate(-Math.PI/4.4);drawEmoji(ctx,"🥒",0,0,34*s);ctx.restore();}}
+  drawSceneChars(t,false);
   renderCat(p,t);
   drawThings(t,dt,true);
+  drawSceneChars(t,true);
   if(!draw3D(t,true))drawLayers(t,true);
   drawRain(t,true);
   drawAmbient(t);
@@ -761,7 +785,7 @@ function update(t,dt){
   if(pet.action==="sleep"&&pet.napUntil&&t>pet.napUntil)start("stretch",true);
   if(pet.action==="sleep"&&S.room==="bedroom"&&!S.lampOff&&!pet.napUntil&&e>1)start("stretch",true);
   // she lives her own life when left alone
-  if(pet.action==="idle"&&t>nextAuto&&!drag.active){
+  if(pet.action==="idle"&&t>nextAuto&&!drag.active&&!scene.on){
     let a;if(n.energy<28)a="sleep";else if(n.joy<40||n.food<30)a="beg";else if(n.clean<30)a="groom";
     else a=pick(["groom","stretch","knead","hide","meow","music","peek","yarn","butterfly","box","beg","sleep","petals","firefly"]);
     start(a,true);if(a==="sleep")pet.napUntil=t+rand(30,60);
@@ -779,14 +803,16 @@ function update(t,dt){
   for(const d of pet.drops){d.y+=d.vy*dt;d.vy+=500*dt;d.a-=dt*.8;}pet.drops=pet.drops.filter(d=>d.a>0&&d.y<view.H);
   if(pet.rinsing){for(const f of pet.foam)f.a-=dt*.9;pet.foam=pet.foam.filter(f=>f.a>0);if(!pet.foam.length)pet.rinsing=false;}
   updateSakura(t,dt);updateWeather(t,dt);updateSpook(t);
+  if(scene.on){const e=t-scene.t0;cam.tx=Math.sin(e*.22)*1.15;cam.ty=.35+.2*Math.sin(e*.17);cam.last=t;}
+  updateVisit(t);
   if(t-cam.last>3){cam.tilt=false;cam.tx=.38*Math.sin(t*.13)+clamp((pet.x/view.W-.5)*.9,-.5,.5);cam.ty=.2*Math.sin(t*.09+1);}
   cam.x+=(cam.tx-cam.x)*Math.min(1,dt*2.2);cam.y+=(cam.ty-cam.y)*Math.min(1,dt*2.2);
 }
 function frame(){
+  requestAnimationFrame(frame);   // keep the loop alive even if one frame throws
   const t=now(),dt=Math.min(.05,t-lastT);lastT=t;
-  update(t,dt);render(t,dt);
+  try{update(t,dt);render(t,dt);}catch(e){console.error(e);}
   if(t-lastHud>.25){lastHud=t;hudTick();}
-  requestAnimationFrame(frame);
 }
 document.addEventListener("visibilitychange",()=>{if(!document.hidden){const t=now(),gap=t-lastT;if(gap>.5){pet.start+=gap;sakura.next+=gap;nextAuto+=gap;}lastT=t;}});
 
@@ -799,7 +825,7 @@ let strokeDist=0,strokeT=0;
 function stroke(x,y,px,py){const t=now(),d=Math.hypot(x-px,y-py);if(t-strokeT>.8)strokeDist=0;strokeT=t;strokeDist+=d;
   if(strokeDist>24*view.s){strokeDist=0;if(["idle","purr","sulk","music","beg","sleep"].includes(pet.action)){if(pet.action==="purr")pet.start=Math.max(pet.start,t-5);else if(pet.action==="sleep"&&S.lampOff){}else start("purr");}}}
 cv.addEventListener("pointerdown",ev=>{
-  audioInit();const [x,y]=local(ev);cv.setPointerCapture(ev.pointerId);
+  audioInit();const [x,y]=local(ev);if(visitHit(x,y))return;cv.setPointerCapture(ev.pointerId);
   pointer.x=x;pointer.y=y;pointer.known=true;pet.gazeUntil=now()+2.8;pet.lastInput=now();
   drag.active=true;drag.sx=x;drag.sy=y;drag.px=x;drag.py=y;drag.dist=0;drag.startX=pet.x;
   if(S.room==="onsen"&&S.tool==="soap"&&hitCat(x,y)){drag.mode="soap";if(pet.action!=="wash")start("wash");}
@@ -865,11 +891,12 @@ function ui(){
   $("roomTitle").innerHTML=`<b>${r.jp}</b><span>${r.ru}</span>`;const hn=$("hint");if(hn.textContent!==r.hint){hn.textContent=r.hint;hn.classList.remove("off");clearTimeout(hintTimer);hintTimer=setTimeout(()=>hn.classList.add("off"),7000);}
   for(const b of $("tabs").children)b.setAttribute("aria-selected",b.dataset.room===S.room);
   const tray=$("tray");
-  const modeSeg=DECOR[S.room]?`<div class="seg"><button data-mode="play" aria-pressed="${S.trayMode[S.room]!=="decor"}">${{engawa:"Занятия",kitchen:"Еда",onsen:"Мытьё",bedroom:"Сон",wardrobe:"Наряды"}[S.room]}</button><button data-mode="decor" aria-pressed="${S.trayMode[S.room]==="decor"}">🛋 Обстановка</button></div>`:"";
+  const tm=S.trayMode[S.room]||"play",modeSeg=`<div class="seg"><button data-mode="play" aria-pressed="${tm==="play"}">${{engawa:"Занятия",kitchen:"Еда",onsen:"Мытьё",bedroom:"Сон",wardrobe:"Наряды",entrance:"У храма",courtyard:"У пруда",games:"Игры"}[S.room]}</button>${DECOR[S.room]?`<button data-mode="decor" aria-pressed="${tm==="decor"}">🛋 Обстановка</button>`:""}<button data-mode="items" aria-pressed="${tm==="items"}">🧺 Вещи</button></div>`;
+  if(tm==="items"){tray.innerHTML=modeSeg+itemsTray();return;}
   if(DECOR[S.room]&&S.trayMode[S.room]==="decor"){const slots=DECOR[S.room],cur=S.dslot&&slots.find(q=>q.k===S.dslot)||slots[0];S.dslot=cur.k;const sel=S.decor[S.room]||{};
     tray.innerHTML=modeSeg+`<div class="seg">${slots.map(q=>`<button data-dslot="${q.k}" aria-pressed="${q.k===cur.k}">${q.n}</button>`).join("")}</div><div class="items">${cur.items.map(it=>{const own=S.owned.has(it.id),on=sel[cur.k]===it.id;return`<button class="item ${on?"on":""}" data-decor="${it.id}"><span class="ico"><img src="assets/decor/${it.id}.webp" alt="" style="max-height:30px;max-width:60px"></span><span class="nm">${it.n}</span><span class="pr">${on?"стоит":own?"куплено":`<span class="mon"></span>${it.p}`}</span></button>`;}).join("")}</div>`;return;}
   if(S.room==="entrance"||S.room==="courtyard"){const A=S.room==="entrance"?[["wash_paws","💧","Омыть лапки"],["pray","🙏","Помолиться"],["omikuji","📜","Омикудзи"],["lantern","🏮",lanternOn?"Погасить фонарь":"Зажечь фонарь"]]:[["koi","🐟","Покормить карпов"],["pebble","🪨","Бросить камешек"],["meditate","🍃","Медитация"]];
-    tray.innerHTML=`<div class="items">${A.map(([k,i,n])=>`<button class="item wide" data-place="${k}"><span class="ico">${i}</span><span class="nm">${n}</span></button>`).join("")}${PLAY.slice(0,6).map(p=>`<button class="item" data-act="${p.a}"><span class="ico">${p.i}</span><span class="nm">${p.n}</span></button>`).join("")}</div>`;return;}
+    tray.innerHTML=modeSeg+`<div class="items">${A.map(([k,i,n])=>`<button class="item wide" data-place="${k}"><span class="ico">${i}</span><span class="nm">${n}</span></button>`).join("")}${PLAY.slice(0,6).map(p=>`<button class="item" data-act="${p.a}"><span class="ico">${p.i}</span><span class="nm">${p.n}</span></button>`).join("")}</div>`;return;}
   if(S.room==="engawa"){tray.innerHTML=modeSeg+`<div class="items">${PLAY.map(p=>`<button class="item" data-act="${p.a}"><span class="ico">${p.i}</span><span class="nm">${p.n}</span></button>`).join("")}</div>`;}
   else if(S.room==="kitchen"){tray.innerHTML=modeSeg+`<div class="items">${FOODS.map(f=>`<button class="item" data-food="${f.id}"><span class="ico">${f.i}</span><span class="nm">${f.n}</span><span class="pr"><span class="mon"></span>${f.p}</span></button>`).join("")}</div>`;}
   else if(S.room==="onsen"){tray.innerHTML=modeSeg+`<div class="items"><button class="item wide ${S.tool==="soap"?"on":""}" data-tool="soap"><span class="ico">🧼</span><span class="nm">Мыло — три Мусю</span></button><button class="item wide" data-tool="rinse"><span class="ico">🪣</span><span class="nm">Смыть из ковша</span></button><button class="item wide" data-tool="towel"><span class="ico">🧺</span><span class="nm">Вытереть полотенцем</span></button></div>`;}
@@ -880,20 +907,22 @@ function ui(){
     tray.querySelectorAll("canvas[data-prev]").forEach(c=>previewWear(c,c.dataset.prev));
   }
   else{const card=g=>`<button class="gcard" data-game="${g.id}"><b>${g.icon} ${g.n}</b><span>${g.tag}</span><em>Рекорд: ${S.best[g.id]||0}</em></button>`;
-    tray.innerHTML=`<div class="glist"><h4>Страшные легенды Японии</h4><div class="games">${GAMES.filter(g=>g.scary).map(card).join("")}</div><h4>Спокойные</h4><div class="games">${GAMES.filter(g=>!g.scary).map(card).join("")}</div></div>`;}
+    tray.innerHTML=modeSeg+`<div class="glist"><h4>Страшные легенды Японии</h4><div class="games">${GAMES.filter(g=>g.scary).map(card).join("")}</div><h4>Спокойные</h4><div class="games">${GAMES.filter(g=>!g.scary).map(card).join("")}</div></div>`;}
 }
 function previewWear(c,id){const g=c.getContext("2d");const slot=Object.keys(WEAR).find(k=>WEAR[k].some(w=>w.id===id));const keep={...S.wear};S.wear={head:null,eyes:null,neck:null};S.wear[slot]=id;
   const k=1.05,an=ANCH.rest[0];g.save();g.translate(44-an[0]*k,(slot==="head"?30:slot==="eyes"?-2:-44)-an[1]*k+ (slot==="head"?0:0));drawWear(g,"rest",0,k);g.restore();S.wear=keep;}
 $("tray").addEventListener("click",ev=>{
   const b=ev.target.closest("button");if(!b)return;audioInit();
+  if(b.dataset.item){putItem(b.dataset.item);return;}
+  if(b.dataset.icat){S.icat=b.dataset.icat;ui();return;}
   if(b.dataset.act){const a=b.dataset.act;if(a==="sleep"){start("sleep");pet.napUntil=now()+40;}else start(a);return;}
-  if(b.dataset.food){const f=FOODS.find(q=>q.id===b.dataset.food);if(S.needs.food>=95){start("refuse");return;}spend(f.p);start("treat");pet.food=f.i;award("food1");stat("foods",f.id);setTimeout(()=>sfx("eat"),900);S.needs.food=clamp(S.needs.food+f.food,0,100);S.needs.joy=clamp(S.needs.joy+f.joy,0,100);return;}
+  if(b.dataset.food){const f=FOODS.find(q=>q.id===b.dataset.food);if(S.needs.food>=95){start("refuse");return;}spend(f.p);start("treat");pet.food=f.i;award("food1");qev("food",f.id);stat("foods",f.id);setTimeout(()=>sfx("eat"),900);S.needs.food=clamp(S.needs.food+f.food,0,100);S.needs.joy=clamp(S.needs.joy+f.joy,0,100);return;}
   if(b.dataset.tool){const t=b.dataset.tool;
     if(t==="soap"){S.tool=S.tool==="soap"?null:"soap";ui();if(S.tool)toast("Три Мусю пальцем");return;}
     if(t==="rinse"){sfx("splash");for(let i=0;i<60;i++){const [x,y]=cellToStage(rand(40,160),240);pet.drops.push({x,y:y-rand(0,60),vx:rand(-20,20),vy:rand(80,200),a:1});}
-      const gain=Math.min(70,pet.foam.length*1.4);if(pet.foam.length){S.needs.clean=clamp(S.needs.clean+gain,0,100);pet.rinsing=true;start("washed");award("bath");}else toast("Сначала намыль Мусю");return;}
-    if(t==="towel"){if(pet.foam.length){toast("Сначала смой пену");return;}S.needs.clean=clamp(S.needs.clean+6,0,100);S.needs.joy=clamp(S.needs.joy+4,0,100);start("purr");return;}}
-  if(b.dataset.lamp){S.lampOff=!S.lampOff;if(S.lampOff){start("sleep");pet.napUntil=0;award("sleep");}else if(pet.action==="sleep")start("stretch");paint();ui();return;}
+      const gain=Math.min(70,pet.foam.length*1.4);if(pet.foam.length){S.needs.clean=clamp(S.needs.clean+gain,0,100);pet.rinsing=true;start("washed");award("bath");qev("bath");}else toast("Сначала намыль Мусю");return;}
+    if(t==="towel"){if(pet.foam.length){toast("Сначала смой пену");return;}S.needs.clean=clamp(S.needs.clean+6,0,100);S.needs.joy=clamp(S.needs.joy+4,0,100);start("purr");qev("towel");return;}}
+  if(b.dataset.lamp){S.lampOff=!S.lampOff;if(S.lampOff){start("sleep");pet.napUntil=0;award("sleep");}else if(pet.action==="sleep")start("stretch");paint();ui();qev("lamp",S.lampOff);return;}
   if(b.dataset.slot){S.wearTab=b.dataset.slot;ui();return;}
   if(b.dataset.wear){const id=b.dataset.wear,slot=S.wearTab,w=WEAR[slot].find(q=>q.id===id);
     if(!S.owned.has(id)){S.owned.add(id);spend(w.p);}
@@ -951,12 +980,14 @@ function drawSprite(g,id,x,y,rot=0,pivot=null,alpha=1,sc=1,noTint=false){
   const im=DIMG[id],m=DMETA[id];if(!im||!m)return;const k=BGM.k,w=m[0]*k*sc,h=m[1]*k*sc;
   const x0=m[2]==="l"?x:x-m[0]*sc/2,y0=m[2]==="t"?y:m[2]==="c"||m[2]==="l"?y-m[1]*sc/2:y-m[1]*sc;const [sx,sy]=imgToStage(x0,y0);
   const tint=noTint?null:DTINT[bgName()];
-  tmpCv.width=Math.ceil(w*view.dpr)+2;tmpCv.height=Math.ceil(h*view.dpr)+2;tmpCx.setTransform(view.dpr,0,0,view.dpr,0,0);
-  tmpCx.drawImage(im,0,0,w,h);if(tint){tmpCx.globalCompositeOperation="source-atop";tmpCx.fillStyle=tint;tmpCx.fillRect(0,0,w,h);tmpCx.globalCompositeOperation="source-over";}
+  const cw=Math.ceil(w*view.dpr)+2,chh=Math.ceil(h*view.dpr)+2,key=id+"|"+tint+"|"+cw+"x"+chh;let sc2=SPRC.get(key);
+  if(!sc2){if(SPRC.size>320)SPRC.clear();sc2=document.createElement("canvas");sc2.width=cw;sc2.height=chh;const c2=sc2.getContext("2d");c2.setTransform(view.dpr,0,0,view.dpr,0,0);
+    c2.drawImage(im,0,0,w,h);if(tint){c2.globalCompositeOperation="source-atop";c2.fillStyle=tint;c2.fillRect(0,0,w,h);}SPRC.set(key,sc2);}
   g.save();g.globalAlpha=alpha;
   if(rot){const [px,py]=pivot?imgToStage(pivot[0],pivot[1]):[sx+w/2,sy];g.translate(px,py);g.rotate(rot);g.translate(-px,-py);}
-  g.drawImage(tmpCv,0,0,tmpCv.width,tmpCv.height,sx,sy,tmpCv.width/view.dpr,tmpCv.height/view.dpr);g.restore();
+  g.drawImage(sc2,0,0,cw,chh,sx,sy,cw/view.dpr,chh/view.dpr);g.restore();
 }
+const SPRC=new Map();
 let nextTinkle=now()+8,shishiClack=0;
 const DECOR_D={d_furin_glass:.92,d_furin_blue:.92,d_furin_iron:.92,d_chochin:.92,d_koi_pole:.42,d_tsukubai:.42,d_sakura_tree:.42,d_teru:.5,d_hoshigaki:.5,d_kingyo:.5,d_ume:.5,d_scroll_moon:.5,d_scroll_koi:.5,d_scroll_neko:.5,d_scroll_mount:.5,d_yuzu:.55,d_petals:.55,d_sake:.55};
 const PROPS=[{"id":"p_eng_toro","room":"engawa","n":"Каменный фонарь","x":1180.0,"y":1090,"w":130,"h":222,"d":0.42,"v":false},{"id":"p_eng_stone0","room":"engawa","n":"Садовый камень","x":520.0,"y":1117,"w":126,"h":38,"d":0.42,"v":false},{"id":"p_eng_stone1","room":"engawa","n":"Садовый камень","x":760.0,"y":1123,"w":126,"h":38,"d":0.42,"v":false},{"id":"p_eng_stone2","room":"engawa","n":"Садовый камень","x":1000.0,"y":1117,"w":126,"h":38,"d":0.42,"v":false},{"id":"p_kit_bowl0","room":"kitchen","n":"Пиала","x":1010.0,"y":475,"w":80,"h":44,"d":0.5,"v":false},{"id":"p_kit_bowl1","room":"kitchen","n":"Пиала","x":1100.0,"y":475,"w":100,"h":50,"d":0.5,"v":false},{"id":"p_kit_bowl2","room":"kitchen","n":"Пиала","x":1200.0,"y":475,"w":70,"h":60,"d":0.5,"v":false},{"id":"p_kit_bowl3","room":"kitchen","n":"Пиала","x":1300.0,"y":475,"w":106,"h":46,"d":0.5,"v":false},{"id":"p_kit_bowl4","room":"kitchen","n":"Пиала","x":1420.0,"y":475,"w":80,"h":70,"d":0.5,"v":false},{"id":"p_kit_bowl5","room":"kitchen","n":"Пиала","x":1530.0,"y":475,"w":98,"h":52,"d":0.5,"v":false},{"id":"p_kit_pot0","room":"kitchen","n":"Горшок","x":1030.0,"y":705,"w":120,"h":70,"d":0.5,"v":false},{"id":"p_kit_pot1","room":"kitchen","n":"Горшок","x":1180.0,"y":705,"w":90,"h":54,"d":0.5,"v":false},{"id":"p_kit_pot2","room":"kitchen","n":"Горшок","x":1330.0,"y":705,"w":130,"h":64,"d":0.5,"v":false},{"id":"p_kit_pot3","room":"kitchen","n":"Горшок","x":1500.0,"y":705,"w":100,"h":80,"d":0.5,"v":false},{"id":"p_kit_lantern","room":"kitchen","n":"Бумажный фонарь","x":1560.0,"y":396,"w":134,"h":396,"d":0.5,"v":false},{"id":"p_kit_noren","room":"kitchen","n":"Занавеска норэн","x":121.0,"y":425,"w":192,"h":425,"d":0.5,"v":false},{"id":"p_kit_kamado","room":"kitchen","n":"Печь камадо","x":1470.0,"y":1155,"w":470,"h":400,"d":0.8,"v":false},{"id":"p_ons_stone0","room":"onsen","n":"Плоский камень","x":900.0,"y":1381,"w":390,"h":102,"d":0.82,"v":false},{"id":"p_ons_stone1","room":"onsen","n":"Плоский камень","x":520.0,"y":1345,"w":270,"h":90,"d":0.82,"v":false},{"id":"p_ons_stone2","room":"onsen","n":"Плоский камень","x":1300.0,"y":1359,"w":310,"h":98,"d":0.82,"v":false},{"id":"p_ons_stone3","room":"onsen","n":"Плоский камень","x":160.0,"y":1305,"w":230,"h":110,"d":0.82,"v":false},{"id":"p_ons_stone4","room":"onsen","n":"Плоский камень","x":1660.0,"y":1319,"w":250,"h":118,"d":0.82,"v":false},{"id":"p_bed_andon","room":"bedroom","n":"Андон","x":330.0,"y":1305,"w":150,"h":260,"d":0.8,"v":true},{"id":"p_bed_ikebana","room":"bedroom","n":"Икебана в нише","x":232.5,"y":1065,"w":373,"h":467,"d":0.5,"v":true},{"id":"p_gam_toro0","room":"games","n":"Каменный фонарь","x":360.0,"y":1255,"w":160,"h":275,"d":0.8,"v":false},{"id":"p_gam_toro1","room":"games","n":"Каменный фонарь","x":1440.0,"y":1255,"w":160,"h":275,"d":0.8,"v":false},{"id":"p_gam_stone0","room":"games","n":"Камень дорожки","x":620.0,"y":1321,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_gam_stone1","room":"games","n":"Камень дорожки","x":760.0,"y":1318,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_gam_stone2","room":"games","n":"Камень дорожки","x":860.0,"y":1315,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_gam_stone3","room":"games","n":"Камень дорожки","x":1000.0,"y":1312,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_gam_stone4","room":"games","n":"Камень дорожки","x":1100.0,"y":1309,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_crt_rock0","room":"courtyard","n":"Валун в заводи","x":1130.0,"y":985,"w":290,"h":110,"d":0.55,"v":false},{"id":"p_crt_rock1","room":"courtyard","n":"Валун в заводи","x":1320.0,"y":1005,"w":230,"h":90,"d":0.55,"v":false},{"id":"p_crt_rock2","room":"courtyard","n":"Валун в заводи","x":1560.0,"y":1004,"w":330,"h":118,"d":0.55,"v":false},{"id":"p_crt_rock3","room":"courtyard","n":"Валун в заводи","x":1000.0,"y":1035,"w":190,"h":70,"d":0.55,"v":false},{"id":"p_crt_stone0","room":"courtyard","n":"Плоский камень","x":900.0,"y":1393,"w":530,"h":126,"d":0.8,"v":false},{"id":"p_crt_stone1","room":"courtyard","n":"Плоский камень","x":520.0,"y":1345,"w":310,"h":90,"d":0.8,"v":false},{"id":"p_crt_stone2","room":"courtyard","n":"Плоский камень","x":1300.0,"y":1359,"w":350,"h":98,"d":0.8,"v":false},{"id":"p_crt_stone3","room":"courtyard","n":"Плоский камень","x":160.0,"y":1325,"w":270,"h":110,"d":0.8,"v":false},{"id":"p_crt_stone4","room":"courtyard","n":"Плоский камень","x":1657.5,"y":1327,"w":285,"h":114,"d":0.8,"v":false},{"id":"p_ent_toro","room":"entrance","n":"Каменный фонарь","x":330.0,"y":1264,"w":322,"h":560,"d":0.85,"v":false},{"id":"p_ent_pillar","room":"entrance","n":"Каменный столб","x":1180.0,"y":1047,"w":78,"h":282,"d":0.7,"v":false}];
@@ -964,7 +995,8 @@ const vpos={};let dragId=null,kitLampOff=false;
 function propAt(id,ox,oy){const d=vpos[id]||S.dpos[id]||[0,0];return[ox+d[0],oy+d[1]];}
 function thingScale(it){const m=DMETA[it.imgId||it.id];if(!m||m[2]!=="b")return 1;const d=(vpos[it.id]||S.dpos[it.id]||[0,0])[1];return clamp(1+d*.0011,.55,1.6);}
 function roomThings(){const out=[];const room=DECOR[S.room];if(room){const sel=S.decor[S.room]||{};for(const slot of room){const it=slot.items.find(i=>i.id===sel[slot.k]);if(it)out.push(Object.assign({slot},it));}}
-  for(const p of PROPS)if(p.room===S.room)out.push({id:p.id,imgId:p.v?p.id+(S.lampOff?"_off":"_on"):p.id,x:p.x,y:p.y,prop:true,d:p.d,n:p.n});return out;}
+  for(const p of PROPS)if(p.room===S.room)out.push({id:p.id,imgId:p.v?p.id+(S.lampOff?"_off":"_on"):p.id,x:p.x,y:p.y,prop:true,d:p.d,n:p.n});
+  if(S.placed)for(const id in S.placed){const q=S.placed[id];if(q.r===S.room&&DMETA[id])out.push({id,x:q.x,y:q.y,item:true,sway:DMETA[id][2]==="t"?.45:0});}return out;}
 function catLineY(){const [,oy]=camOff(CAT_D);return(view.floor+oy-BGM.dy)/BGM.k;}
 function isFront(it){const m=DMETA[it.imgId||it.id];return !!m&&m[2]==="b"&&it.y>catLineY()+6;}
 function drawThings(t,dt,front){
@@ -1045,7 +1077,7 @@ function ev_dur_ms(k){return(({bettari:5.2,rokuro:4.6,onryo:5,peek:4.2,okubi:6.5
 function knock(){if(!snd.on||!snd.ctx)return;[0,.28,.56].forEach(d=>setTimeout(()=>{tone(90,.18,"triangle",.14);tone(60,.22,"sine",.12);},d*1000));}
 function updateSpook(t){
   if(spook.ev&&t-spook.ev.t>spook.ev.dur)spook.ev=null;
-  if(!S.scary||spook.ev||t<spook.next||!document.getElementById("game").hidden||!document.getElementById("story").hidden)return;
+  if(!S.scary||spook.ev||scene.on||visit.on||t<spook.next||!document.getElementById("game").hidden||!document.getElementById("story").hidden)return;
   spook.next=t+rand(55,140)*(weather.on?.6:1);
   let kind=pick(SPOOKS[S.room]||["flicker"]);if(Math.random()<.12)kind="face";if(kind==="shadow"&&visR()<1560)kind="eyes";const r=Math.random;
   spook.ev={kind,t,dur:{knock:2,flicker:1.2,bettari:5.2,rokuro:4.6,onryo:5,peek:4.2,okubi:6.5,face:1.1}[kind]||4.2,x:r(),y:r(),seed:r()*100};
@@ -1079,7 +1111,7 @@ function drawSpook(t,front){
 
 
 // ───────────────────────── Yōkai (painted monsters for the scary happenings) ─────────────────────────
-const MON={"m_bettari":[460,960],"m_bettari_open":[460,960],"m_rokuro":[260,300],"m_onryo":[320,860],"m_peek":[420,300],"m_okubi":[760,660],"m_onryo_face":[800,800]},MIMG={};
+const MON={"m_bettari":[460,960],"m_bettari_open":[460,960],"m_rokuro":[260,300],"m_onryo":[320,860],"m_peek":[420,300],"m_okubi":[760,660],"m_onryo_face":[800,800],"m_warashi":[300,640],"m_warashi_back":[280,620],"m_akaname":[380,440],"m_kappa":[340,480],"m_kitsune":[400,450],"m_obake":[280,440]},MIMG={};
 const BESTIARY=[
  ["bettari","m_bettari_open","Охагуро-бэттари","Женщина в нарядном кимоно без лица — только огромный рот с чернёными зубами. Из «Эхон хякумоногатари», 1841."],
  ["rokuro","m_rokuro","Рокурокуби","Днём обычная женщина, ночью её шея тянется бесконечно, а голова бродит по дому."],
@@ -1088,8 +1120,12 @@ const BESTIARY=[
  ["okubi","m_okubi","Оокуби","Огромная голова, что всплывает в небе и тумане. Нарисована Ториямой Сэкиэном в 1781 году."],
  ["face","m_onryo_face","Лицо в волосах","Когда слишком близко — видно только один глаз."],
  ["yurei","","Юрэй за сёдзи","Тень призрака, что проходит за бумажной стеной."],
- ["obake","","Тётин-обакэ","Старый фонарь, у которого прорезался глаз и язык."],
- ["kitsunebi","","Кицунэ-би","Лисьи огни, уводящие путников с дороги."]
+ ["obake","m_obake","Тётин-обакэ","Старый фонарь, у которого прорезался глаз и язык."],
+ ["kitsunebi","","Кицунэ-би","Лисьи огни, уводящие путников с дороги."],
+ ["warashi","m_warashi","Дзасики-вараси","Дух-ребёнок старых домов. Пока она живёт в доме, дому везёт, а если уходит — дом приходит в упадок. Из преданий префектуры Иватэ."],
+ ["akaname","m_akaname","Аканамэ","«Слизывающий грязь»: по ночам вылизывает купальни в неухоженных домах. Нарисован Ториямой Сэкиэном в 1776 году."],
+ ["kappa","m_kappa","Каппа","Речной дух с блюдцем воды на макушке. Вежлив: поклонишься — поклонится в ответ и прольёт свою силу."],
+ ["kitsune","m_kitsune","Кицунэ","Лиса-оборотень, посланница богини Инари. Когда солнце светит сквозь дождь, говорят: у лис свадьба."]
 ];
 const SEEN_OF={bettari:"bettari",rokuro:"rokuro",onryo:"onryo",peek:"peek",okubi:"okubi",face:"face",shadow:"yurei",shadow_bed:"yurei",torii:"yurei",obake:"obake",kitsunebi:"kitsunebi"};
 function drawMon(id,ix,iy,hImg,d,alpha,anchor="b",rot=0,flipX=false){
@@ -1148,7 +1184,7 @@ const KAIDAN=[
 function openStory(i){
   const st=$("story"),body=$("storyBody");st.hidden=false;$("storyTitle").textContent="Кайданы на ночь";
   if(i==null){body.innerHTML=`<p class="lead">Страшные истории Японии в пересказе. Муся слушает из-под одеяла.</p><div class="slist">${KAIDAN.map((k,j)=>`<button class="scard" data-story-i="${j}"><b>${k.t}</b><span>${k.src}</span></button>`).join("")}</div>`;}
-  else{const k=KAIDAN[i];award("listener");stat("stories",i);body.innerHTML=`<button class="back" data-story-i="-1">← Все истории</button><h3>${k.t}</h3><p class="src">${k.src}</p>${k.p.map(x=>`<p>${x}</p>`).join("")}<button class="btn primary next" data-story-i="${(i+1)%KAIDAN.length}">Следующая история</button>`;body.scrollTop=0;tone(70,1.2,"sawtooth",.04);}
+  else{const k=KAIDAN[i];award("listener");qev("kaidan",i);stat("stories",i);body.innerHTML=`<button class="back" data-story-i="-1">← Все истории</button><h3>${k.t}</h3><p class="src">${k.src}</p>${k.p.map(x=>`<p>${x}</p>`).join("")}<button class="btn primary next" data-story-i="${(i+1)%KAIDAN.length}">Следующая история</button>`;body.scrollTop=0;tone(70,1.2,"sawtooth",.04);}
   if(pet.action!=="sleep")start("hide");
 }
 $("story").addEventListener("click",ev=>{const b=ev.target.closest("[data-story-i]");if(b){const i=+b.dataset.storyI;openStory(i<0?null:i);}if(ev.target.closest("#storyClose")){$("story").hidden=true;start("purr");}});
@@ -1163,7 +1199,9 @@ const STAMPS=[
  ["brave","勇","Храбрая","Переживи страшилку в доме"],["gamer","遊","Игрок","Сыграй в 5 разных мини-игр"],["master","極","Мастер","Сыграй во все мини-игры"],
  ["champ","勝","Чемпион","Набери 10 очков в любой мини-игре"],["hanami","桜","Ханами","Застань сакуропад"],["night","夜","Ночная","Играй ночью, после 22:00"],
  ["joy","喜","Счастье","Доведи радость до 100"],["care","愛","Заботливая","Все потребности выше 80"],["paw","手","Дай пять","Дай лапку 5 раз"],
- ["zoom","走","Тыгыдык","Устрой Мусе тыгыдык"],["cucumber","瓜","Ох уж этот огурец","Напугай Мусю огурцом"],["luck","福","На удачу","Поставь манэки-нэко"]
+ ["zoom","走","Тыгыдык","Устрой Мусе тыгыдык"],["cucumber","瓜","Ох уж этот огурец","Напугай Мусю огурцом"],["luck","福","На удачу","Поставь манэки-нэко"],
+ ["story1","灯","Фонарь зажжён","Пройди пролог истории"],["story","守","Хранительница дома","Пройди всю историю"],["items50","蔵","Кладовая","Собери 50 вещей"],
+ ["tsukumo","妖","Цукумогами","Собери все ожившие вещи"],["items_all","宝","Сокровищница","Собери все вещи до единой"]
 ];
 const ST=Object.assign({got:[],foods:[],wears:[],decors:[],stories:[],games:[],paws:0,seen:[]},saved.stats||{});ST.seen=ST.seen||[];
 function stat(key,val){if(val!==undefined){if(!ST[key].includes(val))ST[key].push(val);}}
@@ -1173,13 +1211,16 @@ function checkStamps(){
   if(ST.foods.length>=8)award("gourmet");if(ST.wears.length>=5)award("fashion");if(ST.decors.length>=10)award("designer");if(S.owned.size>=40)award("collector");
   if(ST.stories.length>=KAIDAN.length)award("bookworm");if(ST.games.length>=5)award("gamer");if(ST.games.length>=GAMES.length)award("master");
   if(ST.paws>=5)award("paw");const n=S.needs;if(n.joy>=99)award("joy");if(n.food>80&&n.clean>80&&n.energy>80&&n.joy>80)award("care");
-  const h=new Date().getHours();if(h>=22||h<5)award("night");if(weather.on)award("rain");if(Object.values(S.decor).some(r=>r&&Object.values(r).includes("d_maneki")))award("luck");
+  const h=new Date().getHours();if(h>=22||h<5)award("night");if(weather.on)award("rain");if(Object.values(S.decor).some(r=>r&&Object.values(r).includes("d_maneki"))||Object.keys(S.placed||{}).some(id=>id.startsWith("mn_")))award("luck");
+  const io=itemsOwned();if(io>=50)award("items50");if(io>=ITEMS.length)award("items_all");if(ITEMS.filter(i=>i.c==="Цукумогами").every(i=>S.owned.has(i.id)))award("tsukumo");
 }
 setInterval(checkStamps,2000);
 function openAlbum(){const a=$("album");a.hidden=false;const got=ST.got.length;
   const best=BESTIARY.map(([id,img,n,d])=>{const on=ST.seen.includes(id);return`<div class="beast ${on?"on":""}">${on&&img?`<img src="assets/mon/${img}.webp" alt="">`:`<span class="q">${on?"👁":"?"}</span>`}<b>${on?n:"???"}</b><small>${on?d:"Ещё не встречалось. Включи страшилки 👻 и жди."}</small></div>`;}).join("");
   $("albumBody").innerHTML=`<p class="lead">Штампы-ханко за заботу о Мусе. Собрано ${got} из ${STAMPS.length}.</p><div class="stamps">${STAMPS.map(([id,k,t,d])=>{const on=ST.got.includes(id);return`<div class="stamp ${on?"on":""}"><span class="seal">${k}</span><b>${t}</b><small>${d}</small></div>`;}).join("")}</div>
-  <h3 class="bh">Бестиарий</h3><p class="lead">Ёкаи, которых вы встретили в доме: ${ST.seen.length} из ${BESTIARY.length}.</p><div class="bestiary">${best}</div>`;}
+  <h3 class="bh">Бестиарий</h3><p class="lead">Ёкаи, которых вы встретили в доме: ${ST.seen.length} из ${BESTIARY.length}.</p><div class="bestiary">${best}</div>
+  <h3 class="bh">Коллекция вещей</h3><p class="lead">Собрано ${itemsOwned()} из ${ITEMS.length}. Вещи покупаются во вкладке «🧺 Вещи» внизу любой комнаты, реликвии даёт история.</p>${ICATS.map(c=>`<h4 class="ch">${c}</h4><div class="coll">${ITEMS.filter(i=>i.c===c).map(i=>{const on=S.owned.has(i.id);return`<div class="ci ${on?"on":""}"><img loading="lazy" src="assets/items/${i.id}.webp" alt=""><small>${on||!i.story?i.n:"???"}</small></div>`;}).join("")}</div>`).join("")}`;
+  $("albumBody").insertAdjacentHTML("afterbegin",`<button class="btn jbtn" id="openJournal">📜 Дневник истории</button>`);}
 $("albumBtn").addEventListener("click",()=>{audioInit();openAlbum();});
 $("albumClose").addEventListener("click",()=>{$("album").hidden=true;});
 
@@ -1211,19 +1252,20 @@ function decorHit(x,y){let hit=null;const all=roomThings(),L=all.map(ipos).sort(
     if(x>=ax&&x<=bx&&y>=ay&&y<=by)hit={it0:all.find(q=>q.id===it.id),it,slot:it.slot};}
   curD=CAT_D;curRow=null;return hit;}
 function fxAt(it,glyphs,n=3){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.35),t=now();for(let i=0;i<n;i++)floatFx.push({g:pick(glyphs),x:sx+rand(-24,24)*view.s,y:sy+rand(-10,10)*view.s,t:t+i*.1});}
-function petalsAt(it,n=14){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.3);for(let i=0;i<n;i++)sakura.list.push({x:sx+rand(-40,40)*view.s,y:sy+rand(-20,20)*view.s,vx:rand(-40,40),vy:rand(-50,10),rot:rand(0,6),vr:rand(-3,3),size:rand(4,7)*view.s,ph:rand(0,6),life:rand(2.5,4)});}
+function petalsFrom(it,n=14){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.3);for(let i=0;i<n;i++)sakura.list.push({x:sx+rand(-40,40)*view.s,y:sy+rand(-20,20)*view.s,vx:rand(-40,40),vy:rand(-50,10),rot:rand(0,6),vr:rand(-3,3),size:rand(4,7)*view.s,ph:rand(0,6),life:rand(2.5,4)});}
 function splashAt(it,n=30){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.3);for(let i=0;i<n;i++)pet.drops.push({x:sx+rand(-30,30)*view.s,y:sy,vx:rand(-60,60),vy:rand(-260,-80),a:1});sfx("splash");}
 function walkTo(it,after,face){pet.walkTarget=clamp(imgToStage(it.x,0)[0],96*view.s,view.W-96*view.s);pet.walkAfter=after;start("walkto");if(face)react(face,1.6);}
 function chime(notes){notes.forEach((f,i)=>setTimeout(()=>tone(f,1.1,"sine",.03),i*120));}
 function decorTap(h){
+  if(h.it.item){itemTap(h.it);return;}
   if(h.it.prop){const P=h.it.id;wob[P]=now();audioInit();
-    if(P==="p_bed_andon"){S.lampOff=!S.lampOff;if(S.lampOff){start("sleep");pet.napUntil=0;award("sleep");}else if(pet.action==="sleep")start("stretch");paint();ui();}
-    else if(P==="p_ent_toro"){lanternOn=!lanternOn;tone(lanternOn?600:300,.08,"square",.04);react(lanternOn?"😸":"🙀",1.2);ui();}
+    if(P==="p_bed_andon"){S.lampOff=!S.lampOff;if(S.lampOff){start("sleep");pet.napUntil=0;award("sleep");}else if(pet.action==="sleep")start("stretch");paint();ui();qev("lamp",S.lampOff);}
+    else if(P==="p_ent_toro"){lanternOn=!lanternOn;tone(lanternOn?600:300,.08,"square",.04);react(lanternOn?"😸":"🙀",1.2);ui();qev("lantern",lanternOn);}
     else if(P==="p_kit_lantern"){kitLampOff=!kitLampOff;tone(kitLampOff?300:600,.08,"square",.04);}
     else if(P.includes("bowl")||P.includes("pot")){tone(P.includes("bowl")?1500:1100,.3,"sine",.04);tone(P.includes("bowl")?2250:1650,.2,"sine",.02);}
     else if(P==="p_kit_kamado"){fxAt(h.it,["✨"],5);tone(160,.3,"triangle",.05);}
     else if(P==="p_kit_noren"){tone(500,.3,"sine",.02);}
-    else if(P==="p_bed_ikebana"){petalsAt(h.it,12);}
+    else if(P==="p_bed_ikebana"){petalsFrom(h.it,12);}
     else if(P.startsWith("p_crt_rock")){splashAt(h.it,16);}
     else{tone(90,.2,"triangle",.08);tone(140,.12,"sine",.05);}
     return;}
@@ -1232,7 +1274,7 @@ function decorTap(h){
   const P=id.replace(/^d_/,"");
   if(P.startsWith("furin")){chime(P==="furin_iron"?[1320,1760,1568]:[2093,2637,2349]);fxAt(it,["♪","♫"],3);react("😺",1.4);}
   else if(["andon","chochin","yukimi"].includes(P)){S.lightsOff[id]=!S.lightsOff[id];tone(S.lightsOff[id]?300:600,.08,"square",.04);react(S.lightsOff[id]?"🙀":"😸",1.2);save();}
-  else if(["ikebana","sakura_tree","ume"].includes(P)){petalsAt(it,16);tone(900,.4,"sine",.03);react("😻",1.6);}
+  else if(["ikebana","sakura_tree","ume"].includes(P)){petalsFrom(it,16);tone(900,.4,"sine",.03);react("😻",1.6);}
   else if(["bonsai","kokedama","bamboo","kiku"].includes(P)){fxAt(it,["🍃","🍂"],4);react("😼",1.2);}
   else if(P.startsWith("zab")){walkTo(it,"knead","😽");}
   else if(P.startsWith("futon")){walkTo(it,"sleep","😴");}
@@ -1305,7 +1347,7 @@ function omikuji(){const i=Math.random()<.12?0:Math.floor(rand(0,FORTUNES.length
   $("fortuneOk").onclick=()=>{st.hidden=true;react(bad?"😾":"😻",2);if(!bad)burst(10);};
   tone(bad?110:880,.5,"sine",.05);if(bad)react("🙀",1.5);}
 function placeAction(a){
-  const t=now();
+  const t=now();setTimeout(()=>{qev("place",a);if(a==="lantern")qev("lantern",lanternOn);},60);
   if(a==="pray"){start("hide");setTimeout(()=>{tone(174,2.4,"sine",.06);tone(349,2,"sine",.03);},200);S.needs.joy=clamp(S.needs.joy+8,0,100);react("🙏",2.4);}
   else if(a==="wash_paws"){S.needs.clean=clamp(S.needs.clean+15,0,100);sfx("splash");start("groom");react("😌",1.6);}
   else if(a==="omikuji"){omikuji();}
@@ -1790,7 +1832,7 @@ G.cv.addEventListener("pointerdown",ev=>{audioInit();if(!G.running||G.over)retur
 G.cv.addEventListener("pointermove",ev=>{if(!G.running||G.over)return;const [x,y]=gLocal(ev);G.def.move&&G.def.move(G,x,y,G.held||ev.pointerType==="mouse");});
 const gUp=()=>{G.held=false;if(G.running&&G.def&&G.def.up)G.def.up(G);};G.cv.addEventListener("pointerup",gUp);G.cv.addEventListener("pointercancel",gUp);
 function gEnd(){
-  if(G.over)return;G.over=true;G.running=false;stat("games",G.id);if(G.score>=10)award("champ");const id=G.id,sc=G.score,rec=sc>(S.best[id]||0);if(rec)S.best[id]=sc;const coins=sc*3;S.earned+=coins;
+  if(G.over)return;G.over=true;G.running=false;stat("games",G.id);qev("game",{id:G.id,score:G.score});if(G.score>=10)award("champ");const id=G.id,sc=G.score,rec=sc>(S.best[id]||0);if(rec)S.best[id]=sc;const coins=sc*3;S.earned+=coins;
   S.needs.joy=clamp(S.needs.joy+Math.min(30,8+sc),0,100);S.needs.energy=clamp(S.needs.energy-8,0,100);save();
   setTimeout(()=>{if(!G.id)return;const res=$("gResult");res.hidden=false;
     res.innerHTML=`<div class="card"><p class="tag">${G.def.tag}</p><h3>${rec&&sc>0?"Новый рекорд":G.lives!=null&&G.lives<=0?"Поймали…":"Готово"}</h3><div class="big">${sc}</div><p>+${coins} монет (баланс и так бесконечный). Рекорд: ${S.best[id]}.</p><div class="row"><button class="btn" id="gHome">Домой</button><button class="btn primary" id="gAgain">Ещё раз</button></div></div>`;
@@ -1799,15 +1841,250 @@ function gEnd(){
 
 addEventListener("resize",()=>{resize();if(G.id&&!G.over)gResize();});
 
+
+// ───────────────────────── Things: 200 collectible items, placed freely in any room ─────────────────────────
+const ITEMS=[{"id":"om_luck","n":"Омамори удачи","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_health","n":"Омамори здоровья","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_study","n":"Омамори учёбы","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_love","n":"Омамори любви","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_ward","n":"Омамори от бед","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_road","n":"Омамори дороги","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_home","n":"Омамори дома","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_cat","n":"Кошачье омамори","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_sleep","n":"Омамори сна","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_money","n":"Омамори богатства","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_fire","n":"Омамори от пожара","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_water","n":"Омамори воды","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_kid","n":"Детское омамори","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_art","n":"Омамори искусства","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_ghost","n":"Омамори от призраков","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"om_moon","n":"Лунное омамори","c":"Омамори","w":70,"h":150,"a":"t","p":45},{"id":"ema_00","n":"Эма года мыши","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_01","n":"Эма года быка","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_02","n":"Эма года тигра","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_03","n":"Эма года зайца","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_04","n":"Эма года дракона","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_05","n":"Эма года змеи","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_06","n":"Эма года лошади","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_07","n":"Эма года овцы","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_08","n":"Эма года обезьяны","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_09","n":"Эма года петуха","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_10","n":"Эма года собаки","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ema_11","n":"Эма года кабана","c":"Эма","w":150,"h":130,"a":"t","p":35},{"id":"ch_matsuri","n":"Фонарь «Праздник»","c":"Фонари","w":110,"h":250,"a":"t","p":70,"glow":[55.0,133.0]},{"id":"ch_white","n":"Белый фонарь","c":"Фонари","w":110,"h":250,"a":"t","p":70,"glow":[55.0,133.0]},{"id":"ch_luck","n":"Фонарь удачи","c":"Фонари","w":140,"h":210,"a":"t","p":70,"glow":[70.0,113.0]},{"id":"ch_dream","n":"Фонарь снов","c":"Фонари","w":110,"h":250,"a":"t","p":70,"glow":[55.0,133.0]},{"id":"ch_moon","n":"Лунный фонарь","c":"Фонари","w":140,"h":210,"a":"t","p":70,"glow":[70.0,113.0]},{"id":"ch_cat","n":"Кошачий фонарь","c":"Фонари","w":140,"h":210,"a":"t","p":70,"glow":[70.0,113.0]},{"id":"ch_black","n":"Чёрный фонарь","c":"Фонари","w":110,"h":250,"a":"t","p":70,"glow":[55.0,133.0]},{"id":"ch_green","n":"Зелёный фонарь","c":"Фонари","w":110,"h":250,"a":"t","p":70,"glow":[55.0,133.0]},{"id":"ch_sakura","n":"Фонарь сакуры","c":"Фонари","w":140,"h":210,"a":"t","p":70,"glow":[70.0,113.0]},{"id":"ch_fox","n":"Лисий фонарь","c":"Фонари","w":110,"h":250,"a":"t","p":70,"glow":[55.0,133.0]},{"id":"ch_rain","n":"Фонарь дождя","c":"Фонари","w":140,"h":210,"a":"t","p":70,"glow":[70.0,113.0]},{"id":"ch_hundred","n":"Фонарь ста историй","c":"Фонари","w":110,"h":250,"a":"t","p":70,"glow":[55.0,133.0]},{"id":"an_square","n":"Андон квадратный","c":"Светильники","w":150,"h":310,"a":"b","p":130,"glow":[75,170]},{"id":"an_tall","n":"Андон высокий","c":"Светильники","w":150,"h":310,"a":"b","p":130,"glow":[75,170]},{"id":"an_moon","n":"Андон с луной","c":"Светильники","w":150,"h":310,"a":"b","p":130,"glow":[75,170]},{"id":"an_maru","n":"Круглый андон","c":"Светильники","w":150,"h":300,"a":"b","p":120,"glow":[75,160]},{"id":"an_maru_k","n":"Андон «Покой»","c":"Светильники","w":150,"h":300,"a":"b","p":120,"glow":[75,160]},{"id":"an_toro","n":"Садовый торо","c":"Светильники","w":170,"h":280,"a":"b","p":160,"glow":[85,130]},{"id":"an_yukimi","n":"Фонарь юкими","c":"Светильники","w":200,"h":230,"a":"b","p":170,"glow":[100,130]},{"id":"an_red","n":"Алый андон","c":"Светильники","w":150,"h":310,"a":"b","p":130,"glow":[75,170]},{"id":"fu_kingyo","n":"Фурин с рыбками","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"fu_asagao","n":"Фурин с вьюнком","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"fu_hanabi","n":"Фурин «Фейерверк»","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"fu_tombo","n":"Фурин со стрекозой","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"fu_momiji","n":"Осенний фурин","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"fu_dots","n":"Фурин «Капли»","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"fu_nami","n":"Фурин «Волны»","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"fu_pink","n":"Розовый фурин","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"fu_nanbu","n":"Чугунный фурин нанбу","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"fu_bronze","n":"Бронзовый фурин","c":"Фурины","w":100,"h":270,"a":"t","p":55},{"id":"ko_kiku","n":"Кокэси «Хризантема»","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"ko_ume","n":"Кокэси «Слива»","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"ko_tsubaki","n":"Кокэси «Камелия»","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"ko_rings","n":"Кокэси с кольцами","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"ko_stripes","n":"Полосатая кокэси","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"ko_kimono","n":"Кокэси в кимоно","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"ko_blue","n":"Синяя кокэси","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"ko_black","n":"Чёрная кокэси","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"ko_tall","n":"Высокая кокэси","c":"Кокэси","w":92,"h":288,"a":"b","p":80},{"id":"ko_mini","n":"Малышка кокэси","c":"Кокэси","w":92,"h":168,"a":"b","p":80},{"id":"ko_green","n":"Лесная кокэси","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"ko_pink","n":"Весенняя кокэси","c":"Кокэси","w":92,"h":238,"a":"b","p":80},{"id":"da_red","n":"Дарума алая","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"da_white","n":"Дарума белая","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"da_gold","n":"Дарума золотая","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"da_black","n":"Дарума чёрная","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"da_pink","n":"Дарума розовая","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"da_blue","n":"Дарума синяя","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"da_green","n":"Дарума зелёная","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"da_purple","n":"Дарума лиловая","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"da_orange","n":"Дарума рыжая","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"da_win","n":"Дарума «Победа»","c":"Дарума","w":160,"h":176,"a":"b","p":70},{"id":"mn_white","n":"Белая манэки-нэко","c":"Манэки-нэко","w":150,"h":186,"a":"b","p":110},{"id":"mn_black","n":"Чёрная манэки-нэко","c":"Манэки-нэко","w":150,"h":186,"a":"b","p":110},{"id":"mn_gold","n":"Золотая манэки-нэко","c":"Манэки-нэко","w":150,"h":186,"a":"b","p":110},{"id":"mn_calico","n":"Трёхцветная манэки-нэко","c":"Манэки-нэко","w":150,"h":186,"a":"b","p":110},{"id":"mn_pink","n":"Розовая манэки-нэко","c":"Манэки-нэко","w":150,"h":186,"a":"b","p":110},{"id":"mn_red","n":"Красная манэки-нэко","c":"Манэки-нэко","w":150,"h":186,"a":"b","p":110},{"id":"mn_ginger","n":"Рыжая манэки-нэко","c":"Манэки-нэко","w":150,"h":186,"a":"b","p":110},{"id":"mn_tabby","n":"Полосатая манэки-нэко","c":"Манэки-нэко","w":150,"h":186,"a":"b","p":110},{"id":"mk_kitsune","n":"Маска кицунэ","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_kitsune_b","n":"Чёрная маска кицунэ","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_neko","n":"Кошачья маска","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_usagi","n":"Маска зайца","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_oni_r","n":"Маска красного óни","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_oni_b","n":"Маска синего óни","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_hannya","n":"Маска ханнья","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_okame","n":"Маска окамэ","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_hyottoko","n":"Маска хёттоко","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_tengu","n":"Маска тэнгу","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_tanuki","n":"Маска тануки","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"mk_kappa","n":"Маска каппы","c":"Маски","w":130,"h":176,"a":"t","p":120},{"id":"fa_nami","n":"Веер «Волны»","c":"Веера","w":220,"h":140,"a":"t","p":65},{"id":"fa_sakura","n":"Веер «Сакура»","c":"Веера","w":220,"h":140,"a":"t","p":65},{"id":"fa_moon","n":"Веер «Луна»","c":"Веера","w":220,"h":140,"a":"t","p":65},{"id":"fa_gold","n":"Золотой веер","c":"Веера","w":220,"h":140,"a":"t","p":65},{"id":"fa_tsuru","n":"Веер с журавлём","c":"Веера","w":220,"h":140,"a":"t","p":65},{"id":"fa_momiji","n":"Осенний веер","c":"Веера","w":220,"h":140,"a":"t","p":65},{"id":"uc_kingyo","n":"Утива с рыбками","c":"Веера","w":130,"h":200,"a":"t","p":45},{"id":"uc_hanabi","n":"Утива «Фейерверк»","c":"Веера","w":130,"h":200,"a":"t","p":45},{"id":"uc_tombo","n":"Утива со стрекозой","c":"Веера","w":130,"h":200,"a":"t","p":45},{"id":"uc_asagao","n":"Утива с вьюнком","c":"Веера","w":130,"h":200,"a":"t","p":45},{"id":"cw_raku","n":"Чаван раку","c":"Посуда","w":150,"h":100,"a":"b","p":50},{"id":"cw_akaraku","n":"Красный раку","c":"Посуда","w":150,"h":100,"a":"b","p":50},{"id":"cw_shino","n":"Чаван сино","c":"Посуда","w":150,"h":100,"a":"b","p":50},{"id":"cw_oribe","n":"Чаван орибэ","c":"Посуда","w":150,"h":100,"a":"b","p":50},{"id":"cw_seiji","n":"Селадоновый чаван","c":"Посуда","w":150,"h":100,"a":"b","p":50},{"id":"cw_tenmoku","n":"Чаван тэммоку","c":"Посуда","w":150,"h":100,"a":"b","p":50},{"id":"cw_hagi","n":"Чаван хаги","c":"Посуда","w":150,"h":100,"a":"b","p":50},{"id":"cw_kintsugi","n":"Чаван кинцуги","c":"Посуда","w":150,"h":100,"a":"b","p":50},{"id":"cw_sometsuke","n":"Бело-синий чаван","c":"Посуда","w":150,"h":100,"a":"b","p":50},{"id":"ve_tokkuri","n":"Токкури для сакэ","c":"Посуда","w":110,"h":190,"a":"b","p":60},{"id":"ve_kyusu","n":"Чайник кюсу","c":"Посуда","w":190,"h":140,"a":"b","p":90},{"id":"ve_natsume","n":"Чайница нацумэ","c":"Посуда","w":120,"h":110,"a":"b","p":80},{"id":"ve_jubako","n":"Лаковая шкатулка дзюбако","c":"Посуда","w":170,"h":170,"a":"b","p":120},{"id":"ve_yunomi","n":"Чашка юноми","c":"Посуда","w":90,"h":130,"a":"b","p":40},{"id":"ve_donburi","n":"Донбури с крышкой","c":"Посуда","w":170,"h":130,"a":"b","p":60},{"id":"ve_tokkuri2","n":"Чёрный токкури","c":"Посуда","w":110,"h":190,"a":"b","p":60},{"id":"sc_yume","n":"Свиток «Сон»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_shizuka","n":"Свиток «Тишина»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_wa","n":"Свиток «Гармония»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_enso","n":"Свиток «Энсо»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_pine","n":"Свиток «Сосна и луна»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_bamboo","n":"Свиток «Бамбук»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_plum","n":"Свиток «Слива»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_fuji","n":"Свиток «Фудзи»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_koi","n":"Свиток «Карпы»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_crane","n":"Свиток «Журавль»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_nami","n":"Свиток «Волны»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"sc_dragon","n":"Свиток «Дракон»","c":"Свитки","w":150,"h":470,"a":"t","p":110},{"id":"pl_pine","n":"Бонсай «Чёрная сосна»","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_momiji","n":"Бонсай «Клён момидзи»","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_juniper","n":"Бонсай «Можжевельник»","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_sakura","n":"Сакура в горшке","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_ume","n":"Слива умэ","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_azalea","n":"Азалия сацуки","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_wisteria","n":"Глициния","c":"Растения","w":240,"h":360,"a":"b","p":140},{"id":"pl_iris","n":"Ирисы","c":"Растения","w":240,"h":360,"a":"b","p":140},{"id":"pl_orchid","n":"Орхидея","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_moss","n":"Моховой сад","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_bamboo","n":"Бамбуковая роща","c":"Растения","w":240,"h":360,"a":"b","p":140},{"id":"pl_camellia","n":"Камелия","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_kiku","n":"Белая хризантема","c":"Растения","w":240,"h":300,"a":"b","p":140},{"id":"pl_pine_tall","n":"Высокая сосна","c":"Растения","w":240,"h":360,"a":"b","p":140},{"id":"zb_seigaiha","n":"Подушка «Сэйгайха»","c":"Подушки","w":320,"h":124,"a":"b","p":60},{"id":"zb_shippo","n":"Подушка «Сиппо»","c":"Подушки","w":320,"h":124,"a":"b","p":60},{"id":"zb_ichimatsu","n":"Подушка «Итимацу»","c":"Подушки","w":320,"h":124,"a":"b","p":60},{"id":"zb_yagasuri","n":"Подушка «Ягасури»","c":"Подушки","w":320,"h":124,"a":"b","p":60},{"id":"zb_uroko","n":"Подушка «Уроко»","c":"Подушки","w":320,"h":124,"a":"b","p":60},{"id":"zb_kikko","n":"Подушка «Кикко»","c":"Подушки","w":320,"h":124,"a":"b","p":60},{"id":"zb_sakura","n":"Подушка «Сакура»","c":"Подушки","w":320,"h":124,"a":"b","p":60},{"id":"zb_tatewaku","n":"Подушка «Татэваку»","c":"Подушки","w":320,"h":124,"a":"b","p":60},{"id":"fr_blue","n":"Узелок фуросики","c":"Подушки","w":170,"h":150,"a":"b","p":50},{"id":"fr_green","n":"Зелёный узелок","c":"Подушки","w":170,"h":150,"a":"b","p":50},{"id":"tm_red","n":"Тэмари алый","c":"Игрушки","w":110,"h":116,"a":"b","p":40},{"id":"tm_blue","n":"Тэмари синий","c":"Игрушки","w":110,"h":116,"a":"b","p":40},{"id":"tm_white","n":"Тэмари белый","c":"Игрушки","w":110,"h":116,"a":"b","p":40},{"id":"tm_black","n":"Тэмари ночной","c":"Игрушки","w":110,"h":116,"a":"b","p":40},{"id":"ty_kendama","n":"Кэндама","c":"Игрушки","w":110,"h":210,"a":"b","p":35},{"id":"ty_koma","n":"Волчок кома","c":"Игрушки","w":110,"h":130,"a":"b","p":30},{"id":"ty_tsuru","n":"Бумажный журавлик","c":"Игрушки","w":150,"h":110,"a":"b","p":20},{"id":"ty_tsuru2","n":"Синий журавлик","c":"Игрушки","w":150,"h":110,"a":"b","p":20},{"id":"ty_tako","n":"Воздушный змей тако","c":"Игрушки","w":150,"h":230,"a":"t","p":60},{"id":"ty_otoshi","n":"Дарума-отоси","c":"Игрушки","w":110,"h":190,"a":"b","p":45},{"id":"ty_denden","n":"Барабанчик дэндэн","c":"Игрушки","w":120,"h":220,"a":"b","p":30},{"id":"ty_mouse","n":"Мышка-игрушка","c":"Игрушки","w":140,"h":90,"a":"b","p":15},{"id":"ty_yarn_r","n":"Красный клубок","c":"Игрушки","w":110,"h":104,"a":"b","p":15},{"id":"ty_yarn_b","n":"Синий клубок","c":"Игрушки","w":110,"h":104,"a":"b","p":15},{"id":"ty_teaser","n":"Удочка с пёрышками","c":"Игрушки","w":90,"h":250,"a":"b","p":20},{"id":"ty_suzu","n":"Колокольчик-мячик","c":"Игрушки","w":90,"h":100,"a":"b","p":25},{"id":"ws_red","n":"Алый зонтик вагаса","c":"Зонтики","w":240,"h":240,"a":"b","p":90},{"id":"ws_janome","n":"Зонтик «Глаз змеи»","c":"Зонтики","w":240,"h":240,"a":"b","p":90},{"id":"ws_sakura","n":"Зонтик с сакурой","c":"Зонтики","w":240,"h":240,"a":"b","p":90},{"id":"ws_black","n":"Чёрный зонтик","c":"Зонтики","w":240,"h":240,"a":"b","p":90},{"id":"ws_kiku","n":"Зонтик с хризантемой","c":"Зонтики","w":240,"h":240,"a":"b","p":90},{"id":"ws_paper","n":"Зонтик из вощёной бумаги","c":"Зонтики","w":240,"h":240,"a":"b","p":90},{"id":"tk_kasa","n":"Каса-обакэ","c":"Цукумогами","w":200,"h":260,"a":"b","p":150},{"id":"tk_chochin","n":"Тётин-обакэ","c":"Цукумогами","w":140,"h":240,"a":"t","p":150,"glow":[70,110]},{"id":"tk_zori","n":"Ожившая сандалия","c":"Цукумогами","w":170,"h":120,"a":"b","p":120},{"id":"tk_chawan","n":"Одноглазая пиала","c":"Цукумогами","w":150,"h":120,"a":"b","p":120},{"id":"tk_shoji","n":"Мокумокурэн","c":"Цукумогами","w":170,"h":260,"a":"b","p":180},{"id":"tk_tetsubin","n":"Чайник с языком","c":"Цукумогами","w":170,"h":170,"a":"b","p":140},{"id":"tk_geta","n":"Гэта-оборотень","c":"Цукумогами","w":170,"h":110,"a":"b","p":110},{"id":"tk_biwa","n":"Бива-бокубоку","c":"Цукумогами","w":150,"h":280,"a":"b","p":160},{"id":"r_bell","n":"Бубенчик дзасики-вараси","c":"Реликвии","w":100,"h":170,"a":"t","p":0,"story":1},{"id":"r_ricebowl","n":"Рисовая чаша духа","c":"Реликвии","w":150,"h":100,"a":"b","p":0,"story":1},{"id":"r_ribbon","n":"Красная ленточка","c":"Реликвии","w":160,"h":110,"a":"b","p":0,"story":1},{"id":"r_pearl","n":"Жемчужина каппы","c":"Реликвии","w":120,"h":110,"a":"b","p":0,"story":1},{"id":"r_candle","n":"Огарок сотой свечи","c":"Реликвии","w":90,"h":170,"a":"b","p":0,"story":1,"glow":[45,60]},{"id":"r_foxbrush","n":"Лисья кисточка","c":"Реликвии","w":200,"h":90,"a":"b","p":0,"story":1},{"id":"r_hyakki","n":"Свиток ста демонов","c":"Реликвии","w":150,"h":470,"a":"t","p":0,"story":1},{"id":"r_temari","n":"Тэмари девочки","c":"Реликвии","w":110,"h":116,"a":"b","p":0,"story":1},{"id":"r_mirror","n":"Зеркальце хранительницы","c":"Реликвии","w":140,"h":200,"a":"b","p":0,"story":1},{"id":"r_key","n":"Ключ от старой кладовой","c":"Реликвии","w":170,"h":80,"a":"b","p":0,"story":1}];
+const IT={},ICATS=[];for(const i of ITEMS){IT[i.id]=i;if(!ICATS.includes(i.c))ICATS.push(i.c);if(i.glow)LIGHT_PT[i.id]=i.glow;}
+S.placed=saved.placed||{};
+function regItems(){for(const i of ITEMS)DMETA[i.id]=[i.w,i.h,i.a==="t"?"t":"b"];for(const id of Object.keys(S.placed))loadItem(id);}
+function loadItem(id){if(DIMG[id]||loadItem[id])return;loadItem[id]=1;ldImg("assets/items/"+id+".webp",im=>{DIMG[id]=im;});}
+const RELIC_LINE={r_bell:"Бубенчик звенит сам, когда рядом дзасики-вараси",r_ricebowl:"Миска для духа дома — к утру всегда пустая",r_ribbon:"Ленточка пахнет водой и смехом",r_pearl:"Подарок каппы тому, кто вежлив",
+  r_foxbrush:"Кисточка с хвоста лисы-невесты",r_hyakki:"На свитке весь Ночной парад — кроме девочки",r_candle:"Сотая свеча горит синим и не тает",r_temari:"Мячик девочки в красном",r_mirror:"В зеркальце иногда видна чёлка",r_key:"Ключ от старой кладовой"};
+function itemsPlacedIn(r){return Object.values(S.placed).filter(p=>p.r===r).length;}
+function itemsOwned(){let n=0;for(const i of ITEMS)if(S.owned.has(i.id))n++;return n;}
+function itemsTray(){
+  const cur=ICATS.includes(S.icat)?S.icat:ICATS[0];S.icat=cur;
+  return`<div class="seg scroll">${ICATS.map(c=>`<button data-icat="${c}" aria-pressed="${c===cur}">${c}</button>`).join("")}</div><div class="items">${ITEMS.filter(i=>i.c===cur).map(i=>{const own=S.owned.has(i.id),pl=S.placed[i.id],here=pl&&pl.r===S.room,lock=i.story&&!own;
+    return`<button class="item ${here?"on":""}" data-item="${i.id}"><span class="ico"><img loading="lazy" src="assets/items/${i.id}.webp" alt="" style="max-height:32px;max-width:64px${lock?";filter:brightness(0) opacity(.45)":""}"></span><span class="nm">${lock?"???":i.n}</span><span class="pr">${here?"стоит здесь":lock?"🔒 сюжет":pl?"в комнате «"+ROOMS.find(r=>r.id===pl.r).ru+"»":own?"куплено":`<span class="mon"></span>${i.p}`}</span></button>`;}).join("")}</div>`;
+}
+function putItem(id){
+  const i=IT[id];if(!i)return;
+  if(i.story&&!S.owned.has(id)){toast("Эту вещь даст только сюжет 📜");return;}
+  const pl=S.placed[id];
+  if(pl&&pl.r===S.room){delete S.placed[id];delete S.dpos[id];delete vpos[id];tone(300,.1,"triangle",.04);save();ui();return;}
+  if(itemsPlacedIn(S.room)>=24){toast("Здесь уже тесно — убери что-нибудь");return;}
+  if(!S.owned.has(id)){S.owned.add(id);spend(i.p);}
+  const hang=i.a==="t",l=-BGM.dx/BGM.k+i.w*.6+40,r=(view.W-BGM.dx)/BGM.k-i.w*.6-40,cx=(pet.x-BGM.dx)/BGM.k;
+  let x=l<r?rand(l,r):(l+r)/2;if(Math.abs(x-cx)<170)x=cx+(x<cx?-1:1)*190;if(l<r)x=clamp(x,l,r);
+  S.placed[id]={r:S.room,x:Math.round(x),y:Math.round(hang?rand(70,210):rand(1250,1368))};delete S.dpos[id];delete vpos[id];
+  loadItem(id);wob[id]=now();sfx("chime");react(pick(["😸","😺","😻"]),1.4);qev("put",{id,room:S.room,c:i.c});save();ui();
+}
+function itemTap(it){
+  const I=IT[it.id],t=now();wob[it.id]=t;boost[it.id]=t;audioInit();S.needs.joy=clamp(S.needs.joy+1,0,100);
+  switch(I.c){
+    case"Омамори":case"Эма":chime([1318,1760]);fxAt(it,["✨"],3);react("😌",1.2);break;
+    case"Фонари":case"Светильники":S.lightsOff[it.id]=!S.lightsOff[it.id];tone(S.lightsOff[it.id]?300:600,.08,"square",.04);react(S.lightsOff[it.id]?"🙀":"😸",1.2);save();break;
+    case"Фурины":chime([2093,2637,2349]);fxAt(it,["♪","♫"],3);break;
+    case"Кокэси":tone(880,.12,"triangle",.05);tone(660,.15,"triangle",.04);react("😺",1.2);break;
+    case"Дарума":fxAt(it,["✨","🍀"],3);tone(160,.2,"triangle",.06);break;
+    case"Манэки-нэко":fxAt(it,["🪙","✨"],5);sfx("coin");react("😻",1.4);break;
+    case"Маски":react(pick(["🙀","😼"]),1.4);tone(140,.3,"sawtooth",.03);break;
+    case"Веера":petalsFrom(it,10);tone(700,.3,"sine",.02);break;
+    case"Посуда":pet.food="🍵";walkTo(it,"treat","😌");break;
+    case"Свитки":fxAt(it,["✨"],2);chime([784,1046]);break;
+    case"Растения":fxAt(it,["🍃","🌸"],4);react("😼",1.2);break;
+    case"Подушки":walkTo(it,"knead","😽");break;
+    case"Игрушки":walkTo(it,/yarn|tm_|temari/.test(it.id)?"yarn":"poke","😸");break;
+    case"Зонтики":tone(420,.2,"triangle",.04);react("😺",1.2);break;
+    case"Цукумогами":scareSound();react("🙀",1.6);fxAt(it,["👁"],2);break;
+    case"Реликвии":chime([1046,1318,1568]);fxAt(it,["✨"],4);toast(RELIC_LINE[it.id]||I.n);break;
+    default:sfx("pop");
+  }
+}
+
+// ───────────────────────── Story «Дом, где погас фонарь» ─────────────────────────
+const PLAYS=["yarn","butterfly","firefly","petals","cursor","zoomies","box","house","gift","highfive","peek","music"];
+const W_="m_warashi",WB="m_warashi_back";
+const STORY=[
+ {title:"Пролог. Погасший фонарь",room:"entrance",reward:"r_bell",
+  intro:{fx:()=>{lanternOn=false;},chars:[{id:WB,x:()=>visX(1040,120),y:1000,h:230,d:.38,from:1.5,to:7}],p:[
+   "Той осенью в доме у старого святилища стало холодно. Не от ветра — от тишины. Перестали скрипеть половицы по ночам, никто больше не прятал Мусины клубки и не хихикал за сёдзи.",
+   "А вечером погас каменный фонарь у тории. Сам. Без ветра и без дождя.",
+   "Муся долго смотрела в темноту за воротами, прижав уши. Кошки видят то, чего не видят люди. Помоги ей понять, что случилось."]},
+  tasks:[{t:"Зажги каменный фонарь у входа",ev:"lantern",test:on=>on},{t:"Омой Мусе лапки",ev:"place",test:a=>a==="wash_paws"},{t:"Помолись у храма",ev:"place",test:a=>a==="pray"},{t:"Вытяни омикудзи",ev:"place",test:a=>a==="omikuji"}],
+  outro:{p:[
+   "Фонарь разгорелся неохотно, будто кто-то дул на огонь с другой стороны. В его свете у подножия тории блеснул крошечный бубенчик на красном шнурке.",
+   "От бубенчика в лес вели следы маленьких босых ног. Туда — и ни одного обратно.",
+   "Муся понюхала шнурок и тихо мяукнула. Так пахнет только одно существо: дзасики-вараси, девочка-дух, что живёт в старых домах и приносит им счастье. Она ушла."]}},
+ {title:"Глава 1. Остывший рис",room:"kitchen",reward:"r_ricebowl",
+  intro:{p:[
+   "В старых домах для дзасики-вараси всегда оставляют горсть риса. Утром миска пуста — значит, хранительница дома сыта и довольна.",
+   "Но рис на кухне остыл нетронутым. Над ним уже кружила ночная мошкара.",
+   "Если дух ушёл, дом нужно снова сделать живым: чтобы пахло едой, чтобы в нём стояли красивые вещи. Может, тогда кто-нибудь расскажет, куда она делась."]},
+  tasks:[{t:"Накорми Мусю 3 раза",ev:"food",n:3},{t:"Приготовь онигири — любимое угощение духов",ev:"food",test:f=>f==="onigiri"},{t:"Поставь на кухне вещь из «🧺 Вещи»",ev:"put",test:d=>d.room==="kitchen"}],
+  outro:{chars:[{id:"m_obake",x:()=>visX(1250,170),y:330,h:340,d:.5,anchor:"c",from:.6}],p:[
+   "Ночью Мусю разбудил шорох. Старый бумажный фонарь под потолком лопнул по шву — и шов оказался ртом. Из прорехи на Мусю уставился огромный глаз.",
+   "Тётин-обакэ, фонарь, проживший сто лет, облизнулся длинным языком и прошелестел: «Девочку ищешь? Она ушла к воде. Туда, где кто-то лижет чужую грязь…»",
+   "И снова стал просто фонарём. А на столе стояла миска для духа. Пустая."]}},
+ {title:"Глава 2. Кто лижет купель",room:"onsen",reward:"r_ribbon",
+  intro:{p:[
+   "Об аканамэ рассказывают шёпотом. Это маленький красный ёкай с языком длиннее руки. По ночам он пробирается в брошенные купальни и вылизывает грязь, что копится там годами.",
+   "Говорят, он приходит только туда, где хозяева ленивы. А онсэн без хранительницы дома уже начал зарастать тиной.",
+   "Чтобы аканамэ показался, придётся оставить его без ужина: отмыть всё до блеска. И Мусю тоже."]},
+  tasks:[{t:"Намыль Мусю и смой пену",ev:"bath"},{t:"Вытри Мусю полотенцем",ev:"towel"},{t:"Подними чистоту до 90",ev:"tick",test:()=>S.needs.clean>=90}],
+  outro:{chars:[{id:"m_akaname",x:()=>visX(1180,190),y:1240,h:330,d:.8,from:.5}],p:[
+   "В полночь над краем купели показалась красная лохматая голова. Аканамэ высунул язык, лизнул камень — и скривился: чисто. Лизнул ещё раз — и сплюнул.",
+   "«Скучный дом, — проворчал он. — Раньше тут жила девочка, она нарочно брызгалась и оставляла следы. Весело было. А теперь её ленточку унесло к пруду, к старому каппе».",
+   "Он шлёпнул на камень что-то мокрое и красное и ушёл, волоча язык по траве."]}},
+ {title:"Глава 3. Жемчужина каппы",room:"courtyard",reward:"r_pearl",
+  intro:{p:[
+   "Каппа живёт в пруду под водопадом дольше, чем стоит дом. Макушка у него как блюдце, и в блюдце всегда есть вода: в ней вся его сила.",
+   "Каппы любят огурцы, сумо и хорошие манеры. Спорить с каппой нельзя. Но если вежливо поклониться, он не удержится, поклонится в ответ — и вода из блюдца прольётся.",
+   "Сначала его нужно выманить из глубины."]},
+  tasks:[{t:"Покорми карпов",ev:"place",test:a=>a==="koi"},{t:"Брось в пруд камешек",ev:"place",test:a=>a==="pebble"},{t:"Поклонись каппе: выиграй «Поклон каппе»",ev:"game",test:d=>d.id==="kappa"&&d.score>=1}],
+  outro:{chars:[{id:"m_kappa",x:()=>visX(1160,170),y:1150,h:360,d:.55,from:.5}],p:[
+   "Каппа поклонился так низко, что вода из блюдца плеснула на траву. Он охнул, сел на камень и долго молчал, глядя на Мусю жёлтыми глазами.",
+   "«Не ищи её в лесу, — сказал он наконец. — Её увели лисы. Не со зла. Скоро по дороге пойдёт Ночной парад ста демонов, и дети духов прячутся от него у лис».",
+   "На прощание каппа выкатил из-под камня мутную жемчужину. Такие каппы берегут для тех, кто им понравился."]}},
+ {title:"Глава 4. Лисья свадьба",room:"entrance",reward:"r_foxbrush",
+  intro:{p:[
+   "Когда солнце светит сквозь дождь, в Японии говорят: «у лис свадьба». В такие вечера за тории загораются голубые огни — кицунэ-би — и тянутся цепочкой в лес.",
+   "Людям на лисью свадьбу нельзя. Кошкам можно, если они вежливы и одеты как положено.",
+   "Муся должна приготовиться: маска, фонарь — и запомнить дорогу огней."]},
+  tasks:[{t:"Надень Мусе маску кицунэ (Гардероб)",ev:"tick",test:()=>S.wear.head==="kitsune"},{t:"Повтори 4 огня в игре «Лисьи огни»",ev:"game",test:d=>d.id==="kitsunebi"&&d.score>=4},{t:"Поставь у входа фонарь из «🧺 Вещи»",ev:"put",test:d=>d.room==="entrance"&&(d.c==="Фонари"||d.c==="Светильники")}],
+  outro:{chars:[{id:"m_kitsune",x:()=>visX(1150,200),y:1180,h:360,d:.7,from:.5}],p:[
+   "Процессия прошла под дождём без единого звука. Последней шла невеста — белая лиса в свадебном капюшоне. Она остановилась перед Мусей и чуть наклонила голову.",
+   "«Мы её не крали, — сказала лиса, не открывая пасти. — Она сама пришла. Боится парада: ёкаи уносят с собой всё, что им приглянется, и детей тоже».",
+   "«Когда парад пройдёт мимо твоего дома, зажги сто огней и гаси их по одному. На последнем она вернётся». Лиса оставила на камне кисточку от своего хвоста и растаяла в огнях."]}},
+ {title:"Глава 5. Ночной парад",room:"games",reward:"r_hyakki",
+  intro:{p:[
+   "Хякки яко — Ночной парад ста демонов. В особые ночи ёкаи идут по дорогам: зонты на одной ноге, фонари с языками, óни с барабанами. Кто увидит парад, того он заберёт с собой.",
+   "Этой ночью барабаны слышны уже у самого леса.",
+   "Мусе нужно пережить парад: не попасться ему на глаза, прогнать óни и вовремя спрятаться."]},
+  tasks:[{t:"Собери 5 онигири в «Ночном параде»",ev:"game",test:d=>d.id==="hyakki"&&d.score>=5},{t:"Выгони 5 óни в «Бобах против óни»",ev:"game",test:d=>d.id==="setsubun"&&d.score>=5},{t:"Спрячься: уложи Мусю спать",ev:"act",test:a=>a==="sleep"}],
+  outro:{parade:true,chars:[["m_obake",300,"c",-100],["m_akaname",280,"b",0],["m_kappa",300,"b",0],["m_bettari",380,"b",0],["m_kitsune",300,"b",0],[WB,230,"b",0]].map(([id,h,anchor,dy],i)=>({id,h,anchor,d:.45,y:1180+dy,x:()=>-BGM.dx/BGM.k-260-i*330,vx:140,bob:1})),p:[
+   "Парад прошёл мимо дома за полночь. Шли фонари с глазами, шёл знакомый аканамэ, шёл каппа, прикрыв блюдце листом, шла гейша без лица.",
+   "А последней, отстав от всех, шла маленькая девочка в красном кимоно. Она шла спиной вперёд — и смотрела прямо на Мусю.",
+   "У ворот девочка бросила что-то в траву и исчезла вслед за парадом. Утром в траве нашёлся свиток, на котором был нарисован весь парад. Девочки на нём не было."]}},
+ {title:"Глава 6. Сто свечей",room:"bedroom",reward:"r_candle",
+  intro:{p:[
+   "Лиса сказала: сто огней. В эпоху Эдо так играли в хякумоногатари — зажигали сто свечей и рассказывали страшные истории, гася по свече после каждой.",
+   "Когда гаснет последняя, в комнату приходит настоящий дух. Обычно этого боятся. Сегодня этого ждут.",
+   "Нужно рассказывать истории, гасить огни — и не бояться темноты."]},
+  tasks:[{t:"Прочитай три кайдана (кнопка внизу спальни)",ev:"kaidan",n:3},{t:"Погаси 10 свечей в «Ста свечах»",ev:"game",test:d=>d.id==="hyaku"&&d.score>=10},{t:"Погаси андон в спальне",ev:"lamp",test:off=>off}],
+  outro:{chars:[{id:W_,x:()=>visX(1330,150),y:1210,h:400,d:.8,from:4,flicker:1}],p:[
+   "Последний огонёк погас. В спальне стало так темно, что Муся слышала собственное сердце.",
+   "И тогда под футоном кто-то тихонько хихикнул. По татами прокатился красный мячик-тэмари и остановился у Мусиных лап.",
+   "В углу, у самых сёдзи, на миг показалась девочка с чёлкой — и сразу спряталась. Она вернулась. Но ещё не решила, останется ли."]}},
+ {title:"Глава 7. Девочка в красном",room:"engawa",reward:"r_temari",
+  intro:{p:[
+   "Дзасики-вараси остаётся только там, где ей весело: где играют, где много красивых вещей и где хозяева добры ко всем, кто живёт рядом.",
+   "Девочка бегает где-то по дому: то хлопнет дверь, то зазвенит фурин без ветра. Нужно показать ей, что здесь хорошо."]},
+  tasks:[{t:"Поставь в спальне три вещи из «🧺 Вещи»",ev:"tick",test:()=>itemsPlacedIn("bedroom")>=3},{t:"Поиграй с Мусей 5 раз",ev:"act",n:5,test:a=>PLAYS.includes(a)},{t:"Погладь Мусю",ev:"act",test:a=>a==="purr"}],
+  outro:{chars:[{id:W_,x:()=>clamp((pet.x-BGM.dx)/BGM.k+260,-BGM.dx/BGM.k+140,(view.W-BGM.dx)/BGM.k-140),y:1300,h:420,d:.8,from:.4}],p:[
+   "Вечером на веранде рядом с Мусей села девочка в красном кимоно. Она ничего не сказала — только протянула руку и почесала Мусю за ухом. Рука была тёплая.",
+   "Потом они играли в тэмари, пока не стемнело. Мячик девочка оставила Мусе.",
+   "Когда зажгли фонари, девочки на веранде уже не было. Но в глубине дома скрипнула половица — там, где никого не было. Это был самый уютный звук на свете."]}},
+ {title:"Эпилог. Лишний ребёнок",room:"bedroom",reward:"r_mirror",
+  intro:{p:[
+   "В доме снова тепло. Рис в миске для духа к утру исчезает, клубки прячутся сами, а по ночам кто-то топает по коридору босыми пятками.",
+   "Осталось последнее: сделать дом таким, чтобы ей никогда не захотелось уйти."]},
+  tasks:[{t:"Расставь по дому 12 вещей из «🧺 Вещи»",ev:"tick",test:()=>Object.keys(S.placed).length>=12},{t:"Все потребности Муси выше 70",ev:"tick",test:()=>Object.values(S.needs).every(v=>v>70)},{t:"Дай Мусе лапку (двойное касание)",ev:"act",test:a=>a==="highfive"}],
+  outro:{chars:[{id:W_,x:()=>visX(640,150),y:1250,h:410,d:.8,from:.5}],p:[
+   "Ночью Муся проснулась оттого, что кто-то поправлял ей одеяло. Девочка в красном сидела рядом и что-то напевала без слов.",
+   "Говорят, в доме, где живёт дзасики-вараси, если пересчитать детей, всегда выходит на одного больше. В этом доме детей нет. Но если долго смотреть в тёмный коридор, там кто-то стоит — и улыбается.",
+   "Дом снова счастливый. Под подушкой Муся нашла зеркальце и старый ключ от кладовой. А девочка теперь иногда заглядывает в гости."]}}
+];
+const QS=Object.assign({ch:0,prog:[],started:false,done:false},saved.story||{});QS.finishing=false;
+const scene={on:false,ch:0,kind:"",i:0,t0:0,chars:[],done:null};
+const MON_BEAST={m_warashi:"warashi",m_warashi_back:"warashi",m_akaname:"akaname",m_kappa:"kappa",m_kitsune:"kitsune",m_obake:"obake"};
+function chDone(){const C=STORY[QS.ch];return !!C&&C.tasks.every((tk,i)=>(QS.prog[i]||0)>=(tk.n||1));}
+function qev(ev,d){
+  if(!QS.started||QS.done||QS.finishing)return;const C=STORY[QS.ch];if(!C)return;let ch=false;
+  C.tasks.forEach((tk,i)=>{const n=tk.n||1;if((QS.prog[i]||0)>=n||tk.ev!==ev)return;if(tk.test&&!tk.test(d))return;QS.prog[i]=(QS.prog[i]||0)+1;ch=true;if(QS.prog[i]>=n){setTimeout(()=>{toast("✓ "+tk.t);sfx("chime");},200);}});
+  if(ch){save();updateQuest();if(chDone()){QS.finishing=true;setTimeout(finishChapter,1600);}}
+}
+function overlaysOpen(){return !$("game").hidden||!$("story").hidden||!$("album").hidden||!$("journal").hidden;}
+function finishChapter(){
+  if(overlaysOpen()||scene.on){setTimeout(finishChapter,1200);return;}
+  const C=STORY[QS.ch];
+  playScene(QS.ch,"outro",()=>{
+    if(C.reward){S.owned.add(C.reward);setTimeout(()=>{toast(`Реликвия: ${IT[C.reward].n} · 🧺 Вещи → Реликвии`);sfx("chime");burst(12);},300);}
+    if(QS.ch===0)award("story1");
+    QS.ch++;QS.prog=[];QS.finishing=false;
+    if(QS.ch>=STORY.length){QS.done=true;S.owned.add("r_key");award("story");save();updateQuest();visit.next=now()+40;return;}
+    save();updateQuest();setTimeout(()=>playScene(QS.ch,"intro",()=>{updateQuest();qev("tick");}),900);
+  });
+}
+function playScene(ch,kind,done,replay){
+  const C=STORY[ch],sc=C&&C[kind];if(!sc){done&&done();return;}
+  for(const id of ["story","album","journal"])$(id).hidden=true;
+  if(S.room!==C.room)goRoom(C.room);
+  if(sc.fx&&!replay)sc.fx();
+  Object.assign(scene,{on:true,ch,kind,i:0,t0:now(),chars:(sc.chars||[]).map(c=>Object.assign({},c)),done,reward:kind==="outro"?C.reward:null});
+  for(const c of scene.chars){const b=MON_BEAST[c.id];if(b&&!ST.seen.includes(b)){ST.seen.push(b);}}
+  if(pet.action!=="sleep")start("idle");spook.ev=null;
+  $("stage").classList.add("cine");document.body.classList.add("cine");$("quest").hidden=true;$("scene").hidden=false;showPara();ui();
+  if(snd.on&&snd.ctx){tone(110,2.2,"sine",.05);tone(165,2.4,"sine",.03);}
+}
+function showPara(){
+  const C=STORY[scene.ch],sc=C[scene.kind],last=scene.i>=sc.p.length-1;
+  $("scHead").textContent=C.title+(scene.kind==="outro"?" · развязка":"");
+  const tx=$("scText");tx.textContent=sc.p[scene.i];tx.classList.remove("in");void tx.offsetWidth;tx.classList.add("in");
+  const img=$("scImg");if(last&&scene.reward){img.src="assets/items/"+scene.reward+".webp";img.hidden=false;}else img.hidden=true;
+  $("scNext").textContent=last?(scene.kind==="intro"?"Начать":"Дальше"):"Дальше ›";
+}
+function nextPara(){
+  if(!scene.on)return;audioInit();const sc=STORY[scene.ch][scene.kind];
+  if(scene.i<sc.p.length-1){scene.i++;showPara();tone(520,.05,"sine",.02);return;}
+  scene.on=false;$("scene").hidden=true;$("stage").classList.remove("cine");document.body.classList.remove("cine");const d=scene.done;scene.done=null;updateQuest();ui();d&&d();
+}
+function drawSceneChars(t,front){
+  if(!scene.on&&!visit.on)return;const list=scene.on?scene.chars:[visit.c];
+  for(const c of list){if(!c)continue;const e=t-scene.t0-(c.from||0);if(!visit.on&&e<0)continue;if(c.to&&e>c.to-(c.from||0)+1)continue;
+    let x=typeof c.x==="function"?c.x():c.x;if(c.vx)x+=c.vx*Math.max(0,t-scene.t0);const y=c.y+(c.bob?Math.sin(t*5+x*.01)*6:0);
+    if((y>catLineY()+6)!==front)continue;
+    let a=visit.on&&!scene.on?visit.alpha:clamp(e/1.2,0,1);if(c.to)a*=clamp((c.to-(c.from||0)-e)/1.2+1,0,1);if(c.flicker)a*=Math.sin(t*19)>-.2?1:.3;
+    drawMon(c.id,x,y,c.h,c.d,a,c.anchor||"b");}
+}
+function updateQuest(){
+  const q=$("quest");if(!QS.started||QS.done||scene.on){q.hidden=true;return;}
+  const C=STORY[QS.ch];if(!C){q.hidden=true;return;}const i=C.tasks.findIndex((tk,k)=>(QS.prog[k]||0)<(tk.n||1));
+  if(i<0){q.hidden=true;return;}const tk=C.tasks[i],n=tk.n||1;
+  q.innerHTML=`<span class="qi">📜</span><span><b>${C.title}</b><br>${tk.t}${n>1?` · ${QS.prog[i]||0}/${n}`:""}</span>`;q.hidden=false;
+}
+function openJournal(){
+  const j=$("journal");j.hidden=false;
+  $("journalBody").innerHTML=`<p class="lead">«Дом, где погас фонарь» — история о том, как Муся искала хранительницу своего дома. Задания подсвечены внизу экрана, главы открываются по очереди.</p>`+
+   STORY.map((C,k)=>{const st=k<QS.ch||QS.done?"done":k===QS.ch&&QS.started?"cur":"lock";
+    const tasks=st==="cur"?`<ul class="qtasks">${C.tasks.map((tk,i)=>{const n=tk.n||1,v=Math.min(n,QS.prog[i]||0);return`<li class="${v>=n?"ok":""}">${v>=n?"☑":"☐"} ${tk.t}${n>1?` <em>${v}/${n}</em>`:""}</li>`;}).join("")}</ul>`:"";
+    const rel=C.reward&&S.owned.has(C.reward)?`<img src="assets/items/${C.reward}.webp" alt="">`:"";
+    return`<div class="qch ${st}"><div class="qh">${rel}<div><b>${st==="lock"?"🔒 ???":C.title}</b>${st==="done"?`<button class="back" data-replay="${k}">Перечитать</button>`:st==="cur"?`<button class="back" data-replay="${k}" data-kind="intro">Перечитать начало</button>`:""}</div></div>${tasks}</div>`;}).join("")+
+   (QS.done?`<p class="lead">История пройдена. Дзасики-вараси иногда заглядывает в гости — ищи её в комнатах.</p>`:"");
+}
+$("journalBody").addEventListener("click",ev=>{const b=ev.target.closest("[data-replay]");if(!b)return;const k=+b.dataset.replay;$("journal").hidden=true;playScene(k,b.dataset.kind||"intro",()=>{if(!b.dataset.kind&&STORY[k].outro)setTimeout(()=>playScene(k,"outro",null,true),400);},true);});
+$("journalClose").addEventListener("click",()=>{$("journal").hidden=true;});
+$("quest").addEventListener("click",()=>{audioInit();openJournal();});
+$("scene").addEventListener("click",nextPara);
+// after the story: the house spirit drops by now and then
+const visit={on:false,next:now()+60,t:0,c:null,alpha:0};
+function updateVisit(t){
+  if(!QS.done)return;
+  if(visit.on){const e=t-visit.t;visit.alpha=clamp(Math.min(e/1.5,(8-e)/1.5),0,1);if(e>8){visit.on=false;visit.next=t+rand(70,160);}return;}
+  if(t<visit.next||scene.on||spook.ev||overlaysOpen()||!["engawa","bedroom","kitchen","wardrobe"].includes(S.room))return;
+  const side=Math.random()<.5,x=side?-BGM.dx/BGM.k+110:(view.W-BGM.dx)/BGM.k-110;
+  visit.on=true;visit.t=t;visit.c={id:Math.random()<.3?WB:W_,x,y:1230,h:380,d:.8};setTimeout(()=>{if(visit.on&&pet.action!=="sleep")react("😸",2);},900);
+}
+function visitHit(x,y){if(!visit.on||visit.alpha<.3)return false;const c=visit.c,[sx,sy]=imgToStage(c.x,c.y,c.d),h=c.h*BGM.k,w=h*.47;
+  if(x>sx-w/2&&x<sx+w/2&&y>sy-h&&y<sy){visit.t=now()-6.4;S.needs.joy=clamp(S.needs.joy+10,0,100);toast("Дзасики-вараси хихикает и убегает");chime([1318,1568,2093]);burst(8);return true;}return false;}
+function storyBoot(){
+  updateQuest();
+  if(!QS.started)setTimeout(function go(){if(overlaysOpen()||drag.active){setTimeout(go,2000);return;}playScene(0,"intro",()=>{QS.started=true;save();updateQuest();});},3500);
+  else if(!QS.done&&chDone()){QS.finishing=true;setTimeout(finishChapter,3000);}
+}
+setInterval(()=>{qev("tick");},2000);
+
+$("albumBody").addEventListener("click",ev=>{if(ev.target.closest("#openJournal")){$("album").hidden=true;openJournal();}});
+
 // ───────────────────────── Boot ─────────────────────────
 grainPat=ctx.createPattern(makeGrain(),"repeat");fogTex=makeFog();
 new ResizeObserver(()=>resize()).observe(cv);
 init3D();
-loadImages().then(()=>{
+const LI=loadImages();regItems();LI.then(()=>{
   resize();ui();hudTick();weatherLabel();pet.idle.next=now()+1.5;
   react("😺",2.2);sakura.until=now()+8;sakura.next=now()+rand(40,80);
   $("loading").style.opacity=0;setTimeout(()=>$("loading").remove(),500);
-  requestAnimationFrame(frame);
+  requestAnimationFrame(frame);storyBoot();
 });
 })();
 </script>

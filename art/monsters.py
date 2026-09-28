@@ -233,6 +233,7 @@ def onryo_face():
     save(img, 'm_onryo_face')
 
 
-for f in (lambda: bettari(False), lambda: bettari(True), rokuro_head, onryo_back, peek_head, okubi, onryo_face):
-    f()
-json.dump(META, open(f'{OUT}/monsters.json', 'w'))
+if __name__ == '__main__':
+    for f in (lambda: bettari(False), lambda: bettari(True), rokuro_head, onryo_back, peek_head, okubi, onryo_face):
+        f()
+    json.dump(META, open(f'{OUT}/monsters.json', 'w'))
