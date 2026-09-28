@@ -186,6 +186,7 @@ const IMG={};
 const BG_FILES=["g_forest","g_temple","g_river","g_field","g_room"];
 function loadImages(){
   const bgs=BG_FILES.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{BGI[n]=im;res();};im.onerror=()=>res();im.src="assets/bg/"+n+".webp";}));
+  for(const p of PROPS){for(const v of p.v?["_on","_off"]:[""])DMETA[p.id+v]=[p.w,p.h,"b"];}
   const decs=Object.keys(DMETA).map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{DIMG[n]=im;res();};im.onerror=()=>res();im.src="assets/decor/"+n+".webp";}));
   const kois=KOI_NAMES.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{KOI_IMG[n]=im;res();};im.onerror=()=>res();im.src="assets/koi/"+n+".webp";}));
   const lays=Object.entries(LAYERS).flatMap(([r,L])=>L.map(([ln])=>new Promise(res=>{const im=new Image();im.onload=()=>{LIMG[r+"_"+ln]=im;res();};im.onerror=()=>res();im.src="assets/layers/"+r+"_"+ln+".webp";})));
@@ -604,14 +605,15 @@ function drawBubble(face,scale,alpha){
 function render(t,dt){
   const {W,H,s}=view;ctx.setTransform(view.dpr,0,0,view.dpr,0,0);ctx.clearRect(0,0,W,H);ctx.fillStyle="#0d1210";ctx.fillRect(0,0,W,H);drawLayers(t,false);
   // drifting fog behind the cat
-  if(S.room==="kitchen"){const fl=.85+.1*Math.sin(t*7)+.06*Math.sin(t*13.3),[lx,ly]=imgToStage(1560,300),R=520*BGM.k;const gr=ctx.createRadialGradient(lx,ly,0,lx,ly,R);gr.addColorStop(0,`rgba(235,160,80,${.22*fl})`);gr.addColorStop(1,"rgba(235,160,80,0)");ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}
-  if(S.room==="bedroom"&&!S.lampOff){const fl=.9+.07*Math.sin(t*5.3)+.04*Math.sin(t*11),[lx,ly]=imgToStage(330,1150),R=700*BGM.k;const gr=ctx.createRadialGradient(lx,ly,0,lx,ly,R);gr.addColorStop(0,`rgba(240,190,110,${.16*fl})`);gr.addColorStop(1,"rgba(240,190,110,0)");ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}
-  drawRain(t,false);drawPlaces(t,dt);drawSpook(t,false);drawDecor(t);
+  if(S.room==="kitchen"&&!kitLampOff){const fl=.85+.1*Math.sin(t*7)+.06*Math.sin(t*13.3),[lx,ly]=imgToStage(...propAt("p_kit_lantern",1560,300),.5),R=520*BGM.k;const gr=ctx.createRadialGradient(lx,ly,0,lx,ly,R);gr.addColorStop(0,`rgba(235,160,80,${.22*fl})`);gr.addColorStop(1,"rgba(235,160,80,0)");ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}
+  if(S.room==="bedroom"&&!S.lampOff){const fl=.9+.07*Math.sin(t*5.3)+.04*Math.sin(t*11),[lx,ly]=imgToStage(...propAt("p_bed_andon",330,1150)),R=900*BGM.k;const gr=ctx.createRadialGradient(lx,ly,0,lx,ly,R);gr.addColorStop(0,`rgba(240,190,110,${.16*fl})`);gr.addColorStop(1,"rgba(240,190,110,0)");ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}
+  drawRain(t,false);drawPlaces(t,dt);drawSpook(t,false);drawThings(t,dt,false);
   const p=pose(t);
   // props behind/around the cat
   const e=t-pet.start;
   if(pet.action==="cucumber"){const al=clamp(Math.min(e/.6,(7.4-e)/.5),0,1);if(al>0){ctx.save();ctx.globalAlpha=al;const [cx,]=cellToStage(192,0);ctx.translate(cx,view.floor-10*s);ctx.rotate(-Math.PI/4.4);drawEmoji(ctx,"🥒",0,0,34*s);ctx.restore();}}
   renderCat(p,t);
+  drawThings(t,dt,true);
   drawLayers(t,true);
   drawRain(t,true);
   drawAmbient(t);
@@ -698,8 +700,9 @@ cv.addEventListener("pointerdown",ev=>{
   pointer.x=x;pointer.y=y;pointer.known=true;pet.gazeUntil=now()+2.8;pet.lastInput=now();
   drag.active=true;drag.sx=x;drag.sy=y;drag.px=x;drag.py=y;drag.dist=0;drag.startX=pet.x;
   if(S.room==="onsen"&&S.tool==="soap"&&hitCat(x,y)){drag.mode="soap";if(pet.action!=="wash")start("wash");}
-  else if(hitCat(x,y))drag.mode=onHead(x,y)&&ev.pointerType!=="mouse"?"pet":"cat";
-  else{const dh=decorHit(x,y);if(dh){drag.mode="decor";drag.item=dh;drag.base=(S.dpos[dh.it0.id]||[0,0]).slice();}else drag.mode="bg";}
+  else{const dh=decorHit(x,y);
+    if(dh&&(isFront(dh.it)||!hitCat(x,y))){drag.mode="decor";drag.item=dh;drag.base=(S.dpos[dh.it0.id]||[0,0]).slice();}
+    else if(hitCat(x,y))drag.mode=onHead(x,y)&&ev.pointerType!=="mouse"?"pet":"cat";else drag.mode="bg";}
 });
 cv.addEventListener("pointermove",ev=>{
   const [x,y]=local(ev);const t=now();
@@ -710,15 +713,16 @@ cv.addEventListener("pointermove",ev=>{
   drag.dist+=Math.hypot(x-drag.px,y-drag.py);drag.px=x;drag.py=y;
   if(drag.mode==="soap"){if(hitCat(x,y)&&pet.foam.length<70){const [cx,cy]=stageToCell(x,y);const last=pet.foam[pet.foam.length-1];if(!last||Math.hypot(last.x-cx,last.y-cy)>9){pet.foam.push({x:cx,y:cy,r:rand(6,10),a:1});if(pet.foam.length%6===0)sfx("pop");}}pet.start=now()-1;}
   else if(drag.mode==="pet")stroke(x,y,px,py);
-  else if(drag.mode==="decor"&&drag.dist>8){const id=drag.item.it0.id,hang=DMETA[id][2]==="t"||DMETA[id][2]==="c",dx=(x-drag.sx)/BGM.k,dy=(y-drag.sy)/BGM.k;
-    S.dpos[id]=[clamp(drag.base[0]+dx,-560,560),hang?0:clamp(drag.base[1]+dy,-90,50)];wob[id]=now()-.25;}
+  else if(drag.mode==="decor"&&drag.dist>8){const it0=drag.item.it0,id=it0.id,m=DMETA[it0.imgId||id],hang=m[2]==="t"||m[2]==="c";dragId=id;
+    const dx=(x-drag.sx)/BGM.k,dy=(y-drag.sy)/BGM.k,nx=clamp(it0.x+drag.base[0]+dx,40,1760),ny=clamp(it0.y+drag.base[1]+dy,hang?10:640,hang?900:1400);
+    S.dpos[id]=[nx-it0.x,ny-it0.y];}
   else if(drag.mode==="cat"&&drag.dist>8){if(pet.action!=="idle"&&pet.action!=="drag"){start("idle");}react("🙀",Infinity);pet.x=clamp(drag.startX+(x-drag.sx),96*view.s,view.W-96*view.s);pet.home=pet.x;}
 });
 function endDrag(ev){
   if(!drag.active)return;drag.active=false;const [x,y]=local(ev);
   if(drag.mode==="cat"&&drag.dist>8){react("😽",1.6);return;}
   if(drag.mode==="soap"){pet.start=now()-DUR.washed+0.1;pet.action="wash";return;}
-  if(drag.mode==="decor"){if(drag.dist>8){save();sfx("pop");}else decorTap(drag.item);return;}
+  if(drag.mode==="decor"){const was=dragId;dragId=null;if(drag.dist>8){if(was)wob[was]=now();save();tone(120,.12,"triangle",.05);}else decorTap(drag.item);return;}
   if(drag.dist>8)return;
   if(drag.mode==="cat"||drag.mode==="pet"){
     const t=now();
@@ -839,10 +843,10 @@ const DECOR={
 };
 const DTINT={wardrobe:"rgba(30,20,10,.16)",kitchen:"rgba(40,22,10,.16)",engawa:"rgba(18,26,22,.22)",onsen:"rgba(20,28,26,.26)",bedroom_on:"rgba(40,25,10,.2)",bedroom_off:"rgba(8,10,26,.62)"};
 const tmpCv=document.createElement("canvas"),tmpCx=tmpCv.getContext("2d");
-function drawSprite(g,id,x,y,rot=0,pivot=null,alpha=1){
-  const im=DIMG[id],m=DMETA[id];if(!im||!m)return;const k=BGM.k,w=m[0]*k,h=m[1]*k;
-  const x0=m[2]==="l"?x:x-m[0]/2,y0=m[2]==="t"?y:m[2]==="c"||m[2]==="l"?y-m[1]/2:y-m[1];const [sx,sy]=imgToStage(x0,y0);
-  const tint=DTINT[bgName()];
+function drawSprite(g,id,x,y,rot=0,pivot=null,alpha=1,sc=1,noTint=false){
+  const im=DIMG[id],m=DMETA[id];if(!im||!m)return;const k=BGM.k,w=m[0]*k*sc,h=m[1]*k*sc;
+  const x0=m[2]==="l"?x:x-m[0]*sc/2,y0=m[2]==="t"?y:m[2]==="c"||m[2]==="l"?y-m[1]*sc/2:y-m[1]*sc;const [sx,sy]=imgToStage(x0,y0);
+  const tint=noTint?null:DTINT[bgName()];
   tmpCv.width=Math.ceil(w*view.dpr)+2;tmpCv.height=Math.ceil(h*view.dpr)+2;tmpCx.setTransform(view.dpr,0,0,view.dpr,0,0);
   tmpCx.drawImage(im,0,0,w,h);if(tint){tmpCx.globalCompositeOperation="source-atop";tmpCx.fillStyle=tint;tmpCx.fillRect(0,0,w,h);tmpCx.globalCompositeOperation="source-over";}
   g.save();g.globalAlpha=alpha;
@@ -851,23 +855,35 @@ function drawSprite(g,id,x,y,rot=0,pivot=null,alpha=1){
 }
 let nextTinkle=now()+8,shishiClack=0;
 const DECOR_D={d_furin_glass:.92,d_furin_blue:.92,d_furin_iron:.92,d_chochin:.92,d_koi_pole:.42,d_tsukubai:.42,d_sakura_tree:.42,d_teru:.5,d_hoshigaki:.5,d_kingyo:.5,d_ume:.5,d_scroll_moon:.5,d_scroll_koi:.5,d_scroll_neko:.5,d_scroll_mount:.5,d_yuzu:.55,d_petals:.55,d_sake:.55};
-function drawDecor(t){
-  const room=DECOR[S.room];if(!room)return;const sel=S.decor[S.room]||{};
-  for(const slot of room){const it0=slot.items.find(i=>i.id===sel[slot.k]);if(!it0)continue;const it=ipos(it0),w=wobAng(it.id,t);curD=DECOR_D[it.id]??CAT_D;
-    if(it.sway){const wind=(weather.on?1.8:1)*(t-(wob[it.id]??-9)<2?2.5:1);const a=(.07*Math.sin(t*1.6+it.x)+.035*Math.sin(t*3.7))*wind*it.sway+w;drawSprite(ctx,it.id,it.x,it.y,a,[it.x,it.y]);
+const PROPS=[{"id":"p_eng_toro","room":"engawa","n":"Каменный фонарь","x":1180.0,"y":1090,"w":130,"h":222,"d":0.42,"v":false},{"id":"p_eng_stone0","room":"engawa","n":"Садовый камень","x":520.0,"y":1117,"w":126,"h":38,"d":0.42,"v":false},{"id":"p_eng_stone1","room":"engawa","n":"Садовый камень","x":760.0,"y":1123,"w":126,"h":38,"d":0.42,"v":false},{"id":"p_eng_stone2","room":"engawa","n":"Садовый камень","x":1000.0,"y":1117,"w":126,"h":38,"d":0.42,"v":false},{"id":"p_kit_bowl0","room":"kitchen","n":"Пиала","x":1010.0,"y":475,"w":80,"h":44,"d":0.5,"v":false},{"id":"p_kit_bowl1","room":"kitchen","n":"Пиала","x":1100.0,"y":475,"w":100,"h":50,"d":0.5,"v":false},{"id":"p_kit_bowl2","room":"kitchen","n":"Пиала","x":1200.0,"y":475,"w":70,"h":60,"d":0.5,"v":false},{"id":"p_kit_bowl3","room":"kitchen","n":"Пиала","x":1300.0,"y":475,"w":106,"h":46,"d":0.5,"v":false},{"id":"p_kit_bowl4","room":"kitchen","n":"Пиала","x":1420.0,"y":475,"w":80,"h":70,"d":0.5,"v":false},{"id":"p_kit_bowl5","room":"kitchen","n":"Пиала","x":1530.0,"y":475,"w":98,"h":52,"d":0.5,"v":false},{"id":"p_kit_pot0","room":"kitchen","n":"Горшок","x":1030.0,"y":705,"w":120,"h":70,"d":0.5,"v":false},{"id":"p_kit_pot1","room":"kitchen","n":"Горшок","x":1180.0,"y":705,"w":90,"h":54,"d":0.5,"v":false},{"id":"p_kit_pot2","room":"kitchen","n":"Горшок","x":1330.0,"y":705,"w":130,"h":64,"d":0.5,"v":false},{"id":"p_kit_pot3","room":"kitchen","n":"Горшок","x":1500.0,"y":705,"w":100,"h":80,"d":0.5,"v":false},{"id":"p_kit_lantern","room":"kitchen","n":"Бумажный фонарь","x":1560.0,"y":396,"w":134,"h":396,"d":0.5,"v":false},{"id":"p_kit_noren","room":"kitchen","n":"Занавеска норэн","x":121.0,"y":425,"w":192,"h":425,"d":0.5,"v":false},{"id":"p_kit_kamado","room":"kitchen","n":"Печь камадо","x":1470.0,"y":1155,"w":470,"h":400,"d":0.8,"v":false},{"id":"p_ons_stone0","room":"onsen","n":"Плоский камень","x":900.0,"y":1381,"w":390,"h":102,"d":0.82,"v":false},{"id":"p_ons_stone1","room":"onsen","n":"Плоский камень","x":520.0,"y":1345,"w":270,"h":90,"d":0.82,"v":false},{"id":"p_ons_stone2","room":"onsen","n":"Плоский камень","x":1300.0,"y":1359,"w":310,"h":98,"d":0.82,"v":false},{"id":"p_ons_stone3","room":"onsen","n":"Плоский камень","x":160.0,"y":1305,"w":230,"h":110,"d":0.82,"v":false},{"id":"p_ons_stone4","room":"onsen","n":"Плоский камень","x":1660.0,"y":1319,"w":250,"h":118,"d":0.82,"v":false},{"id":"p_bed_andon","room":"bedroom","n":"Андон","x":330.0,"y":1305,"w":150,"h":260,"d":0.8,"v":true},{"id":"p_bed_ikebana","room":"bedroom","n":"Икебана в нише","x":232.5,"y":1065,"w":373,"h":467,"d":0.5,"v":true},{"id":"p_gam_toro0","room":"games","n":"Каменный фонарь","x":360.0,"y":1255,"w":160,"h":275,"d":0.8,"v":false},{"id":"p_gam_toro1","room":"games","n":"Каменный фонарь","x":1440.0,"y":1255,"w":160,"h":275,"d":0.8,"v":false},{"id":"p_gam_stone0","room":"games","n":"Камень дорожки","x":620.0,"y":1321,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_gam_stone1","room":"games","n":"Камень дорожки","x":760.0,"y":1318,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_gam_stone2","room":"games","n":"Камень дорожки","x":860.0,"y":1315,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_gam_stone3","room":"games","n":"Камень дорожки","x":1000.0,"y":1312,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_gam_stone4","room":"games","n":"Камень дорожки","x":1100.0,"y":1309,"w":150,"h":42,"d":0.8,"v":false},{"id":"p_crt_rock0","room":"courtyard","n":"Валун в заводи","x":1130.0,"y":985,"w":290,"h":110,"d":0.55,"v":false},{"id":"p_crt_rock1","room":"courtyard","n":"Валун в заводи","x":1320.0,"y":1005,"w":230,"h":90,"d":0.55,"v":false},{"id":"p_crt_rock2","room":"courtyard","n":"Валун в заводи","x":1560.0,"y":1004,"w":330,"h":118,"d":0.55,"v":false},{"id":"p_crt_rock3","room":"courtyard","n":"Валун в заводи","x":1000.0,"y":1035,"w":190,"h":70,"d":0.55,"v":false},{"id":"p_crt_stone0","room":"courtyard","n":"Плоский камень","x":900.0,"y":1393,"w":530,"h":126,"d":0.8,"v":false},{"id":"p_crt_stone1","room":"courtyard","n":"Плоский камень","x":520.0,"y":1345,"w":310,"h":90,"d":0.8,"v":false},{"id":"p_crt_stone2","room":"courtyard","n":"Плоский камень","x":1300.0,"y":1359,"w":350,"h":98,"d":0.8,"v":false},{"id":"p_crt_stone3","room":"courtyard","n":"Плоский камень","x":160.0,"y":1325,"w":270,"h":110,"d":0.8,"v":false},{"id":"p_crt_stone4","room":"courtyard","n":"Плоский камень","x":1657.5,"y":1327,"w":285,"h":114,"d":0.8,"v":false},{"id":"p_ent_toro","room":"entrance","n":"Каменный фонарь","x":330.0,"y":1264,"w":322,"h":560,"d":0.85,"v":false},{"id":"p_ent_pillar","room":"entrance","n":"Каменный столб","x":1180.0,"y":1047,"w":78,"h":282,"d":0.7,"v":false}];
+const vpos={};let dragId=null,kitLampOff=false;
+function propAt(id,ox,oy){const d=vpos[id]||S.dpos[id]||[0,0];return[ox+d[0],oy+d[1]];}
+function thingScale(it){const m=DMETA[it.imgId||it.id];if(!m||m[2]!=="b")return 1;const d=(vpos[it.id]||S.dpos[it.id]||[0,0])[1];return clamp(1+d*.0011,.55,1.6);}
+function roomThings(){const out=[];const room=DECOR[S.room];if(room){const sel=S.decor[S.room]||{};for(const slot of room){const it=slot.items.find(i=>i.id===sel[slot.k]);if(it)out.push(Object.assign({slot},it));}}
+  for(const p of PROPS)if(p.room===S.room)out.push({id:p.id,imgId:p.v?p.id+(S.lampOff?"_off":"_on"):p.id,x:p.x,y:p.y,prop:true,d:p.d,n:p.n});return out;}
+function catLineY(){const [,oy]=camOff(CAT_D);return(view.floor+oy-BGM.dy)/BGM.k;}
+function isFront(it){const m=DMETA[it.imgId||it.id];return !!m&&m[2]==="b"&&it.y>catLineY()+6;}
+function drawThings(t,dt,front){
+  const list=roomThings();
+  if(!front)for(const it of list){const tg=S.dpos[it.id]||[0,0],vp=vpos[it.id]||(vpos[it.id]=tg.slice()),k=Math.min(1,dt*11);vp[0]+=(tg[0]-vp[0])*k;vp[1]+=(tg[1]-vp[1])*k;}
+  const L=list.map(ipos).filter(it=>isFront(it)===front).sort((a,b)=>a.y-b.y);
+  for(const it of L){curD=it.prop?it.d:(DECOR_D[it.id]??CAT_D);const w=wobAng(it.id,t),sc=it.sc,iid=it.imgId||it.id,lift=dragId===it.id?-16:0;
+    if(dragId===it.id&&DMETA[iid][2]==="b"){const [sx,sy]=imgToStage(it.x,it.y);ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(sx,sy+3,DMETA[iid][0]*BGM.k*sc*.42,Math.max(4,12*BGM.k*sc),0,0,Math.PI*2);ctx.fill();}
+    if(it.prop){drawSprite(ctx,iid,it.x,it.y+lift,w,[it.x,it.y],1,sc,true);continue;}
+    if(it.sway){const wind=(weather.on?1.8:1)*(t-(wob[it.id]??-9)<2?2.5:1);const a=(.07*Math.sin(t*1.6+it.x)+.035*Math.sin(t*3.7))*wind*it.sway+w;drawSprite(ctx,it.id,it.x,it.y+lift,a,[it.x,it.y],1,sc);
       if(it.id.startsWith("d_furin")&&t>nextTinkle){nextTinkle=t+rand(6,14)/(weather.on?1.8:1);if(snd.on&&snd.ctx){tone(it.id==="d_furin_iron"?1320:2093,1.2,"sine",.025);setTimeout(()=>tone(it.id==="d_furin_iron"?1760:2637,1,"sine",.018),90);}}}
-    else if(it.bob){drawSprite(ctx,it.id,it.x,it.y+Math.sin(t*1.3+it.x)*3,w,[it.x,it.y]);}
+    else if(it.bob){drawSprite(ctx,it.id,it.x,it.y+lift+Math.sin(t*1.3+it.x)*3,w,[it.x,it.y],1,sc);}
     else if(it.koi){drawSprite(ctx,it.id,it.x,it.y,w*.3,[it.x,it.y]);const top=it.y-DMETA[it.id][1]+30,wind=(weather.on?1.6:1)*(t-koiGust<3?3:1);
       ["d_koi_black","d_koi_red","d_koi_blue"].forEach((c,i)=>{const ay=top+20+i*62,a=(.12*Math.sin(t*2.1*(t-koiGust<3?2:1)+i*1.3)+.06*Math.sin(t*5+i))*wind+.05;drawSprite(ctx,c,it.x+4,ay+Math.sin(t*3+i)*4,a,[it.x+4,ay]);});}
     else if(it.shishi){drawSprite(ctx,it.id,it.x,it.y,w*.3,[it.x,it.y]);
       const cyc=(((t-shishiOff)%6)+6)%6/6,ang=cyc<.93?mix(-.28,.34,Math.pow(cyc/.93,2.2)):mix(.34,-.28,(cyc-.93)/.07);
       if(cyc>.93&&t-shishiClack>1){shishiClack=t;if(snd.on&&snd.ctx){tone(420,.08,"square",.05);tone(210,.12,"triangle",.06);}}
       drawSprite(ctx,"d_shishi_tube",it.x+85,it.y-128,ang,[it.x+85,it.y-128]);}
-    else drawSprite(ctx,it.id,it.x,it.y,w,[it.x,DMETA[it.id][2]==="t"?it.y:it.y]);
+    else drawSprite(ctx,it.id,it.x,it.y+lift,w,[it.x,it.y],1,sc);
     lightGlow(it,t);decorLife(it,t);}
   curD=CAT_D;
 }
-function spritePt(it,sx,sy){const m=DMETA[it.id],x0=m[2]==="l"?it.x:it.x-m[0]/2,y0=m[2]==="t"?it.y:m[2]==="c"||m[2]==="l"?it.y-m[1]/2:it.y-m[1];return imgToStage(x0+sx,y0+sy);}
+function spritePt(it,sx,sy){const [x0,y0,w]=spriteBox(it),f=w/DMETA[it.imgId||it.id][0];return imgToStage(x0+sx*f,y0+sy*f);}
 function decorLife(it,t){
   const k=BGM.k;
   if(it.steam||it.smoke){const [ex,ey]=spritePt(it,...(it.steam||it.smoke)),sm=!!it.smoke;
@@ -1021,13 +1037,12 @@ function drawAmbient(t){
 
 // ───────────────────────── Touchable, movable decor ─────────────────────────
 const wob={},boost={},floatFx=[];let koiGust=-9,shishiOff=0;
-function ipos(it){const d=S.dpos[it.id]||[0,0];return Object.assign({},it,{x:it.x+d[0],y:it.y+d[1]});}
+function ipos(it){const d=vpos[it.id]||S.dpos[it.id]||[0,0];return Object.assign({},it,{x:it.x+d[0],y:it.y+d[1],sc:thingScale(it)*(dragId===it.id?1.06:1)});}
 function wobAng(id,t){const e=t-(wob[id]??-9);return e<1.4?.14*Math.sin(e*16)*Math.exp(-e*3.2):0;}
-function spriteBox(it){const m=DMETA[it.id],x0=m[2]==="l"?it.x:it.x-m[0]/2,y0=m[2]==="t"?it.y:m[2]==="c"||m[2]==="l"?it.y-m[1]/2:it.y-m[1];return[x0,y0,m[0],m[1]];}
-function decorHit(x,y){const room=DECOR[S.room];if(!room)return null;const sel=S.decor[S.room]||{};let hit=null;
-  for(const slot of room){const it0=slot.items.find(i=>i.id===sel[slot.k]);if(!it0)continue;const it=ipos(it0),[x0,y0,w,h]=spriteBox(it);curD=DECOR_D[it.id]??CAT_D;
-    const [ax,ay]=imgToStage(x0+w*.1,y0+h*.06),[bx,by]=imgToStage(x0+w*(it.koi?3.4:.9),y0+h*(it.koi?.45:.97));
-    if(x>=ax&&x<=bx&&y>=ay&&y<=by)hit={it0,it,slot};}
+function spriteBox(it){const m=DMETA[it.imgId||it.id],sc=it.sc||1,x0=m[2]==="l"?it.x:it.x-m[0]*sc/2,y0=m[2]==="t"?it.y:m[2]==="c"||m[2]==="l"?it.y-m[1]*sc/2:it.y-m[1]*sc;return[x0,y0,m[0]*sc,m[1]*sc];}
+function decorHit(x,y){let hit=null;const all=roomThings(),L=all.map(ipos).sort((a,b)=>(isFront(a)-isFront(b))||a.y-b.y);
+  for(const it of L){curD=it.prop?it.d:(DECOR_D[it.id]??CAT_D);const [x0,y0,w,h]=spriteBox(it),[ax,ay]=imgToStage(x0+w*.08,y0+h*.04),[bx,by]=imgToStage(x0+w*(it.koi?3.4:.92),y0+h*(it.koi?.45:.98));
+    if(x>=ax&&x<=bx&&y>=ay&&y<=by)hit={it0:all.find(q=>q.id===it.id),it,slot:it.slot};}
   curD=CAT_D;return hit;}
 function fxAt(it,glyphs,n=3){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.35),t=now();for(let i=0;i<n;i++)floatFx.push({g:pick(glyphs),x:sx+rand(-24,24)*view.s,y:sy+rand(-10,10)*view.s,t:t+i*.1});}
 function petalsAt(it,n=14){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.3);for(let i=0;i<n;i++)sakura.list.push({x:sx+rand(-40,40)*view.s,y:sy+rand(-20,20)*view.s,vx:rand(-40,40),vy:rand(-50,10),rot:rand(0,6),vr:rand(-3,3),size:rand(4,7)*view.s,ph:rand(0,6),life:rand(2.5,4)});}
@@ -1035,6 +1050,17 @@ function splashAt(it,n=30){const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0
 function walkTo(it,after,face){pet.walkTarget=clamp(imgToStage(it.x,0)[0],96*view.s,view.W-96*view.s);pet.walkAfter=after;start("walkto");if(face)react(face,1.6);}
 function chime(notes){notes.forEach((f,i)=>setTimeout(()=>tone(f,1.1,"sine",.03),i*120));}
 function decorTap(h){
+  if(h.it.prop){const P=h.it.id;wob[P]=now();audioInit();
+    if(P==="p_bed_andon"){S.lampOff=!S.lampOff;if(S.lampOff){start("sleep");pet.napUntil=0;award("sleep");}else if(pet.action==="sleep")start("stretch");paint();ui();}
+    else if(P==="p_ent_toro"){lanternOn=!lanternOn;tone(lanternOn?600:300,.08,"square",.04);react(lanternOn?"😸":"🙀",1.2);ui();}
+    else if(P==="p_kit_lantern"){kitLampOff=!kitLampOff;tone(kitLampOff?300:600,.08,"square",.04);}
+    else if(P.includes("bowl")||P.includes("pot")){tone(P.includes("bowl")?1500:1100,.3,"sine",.04);tone(P.includes("bowl")?2250:1650,.2,"sine",.02);}
+    else if(P==="p_kit_kamado"){fxAt(h.it,["✨"],5);tone(160,.3,"triangle",.05);}
+    else if(P==="p_kit_noren"){tone(500,.3,"sine",.02);}
+    else if(P==="p_bed_ikebana"){petalsAt(h.it,12);}
+    else if(P.startsWith("p_crt_rock")){splashAt(h.it,16);}
+    else{tone(90,.2,"triangle",.08);tone(140,.12,"sine",.05);}
+    return;}
   curD=DECOR_D[h.it.id]??CAT_D;setTimeout(()=>{curD=CAT_D;},0);
   const it=h.it,id=it.id,t=now();wob[id]=t;boost[id]=t;audioInit();S.needs.joy=clamp(S.needs.joy+1,0,100);
   const P=id.replace(/^d_/,"");
@@ -1093,8 +1119,8 @@ function drawPlaces(t,dt){
     ctx.restore();
   }
   if(S.room==="entrance"){const fl=.88+.08*Math.sin(t*5.7)+.05*Math.sin(t*12.3);
-    for(const [ix,iy,R,on,dd] of [[330,880,380,lanternOn,.85],[882,870,160,true,.38]]){if(!on)continue;const [x,y]=imgToStage(ix,iy,dd),r=R*BGM.k;const gr=ctx.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(245,190,110,${.32*fl})`);gr.addColorStop(1,"rgba(245,190,110,0)");ctx.fillStyle=gr;ctx.fillRect(x-r,y-r,r*2,r*2);}
-    if(!lanternOn){const [x,y]=imgToStage(330,885,.85);ctx.fillStyle="rgba(8,8,8,.85)";ctx.fillRect(x-20*BGM.k,y-26*BGM.k,40*BGM.k,52*BGM.k);}
+    for(const [ix,iy,R,on,dd] of [[...propAt("p_ent_toro",330,880),380,lanternOn,.85],[882,870,160,true,.38]]){if(!on)continue;const [x,y]=imgToStage(ix,iy,dd),r=R*BGM.k;const gr=ctx.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(245,190,110,${.32*fl})`);gr.addColorStop(1,"rgba(245,190,110,0)");ctx.fillStyle=gr;ctx.fillRect(x-r,y-r,r*2,r*2);}
+    if(!lanternOn){const [x,y]=imgToStage(...propAt("p_ent_toro",330,885),.85);ctx.fillStyle="rgba(8,8,8,.85)";ctx.fillRect(x-20*BGM.k,y-26*BGM.k,40*BGM.k,52*BGM.k);}
     ctx.save();ctx.globalAlpha=.2;const fw=900*view.s*1.3,fh=260*view.s*1.3,off=(t*6*view.s)%fw;for(let x=-off;x<view.W;x+=fw)ctx.drawImage(fogTex,x,view.H*.45,fw,fh);ctx.restore();
   }
 }
