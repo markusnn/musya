@@ -191,14 +191,16 @@ const STRIPS=["rest","moveRight","moveLeft","sleep","play","purr","yarn","treat"
 const ANCH={"rest":[[98,32.5],[86.2,35],[94.8,35],[96.8,34.5],[99,33],[97.8,36],[92.8,33],[98.8,31]],"moveRight":[[146.8,67],[149.8,70.5],[139.5,72],[143.5,71.5],[151.2,72],[146.8,77],[146.8,74],[144.8,77.5]],"moveLeft":[[75.5,63.5],[65.2,62],[67.2,67.5],[75.2,63.5],[69,64],[65.5,61.5],[69.5,65],[71,63.5]],"sleep":[[94,27.5],[102.2,39.5],[98.2,77],[101.8,102.5],[96,85.5],[98.8,91.5],[101.5,93],[105,92]],"play":[[99.2,58],[97.5,56.5],[105,63],[102,58.5],[118,55],[105.5,60.5],[104.8,53],[103,58.5]],"purr":[[97.5,33],[96.2,35],[94.8,37.5],[96.5,38],[101.2,36.5],[97,34.5],[91,35.5],[96.5,33.5]],"yarn":[[102,26.5],[116.8,29.5],[110,44],[119.8,47],[98.2,30],[96.8,21.5],[96.2,44],[132.2,36.5]],"treat":[[101.5,29.5],[100.2,30.5],[101,34],[102.8,30.5],[102.8,30.5],[102,30],[98.5,29.5],[99.5,27]],"highfive":[[98.5,36],[97.2,34.5],[106.2,30],[106.8,34],[103.5,31],[104,32],[97.8,33],[98,37]],"stretch":[[96.2,45.5],[89.5,53.5],[110,55.5],[136.8,19],[67.8,24.5],[100.2,36.5],[95.5,47],[95.2,45.5]],"groom":[[97.2,36],[102.5,36.5],[105.2,39.5],[101.5,39.5],[94.8,32],[97.8,34.5],[101.5,34.5],[100,40]],"knead":[[105,25.5],[98.2,32],[89.8,29.5],[103.2,26],[110.8,32.5],[101,38],[100.8,37.5],[104.8,34.5]],"house":[[103.5,65],[105,77],[113.5,58],[104,71.5],[105.2,81.5],[105.2,78.5],[105.2,70],[105.8,73]],"butterfly":[[103.2,56],[92,55.5],[107.8,108],[115.8,64.5],[113,30],[103,56.5],[92.5,112],[94.2,61]],"box":[[101.2,49],[127.5,46.5],[118.2,75],[113,67],[117.5,111],[137.8,95],[118.5,116],[108.5,78.5]],"gift":[[105,57],[100.2,59.5],[96,66.5],[117.2,61.5],[108.5,68.5],[119.2,74.5],[103.2,61],[102.5,49.5]],"hide":[[99,29],[99.8,29.5],[96,33],[98,36.5],[96,29.5],[103,31],[100.5,29.5],[101.2,28.5]],"sulk":[[94.2,26.5],[92.8,31],[104.5,29.5],[100.8,37],[115.2,26],[88,27.5],[102,29.5],[112,32]],"gaze9":[[97.8,33.5],[93.2,36],[93.8,38],[95.8,39.5],[111.5,44],[108,43],[107,44],[104.8,48.5]],"gaze10":[[94.5,47],[94,47.5],[91.8,48.5],[82.5,47.5],[89.8,51.5],[90.8,50.5],[92.5,47.5],[101.5,45.5]]};
 const IMG={};
 const BG_FILES=["g_forest","g_temple","g_river","g_field","g_room"];
+// retries a failed image a few times; the game starts anyway and the picture appears when it arrives
+function ldImg(src,set){return new Promise(res=>{let n=0;const go=()=>{const im=new Image();im.onload=()=>{set(im);res();};im.onerror=()=>{res();if(n++<3)setTimeout(go,1500*n);};im.src=src;};go();});}
 function loadImages(){
-  const bgs=BG_FILES.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{BGI[n]=im;res();};im.onerror=()=>res();im.src="assets/bg/"+n+".webp";}));
+  const bgs=BG_FILES.map(n=>ldImg("assets/bg/"+n+".webp",im=>{BGI[n]=im;}));
   for(const p of PROPS){for(const v of p.v?["_on","_off"]:[""])DMETA[p.id+v]=[p.w,p.h,"b"];}
-  const decs=Object.keys(DMETA).map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{DIMG[n]=im;res();};im.onerror=()=>res();im.src="assets/decor/"+n+".webp";}));
-  const kois=KOI_NAMES.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{KOI_IMG[n]=im;res();};im.onerror=()=>res();im.src="assets/koi/"+n+".webp";}));
-  const lays=Object.entries(LAYERS).flatMap(([r,L])=>L.map(([ln])=>new Promise(res=>{const im=new Image();im.onload=()=>{LIMG[r+"_"+ln]=im;res();};im.onerror=()=>res();im.src="assets/layers/"+r+"_"+ln+".webp";})));
-  const mons=Object.keys(MON).map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{MIMG[n]=im;res();};im.onerror=()=>res();im.src="assets/mon/"+n+".webp";}));
-  return Promise.all([...bgs,...lays,...mons,...decs,...kois,...STRIPS.map(n=>new Promise(res=>{const im=new Image();im.onload=()=>{IMG[n]=im;res();};im.onerror=()=>res();im.src="assets/"+n+"@2x.webp";}))]);
+  const decs=Object.keys(DMETA).map(n=>ldImg("assets/decor/"+n+".webp",im=>{DIMG[n]=im;}));
+  const kois=KOI_NAMES.map(n=>ldImg("assets/koi/"+n+".webp",im=>{KOI_IMG[n]=im;}));
+  const lays=Object.entries(LAYERS).flatMap(([r,L])=>L.map(([ln])=>ldImg("assets/layers/"+r+"_"+ln+".webp",im=>{LIMG[r+"_"+ln]=im;})));
+  const mons=Object.keys(MON).map(n=>ldImg("assets/mon/"+n+".webp",im=>{MIMG[n]=im;}));
+  return Promise.all([...bgs,...lays,...mons,...decs,...kois,...STRIPS.map(n=>ldImg("assets/"+n+"@2x.webp",im=>{IMG[n]=im;}))]);
 }
 const EMOJI='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 
