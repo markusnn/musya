@@ -211,6 +211,18 @@ body.cine .tray,body.cine .tabs{display:none}
 .card .need>span.no{border-color:rgba(194,106,90,.7)}.card .need small{font-size:10.5px;color:var(--muted)}
 .card p.miss{font-size:13px;color:var(--sakura)}
 .btn:disabled{opacity:.4}
+/* Add-ons: the story tab, «家 Дом» hub cards, locked rooms */
+.tabs .stab{position:sticky;left:0;z-index:2;background:var(--ink);color:var(--sakura);box-shadow:-8px 0 0 var(--ink),8px 0 10px -8px #000;border-right:1px solid var(--line);border-radius:0 10px 10px 0}
+.tabs button.lock{opacity:.55}
+.hubc{border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--ink-2);margin:0 0 12px}
+.hubc h4{font-family:var(--display);font-size:20px;margin:0 0 6px;color:var(--paper);display:flex;align-items:center;gap:8px}
+.hubc h4 i{font-style:normal;font-family:var(--jp);font-size:14px;color:var(--sakura)}
+.story-body .hubc p{font-size:14px;line-height:1.5;margin:4px 0}
+.hubc .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.book{margin-bottom:28px}.story-body .book h3{margin-top:4px}
+.qch .sbtn{margin-top:10px;width:100%}
+.story-body .qch .gate,.story-body .qch .ready{font-size:14px;margin:8px 0 0;color:var(--muted)}.story-body .qch .ready{color:var(--sakura)}
+@media (max-width:440px){.coins{display:none}.brand{margin-right:auto}}
 @media (max-width:420px){.hud{gap:6px}.hud .iconbtn{width:31px;height:31px;font-size:14px}}
 </style>
 
@@ -218,6 +230,7 @@ body.cine .tray,body.cine .tabs{display:none}
   <header class="hud">
     <div class="brand"><b>Муся</b><i>猫の家</i></div>
     <div class="coins" title="Баланс бесконечный"><span class="mon"></span><span id="coinVal">∞</span></div>
+    <button class="iconbtn" id="homeBtn" aria-label="Дом и дела" title="Дом и дела" style="font-family:var(--jp)">家</button>
     <button class="iconbtn" id="calBtn" aria-label="Праздники и гости" title="Праздники и гости" style="font-family:var(--jp)">暦</button>
     <button class="iconbtn" id="albumBtn" aria-label="Альбом штампов" title="Альбом штампов" style="font-family:var(--jp)">印</button>
     <button class="iconbtn" id="weatherBtn" aria-label="Погода" title="Погода: авто">🌦</button>
@@ -234,6 +247,7 @@ body.cine .tray,body.cine .tabs{display:none}
     <button class="fchip" id="fchip" hidden></button>
     <div class="scene" id="scene" hidden><div class="sc-head" id="scHead"></div><div class="sc-text" id="scText"></div><div class="sc-row"><span id="scImg" class="scimg" hidden></span><button class="btn primary" id="scNext">Дальше</button></div></div>
     <div class="scene gdlg" id="gdlg" hidden><div class="sc-head" id="gdHead"></div><div class="sc-text" id="gdText"></div><div class="sc-row"><span class="scimg" id="gdImg"></span><button class="btn" id="gdLater">Позже</button><button class="btn primary" id="gdGive">Угостить</button></div></div>
+    <div class="scene gdlg" id="xdlg" hidden><div class="sc-head" id="xdHead"></div><div class="sc-text" id="xdText"></div><div class="sc-row"><span class="scimg" id="xdImg"></span><button class="btn" id="xdNo">Позже</button><button class="btn primary" id="xdOk">Хорошо</button></div></div>
   </main>
   <section class="tray" id="tray"></section>
   <nav class="tabs" id="tabs" role="tablist"></nav>
@@ -243,9 +257,10 @@ body.cine .tray,body.cine .tabs{display:none}
   <div class="field" id="gField"><canvas id="gcv"></canvas><div class="result" id="gResult" hidden></div></div>
 </div>
 <div class="story" id="story" hidden><header><h2 id="storyTitle">Кайданы на ночь</h2><button class="iconbtn" id="storyClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="storyBody"></div></div>
-<div class="story" id="journal" hidden><header><h2>Дневник Муси</h2><button class="iconbtn" id="journalClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="journalBody"></div></div>
+<div class="story" id="journal" hidden><header><h2>Сюжет</h2><button class="iconbtn" id="journalClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="journalBody"></div></div>
 <div class="story" id="album" hidden><header><h2>Альбом штампов</h2><button class="iconbtn" id="albumClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="albumBody"></div></div>
 <div class="story" id="cal" hidden><header><h2>Праздники и гости</h2><button class="iconbtn" id="calClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="calBody"></div></div>
+<div class="story" id="xpanel" hidden><header><h2 id="xpTitle"></h2><button class="iconbtn" id="xpClose" aria-label="Закрыть">✕</button></header><div class="story-body" id="xpBody"></div></div>
 <div class="loading" id="loading">Муся просыпается…</div>
 
 <script>
@@ -365,14 +380,28 @@ const S={
   wearTab:"head",
   decor:Object.assign({engawa:{plant:"d_bonsai",chime:"d_furin_glass"},onsen:{bucket:"d_okeya"},bedroom:{}},saved.decor||{}),
   trayMode:{},weather:saved.weather||"auto",scary:saved.scary!==false,
-  dpos:saved.dpos||{},lightsOff:saved.lightsOff||{}
+  dpos:saved.dpos||{},lightsOff:saved.lightsOff||{},
+  ext:saved.ext||{}   // add-on systems keep their state here: S.ext.<name>
 };
 for(const id of ["d_bonsai","d_furin_glass","d_okeya"])S.owned.add(id);
 // Time away: needs fade a little, never below 15 on return.
 if(saved.t){const mins=clamp((Date.now()-saved.t)/60000,0,360);for(const k of ["food","clean","joy"])S.needs[k]=Math.max(Math.min(S.needs[k],15),S.needs[k]-mins*0.5);S.needs.energy=clamp(S.needs.energy+mins*0.8,0,100);}
-function save(){store.set({needs:S.needs,owned:[...S.owned],wear:S.wear,best:S.best,earned:S.earned,decor:S.decor,dpos:S.dpos,lightsOff:S.lightsOff,weather:S.weather,scary:S.scary,stats:typeof ST!=="undefined"?ST:saved.stats,placed:S.placed,pantry:S.pantry,cooked:S.cooked,catch:S.catch,crops:S.crops,wishes:S.wishes,garden:S.garden,guest:S.guest,friends:S.friends,fest:S.fest,story:typeof QS!=="undefined"?{ch:QS.ch,prog:QS.prog,started:QS.started,done:QS.done}:saved.story,t:Date.now()});}
+function save(){store.set({needs:S.needs,owned:[...S.owned],wear:S.wear,best:S.best,earned:S.earned,decor:S.decor,dpos:S.dpos,lightsOff:S.lightsOff,weather:S.weather,scary:S.scary,stats:typeof ST!=="undefined"?ST:saved.stats,placed:S.placed,pantry:S.pantry,cooked:S.cooked,catch:S.catch,crops:S.crops,wishes:S.wishes,garden:S.garden,guest:S.guest,friends:S.friends,fest:S.fest,story:typeof QS!=="undefined"?{ch:QS.ch,prog:QS.prog,started:QS.started,done:QS.done,seen:QS.seen,ready:QS.ready}:saved.story,ext:S.ext,t:Date.now()});}
 setInterval(save,5000);
 addEventListener("pagehide",save);
+
+// ───────────────────────── Add-on hooks ─────────────────────────
+// Every add-on system is its own { … } block before «Boot» and plugs in with hook(name,fn):
+// hk(name,…) asks the handlers in order and returns the first truthy answer; hkAll(name,…) calls them all and collects the answers.
+const HK={},X={};   // X.<addon> — handles one add-on shares with others (and with tests)
+function hook(name,fn){(HK[name]||(HK[name]=[])).push(fn);}
+function hk(name,...a){for(const f of HK[name]||[]){try{const r=f(...a);if(r)return r;}catch(e){console.error("hook "+name,e);}}}
+function hkAll(name,...a){const out=[];for(const f of HK[name]||[]){try{const r=f(...a);if(r)out.push(r);}catch(e){console.error("hook "+name,e);}}return out;}
+// Musya is out of the house (a trip): she is not drawn, does not react, and her needs stand still
+function petAway(){return !!S.ext.away;}
+// the first time something collectible is found (the hundred candles count these)
+function disc(kind,id){const D=S.ext.disc||(S.ext.disc={}),k=D[kind]||(D[kind]={});if(k[id])return false;k[id]=Date.now();hkAll("disc",kind,id);return true;}
+function discN(kind){return Object.keys((S.ext.disc||{})[kind]||{}).length;}
 
 const pet={action:"idle",start:0,auto:false,x:0,home:0,lift:0,heading:1,walk:0,napUntil:0,face:null,
   idle:{kind:"none",start:0,next:0},gazeUntil:0,lastInput:0,cur:null,prev:null,fadeStart:0,fadeLen:.1,lastChange:0,
@@ -382,6 +411,7 @@ const pointer={x:0,y:0,known:false,moved:0};
 
 // ───────────────────────── Pet behaviour ─────────────────────────
 function start(a,auto=false){
+  if(petAway()&&a!=="idle"){if(!auto)toast("Муся в путешествии — скоро вернётся");return;}
   const t=now();if(!auto)try{qev("act",a);}catch(e){}
   pet.action=a;pet.start=t;pet.auto=auto;pet.home=pet.x;pet.walk=0;pet.napUntil=0;pet.variant=Math.floor(Math.random()*1000);
   pet.idle.kind="none";pet.idle.next=t+1.2;
@@ -698,7 +728,7 @@ function hatOK(st,f){return !(st==="sleep"&&f>=2)&&st!=="house"&&!(st==="box"&&f
 function bodyAt(st){return bodyAt[st]||(bodyAt[st]=[0,1].map(j=>{const v=ANCH[st].map(a=>a[j]).sort((a,b)=>a-b);return v[v.length>>1];}));}
 function drawWear(g,st,f,k){
   const an=ANCH[st]&&ANCH[st][f];if(!an)return;const x=an[0]*k,y=an[1]*k,w=S.wear,E=EYES[st]&&EYES[st][f]||null;
-  if(w.body&&NECKOK.has(st)&&WSPR[w.body]){const B=bodyAt(st);sprWear(g,w.body,B[0]*k,B[1]*k,k);}
+  if(w.body&&NECKOK.has(st)&&WSPR[w.body]&&!hk("drawBody",g,st,f,k,w.body)){const B=bodyAt(st);sprWear(g,w.body,B[0]*k,B[1]*k,k);}
   if(w.neck&&NECKOK.has(st)){g.save();wearT(g,E,k,x,y,"neck");if(WSPR[w.neck])sprWear(g,w.neck,x,y,k);else{const ny=y+74*k;
     if(w.neck==="juzu"){for(let i=0;i<13;i++){const a=Math.PI*(.08+i/12*.84);g.fillStyle=i%4?"#3a2418":"#6b4a2a";g.beginPath();g.arc(x+Math.cos(a)*26*k,ny-4*k+Math.sin(a)*9*k,3.4*k,0,Math.PI*2);g.fill();}g.fillStyle="#6b1f1a";g.fillRect(x-2*k,ny+6*k,4*k,14*k);}
     else if(w.neck==="obiage"){g.fillStyle="#e39ab2";for(const d of[-1,1]){g.beginPath();g.ellipse(x+d*9*k,ny+2*k,10*k,6*k,d*.3,0,Math.PI*2);g.fill();}g.fillStyle="#c9738f";g.beginPath();g.arc(x,ny+2*k,4*k,0,Math.PI*2);g.fill();}
@@ -808,10 +838,10 @@ function render(t,dt){
   // props behind/around the cat
   const e=t-pet.start;
   if(pet.action==="cucumber"){const al=clamp(Math.min(e/.6,(7.4-e)/.5),0,1);if(al>0){ctx.save();ctx.globalAlpha=al;const [cx,]=cellToStage(192,0);ctx.translate(cx,view.floor-10*s);ctx.rotate(-Math.PI/4.4);drawEmoji(ctx,"🥒",0,0,34*s);ctx.restore();}}
-  drawSceneChars(t,false);drawGuest(t,false);
-  renderCat(p,t);
+  drawSceneChars(t,false);drawGuest(t,false);hkAll("draw",t,false);
+  const away=petAway();if(!away)renderCat(p,t);
   drawThings(t,dt,true);
-  drawSceneChars(t,true);drawGuest(t,true);
+  drawSceneChars(t,true);drawGuest(t,true);hkAll("draw",t,true);
   if(!draw3D(t,true))drawLayers(t,true);
   drawRain(t,true);drawFall();
   drawAmbient(t);
@@ -825,21 +855,21 @@ function render(t,dt){
   for(const d of pet.drops){ctx.strokeStyle=`rgba(170,205,220,${d.a})`;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(d.x,d.y);ctx.lineTo(d.x-d.vx*.02,d.y-12);ctx.stroke();}
   if(S.room==="onsen"){ctx.save();for(let i=0;i<7;i++){const ph=(t*.1+i/7)%1,[px,py]=imgToStage(900+(i-3)*170,1080),x=px+Math.sin(t*.5+i)*20*s,y=py-ph*170*s,r=60*s;const gr=ctx.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,`rgba(225,230,226,${.2*Math.sin(Math.PI*ph)})`);gr.addColorStop(1,"rgba(225,230,226,0)");ctx.fillStyle=gr;ctx.fillRect(x-r,y-r,r*2,r*2);}ctx.restore();}
   // stink lines when dirty
-  if(S.needs.clean<25&&pet.action!=="sleep"){ctx.save();ctx.strokeStyle="rgba(150,160,120,.45)";ctx.lineWidth=1.6*s;for(let i=0;i<3;i++){const [x,y]=cellToStage(70+i*28,200);ctx.beginPath();for(let k=0;k<=12;k++){const yy=y-k*3*s-((t*14*s)%(12*s)),xx=x+Math.sin(k*.9+t*3+i)*4*s;k?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);}ctx.stroke();}ctx.restore();}
+  if(S.needs.clean<25&&pet.action!=="sleep"&&!away){ctx.save();ctx.strokeStyle="rgba(150,160,120,.45)";ctx.lineWidth=1.6*s;for(let i=0;i<3;i++){const [x,y]=cellToStage(70+i*28,200);ctx.beginPath();for(let k=0;k<=12;k++){const yy=y-k*3*s-((t*14*s)%(12*s)),xx=x+Math.sin(k*.9+t*3+i)*4*s;k?ctx.lineTo(xx,yy):ctx.moveTo(xx,yy);}ctx.stroke();}ctx.restore();}
   // moods
   const sp=particleSpec(pet.action);
   if(sp){for(const q of emit(sp,e,DUR[pet.action])){const [x,y]=cellToStage(q.x,q.y);if(q.letter){ctx.save();ctx.globalAlpha=q.al;ctx.font=`800 ${q.size*s}px ${getComputedStyle(document.body).fontFamily}`;ctx.textAlign="center";ctx.fillStyle=q.g.toLowerCase()==="z"?"#aeb8d8":"#eea3bb";ctx.fillText(q.g,x,y);ctx.restore();}else drawEmoji(ctx,q.g,x,y,q.size*s,q.al);}}
-  else if(pet.action==="idle"&&pet.idle.kind==="slow"){const a=clamp((t-pet.idle.start)/1.5,0,1);const [x,y]=cellToStage(132,176+30*a);drawEmoji(ctx,"💗",x,y,13*s,Math.sin(Math.PI*a));}
+  else if(!away&&pet.action==="idle"&&pet.idle.kind==="slow"){const a=clamp((t-pet.idle.start)/1.5,0,1);const [x,y]=cellToStage(132,176+30*a);drawEmoji(ctx,"💗",x,y,13*s,Math.sin(Math.PI*a));}
   let face=null,age=0,left=1;
   if(pet.face){const l=t-pet.face.at;if(l<pet.face.to){face=pet.face.face;age=l;left=pet.face.to===Infinity?1:pet.face.to-l;}else pet.face=null;}
   if(!face&&MOOD[pet.action]){for(const [fc,a,b] of MOOD[pet.action]){if(e>=a&&e<b){face=fc;age=e-a;left=b-e;break;}}}
   if(!face&&pet.action==="idle"){const n=S.needs,low=Math.min(n.food,n.clean,n.energy,n.joy);if(low<22&&Math.floor(t/7)%2===0){face=n.food===low?"😿":n.energy===low?"😪":n.clean===low?"🙀":"😿";age=(t%7);left=7-age;}}
-  if(face)drawBubble(face,.55+.45*easeOutBack(age/.3),clamp(Math.min(age/.12,left/.3),0,1));
+  if(face&&!away)drawBubble(face,.55+.45*easeOutBack(age/.3),clamp(Math.min(age/.12,left/.3),0,1));
   // sakura petals drift over everything
   for(const q of sakura.list)drawPetal(ctx,q.x,q.y,q.size,q.rot,Math.min(1,q.life)*.92);
   if(t<sakura.until){const k=clamp(Math.min(t-(sakura.until-12),sakura.until-t),0,1);ctx.fillStyle=`rgba(238,163,187,${.06*k})`;ctx.fillRect(0,0,W,H);}
   ctx.drawImage(bg,0,0,W,H);
-  drawFloatFx(t);drawSpook(t,true);drawFlash(t);
+  drawFloatFx(t);drawSpook(t,true);drawFlash(t);hkAll("overlay",t);
   // film grain
   ctx.save();ctx.globalAlpha=.5;ctx.translate((Math.random()*128)|0,(Math.random()*128)|0);ctx.fillStyle=grainPat;ctx.fillRect(-128,-128,W+256,H+256);ctx.restore();
 }
@@ -847,16 +877,16 @@ function render(t,dt){
 // ───────────────────────── Update loop ─────────────────────────
 let nextAuto=now()+rand(14,26),lastT=now(),lastHud=0;
 function update(t,dt){
-  const n=S.needs,sleeping=pet.action==="sleep";
-  n.food=clamp(n.food-dt*2.2/60,0,100);n.clean=clamp(n.clean-dt*1.2/60,0,100);n.joy=clamp(n.joy-dt*(sleeping?.6:2.4)/60,0,100);
-  n.energy=clamp(n.energy+dt*(sleeping?(S.lampOff?30:14):-1.6)/60,0,100);
+  const n=S.needs,sleeping=pet.action==="sleep",away=petAway();
+  if(!away){n.food=clamp(n.food-dt*2.2/60,0,100);n.clean=clamp(n.clean-dt*1.2/60,0,100);n.joy=clamp(n.joy-dt*(sleeping?.6:2.4)/60,0,100);
+  n.energy=clamp(n.energy+dt*(sleeping?(S.lampOff?30:14):-1.6)/60,0,100);}
   if(pet.action==="purr")n.joy=clamp(n.joy+dt*3,0,100);
   const e=t-pet.start,d=DUR[pet.action];
   if(d&&e>=d)start("idle",true);
   if(pet.action==="sleep"&&pet.napUntil&&t>pet.napUntil)start("stretch",true);
   if(pet.action==="sleep"&&S.room==="bedroom"&&!S.lampOff&&!pet.napUntil&&e>1)start("stretch",true);
   // she lives her own life when left alone
-  if(pet.action==="idle"&&t>nextAuto&&!drag.active&&!scene.on){
+  if(pet.action==="idle"&&t>nextAuto&&!drag.active&&!scene.on&&!away){
     let a;if(n.energy<28)a="sleep";else if(n.joy<40||n.food<30)a="beg";else if(n.clean<30)a="groom";
     else a=pick(["groom","stretch","knead","hide","meow","music","peek","yarn","butterfly","box","beg","sleep","petals","firefly"]);
     start(a,true);if(a==="sleep")pet.napUntil=t+rand(30,60);
@@ -878,6 +908,7 @@ function update(t,dt){
   updateVisit(t);
   if(t-cam.last>3){cam.tilt=false;cam.tx=.38*Math.sin(t*.13)+clamp((pet.x/view.W-.5)*.9,-.5,.5);cam.ty=.2*Math.sin(t*.09+1);}
   cam.x+=(cam.tx-cam.x)*Math.min(1,dt*2.2);cam.y+=(cam.ty-cam.y)*Math.min(1,dt*2.2);
+  hkAll("tick",t,dt);
 }
 function frame(){
   requestAnimationFrame(frame);   // keep the loop alive even if one frame throws
@@ -889,14 +920,14 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){const t=n
 
 // ───────────────────────── Input on the stage ─────────────────────────
 const drag={active:false,mode:null,sx:0,sy:0,px:0,py:0,dist:0,startX:0,lastTap:0,tapTimer:null};
-function hitCat(x,y){const [cx,cy]=stageToCell(x,y);return cx>28&&cx<168&&cy>10&&cy<205;}
-function onHead(x,y){const [cx,cy]=stageToCell(x,y);return cx>37&&cx<149&&cy>116&&cy<204;}
+function hitCat(x,y){if(petAway())return false;const [cx,cy]=stageToCell(x,y);return cx>28&&cx<168&&cy>10&&cy<205;}
+function onHead(x,y){if(petAway())return false;const [cx,cy]=stageToCell(x,y);return cx>37&&cx<149&&cy>116&&cy<204;}
 function local(ev){const r=cv.getBoundingClientRect();return[ev.clientX-r.left,ev.clientY-r.top];}
 let strokeDist=0,strokeT=0;
 function stroke(x,y,px,py){const t=now(),d=Math.hypot(x-px,y-py);if(t-strokeT>.8)strokeDist=0;strokeT=t;strokeDist+=d;
   if(strokeDist>24*view.s){strokeDist=0;if(["idle","purr","sulk","music","beg","sleep"].includes(pet.action)){if(pet.action==="purr")pet.start=Math.max(pet.start,t-5);else if(pet.action==="sleep"&&S.lampOff){}else start("purr");}}}
 cv.addEventListener("pointerdown",ev=>{
-  audioInit();const [x,y]=local(ev);if(visitHit(x,y)||guestHit(x,y))return;cv.setPointerCapture(ev.pointerId);
+  audioInit();const [x,y]=local(ev);if(visitHit(x,y)||guestHit(x,y)||hk("hit",x,y))return;cv.setPointerCapture(ev.pointerId);
   pointer.x=x;pointer.y=y;pointer.known=true;pet.gazeUntil=now()+2.8;pet.lastInput=now();
   drag.active=true;drag.sx=x;drag.sy=y;drag.px=x;drag.py=y;drag.dist=0;drag.startX=pet.x;
   if(S.room==="onsen"&&S.tool==="soap"&&hitCat(x,y)){drag.mode="soap";if(pet.action!=="wash")start("wash");}
@@ -931,7 +962,7 @@ function endDrag(ev){
     if(t-drag.lastTap<.3){clearTimeout(drag.tapTimer);drag.lastTap=0;if(pet.action!=="sleep")start("highfive");return;}
     drag.lastTap=t;clearTimeout(drag.tapTimer);
     drag.tapTimer=setTimeout(()=>{
-      if(pet.action==="sleep"){if(S.room==="bedroom"&&S.lampOff){react("😾",1.4);return;}start("idle");react("😿",2);return;}
+      if(pet.action==="sleep"){if(hk("sleepTap"))return;if(S.room==="bedroom"&&S.lampOff){react("😾",1.4);return;}start("idle");react("😿",2);return;}
       start("poke");sfx("pop");
     },300);
   }
@@ -949,22 +980,30 @@ let toastTimer=null;function toast(msg){const el=$("toast");el.textContent=msg;e
 function spend(p){sfx("coin");toast(`−${p} монет · осталось ∞`);}
 $("soundBtn").addEventListener("click",()=>{audioInit();snd.on=!snd.on;$("soundBtn").textContent=snd.on?"🔈":"🔇";if(!snd.on)loop(null);});
 
-$("tabs").innerHTML=ROOMS.map(r=>`<button role="tab" data-room="${r.id}" aria-selected="false"><b>${r.jp}</b><span>${r.ru}</span></button>`).join("");
-$("tabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(b)goRoom(b.dataset.room);});
+buildTabs();
+$("tabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;if(b.dataset.tab){audioInit();openStoryTab();return;}goRoom(b.dataset.room);});
 function goRoom(id){
-  if(S.room===id)return;$("gdlg").hidden=true;S.room=id;S.tool=null;
+  if(S.room===id)return;if(hk("gate",id))return;$("gdlg").hidden=true;$("xdlg").hidden=true;S.room=id;S.tool=null;
   if(id!=="bedroom"&&S.lampOff){S.lampOff=false;}
   if(pet.action==="wash"||pet.action==="sleep"&&!pet.napUntil)start("idle");
-  pet.foam=[];pet.x=view.W/2;pet.home=pet.x;cam.trans=now();G3.dir=-G3.dir;paint();ui();
+  pet.foam=[];pet.x=view.W/2;pet.home=pet.x;cam.trans=now();G3.dir=-G3.dir;paint();ui();hkAll("room",id);
 }
 let hintTimer=null;
+// the tray is rebuilt on every change: keep the rows scrolled where they were while the room and the list stay the same
 function ui(){
+  const tray=$("tray"),sig=[S.room,S.trayMode[S.room],S.icatBy&&S.icatBy[S.room],S.wearTab,S.dslot].join("|"),rows=()=>[...tray.querySelectorAll(".items,.seg.scroll,.glist")];
+  const keep=ui.sig===sig?rows().map(e=>[e.scrollLeft,e.scrollTop]):null,top=tray.scrollTop;
+  ui0();hkAll("tray",tray,S.room);ui.sig=sig;
+  if(keep){rows().forEach((e,i)=>{if(keep[i]){e.style.scrollSnapType="none";e.scrollLeft=keep[i][0];e.scrollTop=keep[i][1];e.style.scrollSnapType="";}});tray.scrollTop=top;}
+}
+function ui0(){
   const r=ROOMS.find(q=>q.id===S.room);
   $("roomTitle").innerHTML=`<b>${r.jp}</b><span>${r.ru}</span>`;const hn=$("hint");if(hn.textContent!==r.hint){hn.textContent=r.hint;hn.classList.remove("off");clearTimeout(hintTimer);hintTimer=setTimeout(()=>hn.classList.add("off"),7000);}
   for(const b of $("tabs").children)b.setAttribute("aria-selected",b.dataset.room===S.room);
   const tray=$("tray");
-  const tm=S.trayMode[S.room]||"play",modeSeg=`<div class="seg"><button data-mode="play" aria-pressed="${tm==="play"}">${{engawa:"Занятия",kitchen:"Еда",onsen:"Мытьё",bedroom:"Сон",wardrobe:"Наряды",entrance:"У храма",courtyard:"У пруда",games:"Игры",matsuri:"Ларьки"}[S.room]}</button>${S.room==="kitchen"?`<button data-mode="cook" aria-pressed="${tm==="cook"}">🍳 Готовить</button>`:""}${DECOR[S.room]?`<button data-mode="decor" aria-pressed="${tm==="decor"}">🛋 Обстановка</button>`:""}<button data-mode="items" aria-pressed="${tm==="items"}">🧺 Вещи</button></div>`;
+  const tm=S.trayMode[S.room]||"play",modeSeg=`<div class="seg"><button data-mode="play" aria-pressed="${tm==="play"}">${{engawa:"Занятия",kitchen:"Еда",onsen:"Мытьё",bedroom:"Сон",wardrobe:"Наряды",entrance:"У храма",courtyard:"У пруда",games:"Игры",matsuri:"Ларьки"}[S.room]||(ROOMX[S.room]||{}).label||"Занятия"}</button>${S.room==="kitchen"?`<button data-mode="cook" aria-pressed="${tm==="cook"}">🍳 Готовить</button>`:""}${DECOR[S.room]?`<button data-mode="decor" aria-pressed="${tm==="decor"}">🛋 Обстановка</button>`:""}<button data-mode="items" aria-pressed="${tm==="items"}">🧺 Вещи</button></div>`;
   if(tm==="items"){tray.innerHTML=modeSeg+itemsTray();return;}
+  if(ROOMX[S.room]){const d=ROOMX[S.room];tray.innerHTML=modeSeg+`<div class="items">${d.tray?d.tray():""}${PLAY.slice(0,6).map(p=>`<button class="item" data-act="${p.a}"><span class="ico">${p.i}</span><span class="nm">${p.n}</span></button>`).join("")}</div>`;return;}
   if(DECOR[S.room]&&S.trayMode[S.room]==="decor"){const slots=DECOR[S.room],cur=S.dslot&&slots.find(q=>q.k===S.dslot)||slots[0];S.dslot=cur.k;const sel=S.decor[S.room]||{};
     tray.innerHTML=modeSeg+`<div class="seg">${slots.map(q=>`<button data-dslot="${q.k}" aria-pressed="${q.k===cur.k}">${q.n}</button>`).join("")}</div><div class="items">${cur.items.map(it=>{const own=S.owned.has(it.id),on=sel[cur.k]===it.id;return`<button class="item ${on?"on":""}" data-decor="${it.id}"><span class="ico"><img src="assets/decor/${it.id}.webp" alt="" style="max-height:30px;max-width:60px"></span><span class="nm">${it.n}</span><span class="pr">${on?"стоит":own?"куплено":`<span class="mon"></span>${it.p}`}</span></button>`;}).join("")}</div>`;return;}
   if(S.room==="entrance"||S.room==="courtyard"){const A=S.room==="entrance"?[["wash_paws","💧","Омыть лапки"],["pray","🙏","Помолиться"],["omikuji","📜","Омикудзи"],["lantern","🏮",lanternOn?"Погасить фонарь":"Зажечь фонарь"]]:[["garden","🌱","Огород"+(gardenRipe()?" · ✓"+gardenRipe():"")],["fishing","🎣","Рыбалка"],...(festOn("obon")?[["toro","🏮","Пустить фонарики"]]:[]),["koi","🐟","Покормить карпов"],["pebble","🪨","Бросить камешек"],["meditate","🍃","Медитация"]];
@@ -986,6 +1025,7 @@ function previewWear(c,id){const g=c.getContext("2d");const slot=Object.keys(WEA
   const k=1.05,an=ANCH.rest[0];g.save();g.translate(44-an[0]*k,(slot==="head"?30:slot==="eyes"?-2:-44)-an[1]*k+ (slot==="head"?0:0));drawWear(g,"rest",0,k);g.restore();S.wear=keep;}
 $("tray").addEventListener("click",ev=>{
   const b=ev.target.closest("button");if(!b)return;audioInit();
+  if(b.dataset.x){hk("click",b.dataset.x,b);return;}
   if(b.dataset.item){putItem(b.dataset.item);return;}
   if(b.dataset.pfood){eatPantry(b.dataset.pfood);return;}
   if(b.dataset.cook){openCook(b.dataset.cook);return;}
@@ -1296,12 +1336,14 @@ function openAlbum(){const a=$("album");a.hidden=false;const got=ST.got.length;
   $("albumBody").innerHTML=`<p class="lead">Штампы-ханко за заботу о Мусе. Собрано ${got} из ${STAMPS.length}.</p><div class="stamps">${STAMPS.map(([id,k,t,d])=>{const on=ST.got.includes(id);return`<div class="stamp ${on?"on":""}"><span class="seal">${k}</span><b>${t}</b><small>${d}</small></div>`;}).join("")}</div>
   <h3 class="bh">Бестиарий</h3><p class="lead">Ёкаи, которых вы встретили в доме: ${ST.seen.length} из ${BESTIARY.length}.</p><div class="bestiary">${best}</div>
   <h3 class="bh">Коллекция вещей</h3><p class="lead">Собрано ${itemsOwned()} из ${ITEMS.length}. Вещи покупаются во вкладке «🧺 Вещи» внизу любой комнаты, реликвии даёт история.</p>${ICATS.map(c=>`<h4 class="ch">${c}</h4><div class="coll">${ITEMS.filter(i=>i.c===c).map(i=>{const on=S.owned.has(i.id);return`<div class="ci ${on?"on":""}">${i.at?itemThumb(i,70,52):`<img loading="lazy" src="assets/items/${i.id}.webp" alt="">`}<small>${on||!i.story?i.n:"???"}</small></div>`;}).join("")}</div>`).join("")}`;
-  $("albumBody").insertAdjacentHTML("afterbegin",`<button class="btn jbtn" id="openJournal">📜 Дневник истории</button>`);albumExtra();}
+  $("albumBody").insertAdjacentHTML("afterbegin",`<button class="btn jbtn" id="openJournal">📜 Сюжет</button>`);albumExtra();}
 $("albumBtn").addEventListener("click",()=>{audioInit();openAlbum();});
 $("albumClose").addEventListener("click",()=>{$("album").hidden=true;});
 
 // ───────────────────────── Time of day, crows, frogs, fireflies ─────────────────────────
-function dayTint(){const h=new Date().getHours()+new Date().getMinutes()/60;
+// ?hour=2.5 in the address fakes the time of day (for checking night things)
+function hourNow(){const q=new URLSearchParams(location.search).get("hour");return q!=null&&q!==""?+q:new Date().getHours()+new Date().getMinutes()/60;}
+function dayTint(){const h=hourNow();
   if(h>=21.5||h<4.5)return["rgba(6,10,30,.36)",true];if(h>=19)return[`rgba(40,26,60,${.12+.2*(h-19)/2.5})`,h>20.5];if(h>=17)return["rgba(90,50,30,.1)",false];if(h<7)return["rgba(60,55,70,.14)",false];return[null,false];}
 const crow={next:now()+rand(40,90),t:-9,dir:1,y:.2};
 const nightFlies=Array.from({length:10},()=>({u:Math.random(),v:Math.random(),ph:Math.random()*6}));
@@ -1950,7 +1992,7 @@ function itemsTray(){
 }
 function putItem(id){
   const i=IT[id];if(!i)return;
-  if(!S.owned.has(id)&&itemLock(i)){toast(i.story?"Эту вещь даст только сюжет 📜":i.gift?"Эту вещь приносит гость-ёкай 🎁":i.reward?"Это награда за задания праздника 暦":`Эта вещь продаётся только на празднике ${FEST.find(F=>F.id===i.fest).n} (${festDates(FEST.find(F=>F.id===i.fest))})`);return;}
+  if(!S.owned.has(id)&&itemLock(i)){toast(i.hint?i.hint:i.story?"Эту вещь даст только сюжет 📜":i.gift?"Эту вещь приносит гость-ёкай 🎁":i.reward?"Это награда за задания праздника 暦":`Эта вещь продаётся только на празднике ${FEST.find(F=>F.id===i.fest).n} (${festDates(FEST.find(F=>F.id===i.fest))})`);return;}
   const pl=S.placed[id];
   if(pl&&pl.r===S.room){delete S.placed[id];delete S.dpos[id];delete vpos[id];tone(300,.1,"triangle",.04);save();ui();return;}
   if(itemsPlacedIn(S.room)>=30){toast("Здесь уже тесно — убери что-нибудь");return;}
@@ -2112,48 +2154,54 @@ const STORY=[
    "Говорят, в доме, где живёт дзасики-вараси, если пересчитать детей, всегда выходит на одного больше. В этом доме детей нет. Но если долго смотреть в тёмный коридор, там кто-то стоит — и улыбается.",
    "Дом снова счастливый. Под подушкой Муся нашла зеркальце и старый ключ от кладовой. А девочка теперь иногда заглядывает в гости."]}}
 ];
-const QS=Object.assign({ch:0,prog:[],started:false,done:false},saved.story||{});QS.finishing=false;
-const scene={on:false,ch:0,kind:"",i:0,t0:0,chars:[],done:null};
+const QS=Object.assign({ch:0,prog:[],started:false,done:false},saved.story||{});if(QS.seen==null)QS.seen=QS.started?QS.ch:-1;QS.ready=!!QS.ready;delete QS.finishing;
+const scene={on:false,ch:0,kind:"",i:0,t0:0,chars:[],done:null,book:STORY};
 const MON_BEAST={m_warashi:"warashi",m_warashi_back:"warashi",m_akaname:"akaname",m_kappa:"kappa",m_kitsune:"kitsune",m_obake:"obake"};
-function chDone(){const C=STORY[QS.ch];return !!C&&C.tasks.every((tk,i)=>(QS.prog[i]||0)>=(tk.n||1));}
+// The story tab: every book is a chain of chapters. A chapter starts when its beginning is watched in the tab,
+// its tasks are caught by qev, and its ending is watched from the tab too — nothing starts by itself on the main screen.
+const BOOKS=[{id:"house",title:"Дом, где погас фонарь",ch:STORY,st:QS,
+  lead:"История о том, как Муся искала хранительницу своего дома. Главы открываются по очереди.",
+  fin:"История пройдена. Дзасики-вараси иногда заглядывает в гости — ищи её в комнатах.",
+  after(k){if(k===0)award("story1");},end(){S.owned.add("r_key");award("story");visit.next=now()+40;}}];
+function bkTasksDone(B){const C=B.ch[B.st.ch];return !!C&&C.tasks.every((tk,i)=>(B.st.prog[i]||0)>=(tk.n||1));}
+// intro: the beginning is waiting · gate: the next chapter is not open yet · tasks · outro: the ending is waiting · done
+function bkState(B){const st=B.st;if(st.done||st.ch>=B.ch.length)return"done";if(st.ready)return"outro";if(st.seen<st.ch)return B.gate&&B.gate(st)?"gate":"intro";return"tasks";}
+function storyWants(){return BOOKS.some(B=>{const k=bkState(B);return k==="intro"||k==="outro";});}
 function qev(ev,d){
-  festEv(ev,d);
-  if(!QS.started||QS.done||QS.finishing)return;const C=STORY[QS.ch];if(!C)return;let ch=false;
-  C.tasks.forEach((tk,i)=>{const n=tk.n||1;if((QS.prog[i]||0)>=n||tk.ev!==ev)return;if(tk.test&&!tk.test(d))return;QS.prog[i]=(QS.prog[i]||0)+1;ch=true;if(QS.prog[i]>=n){setTimeout(()=>{toast("✓ "+tk.t);sfx("chime");},200);}});
-  if(ch){save();updateQuest();if(chDone()){QS.finishing=true;setTimeout(finishChapter,1600);}}
+  festEv(ev,d);hkAll("ev",ev,d);
+  for(const B of BOOKS){const st=B.st;if(st.done||st.ready||st.seen!==st.ch)continue;const C=B.ch[st.ch];if(!C)continue;let ch=false;
+    C.tasks.forEach((tk,i)=>{const n=tk.n||1;if((st.prog[i]||0)>=n||tk.ev!==ev)return;if(tk.test&&!tk.test(d))return;st.prog[i]=(st.prog[i]||0)+1;ch=true;if(st.prog[i]>=n){setTimeout(()=>{toast("✓ "+tk.t);sfx("chime");},200);}});
+    if(ch){if(bkTasksDone(B)){st.ready=true;setTimeout(()=>{toast("📜 Глава пройдена — загляни во вкладку «Сюжет»");chime([1046,1318,1568]);},2300);}save();tabDots();}}
 }
-function overlaysOpen(){return !$("game").hidden||!$("cal").hidden||!$("story").hidden||!$("album").hidden||!$("journal").hidden;}
-function finishChapter(){
-  if(overlaysOpen()||scene.on){setTimeout(finishChapter,1200);return;}
-  const C=STORY[QS.ch];
-  playScene(QS.ch,"outro",()=>{
-    if(C.reward){S.owned.add(C.reward);setTimeout(()=>{toast(`Реликвия: ${IT[C.reward].n} · 🧺 Вещи → Реликвии`);sfx("chime");burst(12);},300);}
-    if(QS.ch===0)award("story1");
-    QS.ch++;QS.prog=[];QS.finishing=false;
-    if(QS.ch>=STORY.length){QS.done=true;S.owned.add("r_key");award("story");save();updateQuest();visit.next=now()+40;return;}
-    save();updateQuest();setTimeout(()=>playScene(QS.ch,"intro",()=>{updateQuest();qev("tick");}),900);
-  });
-}
-function playScene(ch,kind,done,replay){
-  const C=STORY[ch],sc=C&&C[kind];if(!sc){done&&done();return;}
-  for(const id of ["story","album","journal"])$(id).hidden=true;
+function overlaysOpen(){return !$("game").hidden||!$("cal").hidden||!$("story").hidden||!$("album").hidden||!$("journal").hidden||!$("xpanel").hidden;}
+function bkIntro(B){const k=B.st.ch;playScene(k,"intro",()=>{B.st.seen=k;B.st.started=true;save();qev("tick");tabDots();setTimeout(openStoryTab,500);},false,B.ch);}
+function bkOutro(B){const st=B.st,k=st.ch,C=B.ch[k];
+  playScene(k,"outro",()=>{
+    if(C.reward&&IT[C.reward]){S.owned.add(C.reward);setTimeout(()=>{toast(`Награда: ${IT[C.reward].n} · 🧺 Вещи → ${IT[C.reward].c}`);sfx("chime");burst(12);},300);}
+    st.ch++;st.prog=[];st.ready=false;B.after&&B.after(k);
+    if(st.ch>=B.ch.length){st.done=true;B.end&&B.end();}
+    save();tabDots();setTimeout(openStoryTab,900);
+  },false,B.ch);}
+function playScene(ch,kind,done,replay,book){
+  const CH=book||STORY,C=CH[ch],sc=C&&C[kind];if(!sc){done&&done();return;}
+  for(const id of ["story","album","journal","xpanel","cal"])$(id).hidden=true;
   if(S.room!==C.room)goRoom(C.room);
   if(sc.fx&&!replay)sc.fx();
-  Object.assign(scene,{on:true,ch,kind,i:0,t0:now(),chars:(sc.chars||[]).map(c=>Object.assign({},c)),done,reward:kind==="outro"?C.reward:null});
+  Object.assign(scene,{on:true,ch,kind,i:0,t0:now(),chars:(sc.chars||[]).map(c=>Object.assign({},c)),done,reward:kind==="outro"?C.reward:null,book:CH});
   for(const c of scene.chars){const b=MON_BEAST[c.id];if(b&&!ST.seen.includes(b)){ST.seen.push(b);}}
   if(pet.action!=="sleep")start("idle");spook.ev=null;
   $("stage").classList.add("cine");document.body.classList.add("cine");$("quest").hidden=true;$("scene").hidden=false;showPara();ui();
   if(snd.on&&snd.ctx){tone(110,2.2,"sine",.05);tone(165,2.4,"sine",.03);}
 }
 function showPara(){
-  const C=STORY[scene.ch],sc=C[scene.kind],last=scene.i>=sc.p.length-1;
+  const C=scene.book[scene.ch],sc=C[scene.kind],last=scene.i>=sc.p.length-1;
   $("scHead").textContent=C.title+(scene.kind==="outro"?" · развязка":"");
   const tx=$("scText");tx.textContent=sc.p[scene.i];tx.classList.remove("in");void tx.offsetWidth;tx.classList.add("in");
   const img=$("scImg");if(last&&scene.reward&&IT[scene.reward]){img.innerHTML=itemThumb(IT[scene.reward],90,56);img.hidden=false;}else img.hidden=true;
   $("scNext").textContent=last?(scene.kind==="intro"?"Начать":"Дальше"):"Дальше ›";
 }
 function nextPara(){
-  if(!scene.on)return;audioInit();const sc=STORY[scene.ch][scene.kind];
+  if(!scene.on)return;audioInit();const sc=scene.book[scene.ch][scene.kind];
   if(scene.i<sc.p.length-1){scene.i++;showPara();tone(520,.05,"sine",.02);return;}
   scene.on=false;$("scene").hidden=true;$("stage").classList.remove("cine");document.body.classList.remove("cine");const d=scene.done;scene.done=null;updateQuest();ui();d&&d();
 }
@@ -2165,22 +2213,25 @@ function drawSceneChars(t,front){
     let a=visit.on&&!scene.on?visit.alpha:clamp(e/1.2,0,1);if(c.to)a*=clamp((c.to-(c.from||0)-e)/1.2+1,0,1);if(c.flicker)a*=Math.sin(t*19)>-.2?1:.3;
     drawMon(c.id,x,y,c.h,c.d,a,c.anchor||"b");}
 }
-function updateQuest(){
-  const q=$("quest");if(!QS.started||QS.done||scene.on){q.hidden=true;return;}
-  const C=STORY[QS.ch];if(!C){q.hidden=true;return;}const i=C.tasks.findIndex((tk,k)=>(QS.prog[k]||0)<(tk.n||1));
-  if(i<0){q.hidden=true;return;}const tk=C.tasks[i],n=tk.n||1;
-  q.innerHTML=`<span class="qi">📜</span><span><b>${C.title}</b><br>${tk.t}${n>1?` · ${QS.prog[i]||0}/${n}`:""}</span>`;q.hidden=false;
+function updateQuest(){$("quest").hidden=true;tabDots();}
+function openJournal(){openStoryTab();}
+function openStoryTab(){
+  $("journal").hidden=false;const order=BOOKS.map((B,i)=>i).sort((a,b)=>(bkState(BOOKS[a])==="done")-(bkState(BOOKS[b])==="done"));
+  $("journalBody").innerHTML=order.map(bi=>{const B=BOOKS[bi],st=B.st,now_=bkState(B);
+    const chs=B.ch.map((C,k)=>{const cls=st.done||k<st.ch?"done":k===st.ch?"cur":"lock";let body="";
+      if(cls==="cur"){
+        if(now_==="intro")body=`<button class="btn primary sbtn" data-bk="${bi}" data-go="intro">▶ Начать главу</button>`;
+        else if(now_==="gate")body=`<p class="gate">🔒 ${B.gate(st)}</p>`;
+        else if(now_==="outro")body=`<p class="ready">Все задания выполнены.</p><button class="btn primary sbtn" data-bk="${bi}" data-go="outro">▶ Узнать, что было дальше</button>`;
+        else body=`<ul class="qtasks">${C.tasks.map((tk,i)=>{const n=tk.n||1,v=Math.min(n,st.prog[i]||0);return`<li class="${v>=n?"ok":""}">${v>=n?"☑":"☐"} ${tk.t}${n>1?` <em>${v}/${n}</em>`:""}</li>`;}).join("")}</ul><button class="back" data-bk="${bi}" data-go="reintro">Перечитать начало</button>`;}
+      const rel=C.reward&&IT[C.reward]&&S.owned.has(C.reward)?itemThumb(IT[C.reward],60,44):"";
+      return`<div class="qch ${cls}"><div class="qh">${rel}<div><b>${cls==="lock"?"🔒 ???":C.title}</b>${cls==="done"?`<button class="back" data-bk="${bi}" data-go="replay" data-k="${k}">Перечитать</button>`:""}</div></div>${body}</div>`;}).join("");
+    return`<section class="book"><h3>${B.title}</h3><p class="lead">${B.lead}</p>${chs}${now_==="done"&&B.fin?`<p class="lead">${B.fin}</p>`:""}</section>`;}).join("");
 }
-function openJournal(){
-  const j=$("journal");j.hidden=false;
-  $("journalBody").innerHTML=`<p class="lead">«Дом, где погас фонарь» — история о том, как Муся искала хранительницу своего дома. Задания подсвечены внизу экрана, главы открываются по очереди.</p>`+
-   STORY.map((C,k)=>{const st=k<QS.ch||QS.done?"done":k===QS.ch&&QS.started?"cur":"lock";
-    const tasks=st==="cur"?`<ul class="qtasks">${C.tasks.map((tk,i)=>{const n=tk.n||1,v=Math.min(n,QS.prog[i]||0);return`<li class="${v>=n?"ok":""}">${v>=n?"☑":"☐"} ${tk.t}${n>1?` <em>${v}/${n}</em>`:""}</li>`;}).join("")}</ul>`:"";
-    const rel=C.reward&&S.owned.has(C.reward)?itemThumb(IT[C.reward],60,44):"";
-    return`<div class="qch ${st}"><div class="qh">${rel}<div><b>${st==="lock"?"🔒 ???":C.title}</b>${st==="done"?`<button class="back" data-replay="${k}">Перечитать</button>`:st==="cur"?`<button class="back" data-replay="${k}" data-kind="intro">Перечитать начало</button>`:""}</div></div>${tasks}</div>`;}).join("")+
-   (QS.done?`<p class="lead">История пройдена. Дзасики-вараси иногда заглядывает в гости — ищи её в комнатах.</p>`:"");
-}
-$("journalBody").addEventListener("click",ev=>{const b=ev.target.closest("[data-replay]");if(!b)return;const k=+b.dataset.replay;$("journal").hidden=true;playScene(k,b.dataset.kind||"intro",()=>{if(!b.dataset.kind&&STORY[k].outro)setTimeout(()=>playScene(k,"outro",null,true),400);},true);});
+$("journalBody").addEventListener("click",ev=>{const b=ev.target.closest("[data-go]");if(!b)return;audioInit();const B=BOOKS[+b.dataset.bk],go=b.dataset.go;if(!B)return;$("journal").hidden=true;
+  if(go==="intro")bkIntro(B);else if(go==="outro")bkOutro(B);
+  else if(go==="reintro")playScene(B.st.ch,"intro",()=>setTimeout(openStoryTab,400),true,B.ch);
+  else if(go==="replay"){const k=+b.dataset.k;playScene(k,"intro",()=>{if(B.ch[k].outro)setTimeout(()=>playScene(k,"outro",()=>setTimeout(openStoryTab,400),true,B.ch),400);else openStoryTab();},true,B.ch);}});
 $("journalClose").addEventListener("click",()=>{$("journal").hidden=true;});
 $("quest").addEventListener("click",()=>{audioInit();openJournal();});
 $("scene").addEventListener("click",nextPara);
@@ -2196,9 +2247,9 @@ function updateVisit(t){
 function visitHit(x,y){if(!visit.on||visit.alpha<.3)return false;const c=visit.c,[sx,sy]=imgToStage(c.x,c.y,c.d),h=c.h*BGM.k,w=h*.47;
   if(x>sx-w/2&&x<sx+w/2&&y>sy-h&&y<sy){visit.t=now()-6.4;S.needs.joy=clamp(S.needs.joy+10,0,100);toast("Дзасики-вараси хихикает и убегает");chime([1318,1568,2093]);burst(8);return true;}return false;}
 function storyBoot(){
+  for(const B of BOOKS){const st=B.st;if(!st.done&&!st.ready&&st.seen===st.ch&&bkTasksDone(B))st.ready=true;}
   updateQuest();
-  if(!QS.started)setTimeout(function go(){if(overlaysOpen()||drag.active){setTimeout(go,2000);return;}playScene(0,"intro",()=>{QS.started=true;save();updateQuest();});},3500);
-  else if(!QS.done&&chDone()){QS.finishing=true;setTimeout(finishChapter,3000);}
+  if(!QS.started)setTimeout(()=>{if(!QS.started&&!scene.on)toast("📜 Во вкладке «Сюжет» ждёт история");},7000);
 }
 setInterval(()=>{qev("tick");},2000);
 
@@ -2412,10 +2463,11 @@ function guestPick(){const last=S.guest&&S.guest.id,pool=GUESTS.filter(g=>g.id!=
   return{day:dayKey(),id:g.id,want:g.wants[f.n%g.wants.length],state:"coming",at:Date.now()+rand(30,80)*1000};}
 function guestTick(){
   if(!S.guest||S.guest.day!==dayKey()){S.guest=guestPick();save();}
-  const q=S.guest;if(q.state==="coming"&&Date.now()>q.at&&QS.started&&!scene.on&&!overlaysOpen()){q.state="here";gAnim.arrive=0;knock();setTimeout(()=>toast(S.room==="entrance"?"Тук-тук! К воротам кто-то пришёл":"Тук-тук! Во «Входе» у ворот ждёт гость ⛩"),700);save();}
+  const q=S.guest;if(q.state==="coming"&&Date.now()>q.at&&now()>12&&!scene.on&&!overlaysOpen()){q.state="here";gAnim.arrive=0;knock();setTimeout(()=>toast(S.room==="entrance"?"Тук-тук! К воротам кто-то пришёл":"Тук-тук! Во «Входе» у ворот ждёт гость ⛩"),700);save();}
   tabDots();festChip();
 }
-function tabDots(){for(const b of $("tabs").children){const r=b.dataset.room;b.classList.toggle("dot",r==="entrance"&&!!S.guest&&S.guest.state==="here"||r==="courtyard"&&gardenRipe()>0);}}
+function tabDots(){for(const b of $("tabs").children){const r=b.dataset.room;if(!r){b.classList.toggle("dot",storyWants());continue;}
+  b.classList.toggle("dot",r==="entrance"&&!!S.guest&&S.guest.state==="here"||r==="courtyard"&&gardenRipe()>0||!!hk("tabDot",r));}}
 function drawGuest(t,front){
   const q=S.guest,gd=guestDef();if(S.room!=="entrance"||!gd)return;let a;
   if(q.state==="here"){if(!gAnim.arrive)gAnim.arrive=t;a=clamp((t-gAnim.arrive)/1.4,0,1);}else if(q.state==="fed"&&t-gAnim.leave<2.2)a=1-(t-gAnim.leave)/2.2;else return;
@@ -2894,6 +2946,7 @@ function albumExtra(){
    <h3 class="bh">Улов</h3><p class="lead">Рыбы из пруда во дворике: ${fc} из ${fish.length}.</p><div class="coll">${fish.map(f=>{const on=S.catch[f.id];return`<div class="ci ${on?"on":""}">${fThumb(f.id,74,40)}<small>${on?FOOD[f.id].n+(on>1?` · ${on} см`:""):"???"}</small></div>`;}).join("")}</div>
    <h3 class="bh">Рецепты</h3><p class="lead">Приготовлено ${RECIPES.filter(r=>S.cooked[r.id]).length} из ${RECIPES.length}.</p><div class="coll">${RECIPES.map(R=>{const st=S.cooked[R.id];return`<div class="ci ${st?"on":""}">${fThumb(R.dish,70,44)}<small>${R.n}${st?"<br>"+"★".repeat(st)+"☆".repeat(3-st):""}</small></div>`;}).join("")}</div>
    <h3 class="bh">Огород</h3><div class="coll">${CROPS.map(c=>{const n=S.crops[c.id];return`<div class="ci ${n?"on":""}">${fThumb("v_"+c.id,60,40)}<small>${c.n}${n?" · "+n:""}</small></div>`;}).join("")}</div>`);
+  hkAll("album",$("albumBody"));
 }
 STAMPS.push(["cook1","料","Первое блюдо","Приготовь что-нибудь на кухне"],["chef","匠","Шеф-повар","Приготовь все рецепты"],["garden1","畑","Огородница","Собери первый урожай"],["garden_all","穣","Богатый урожай","Вырасти все растения"],
  ["fish1","釣","Первая рыбка","Поймай рыбу в пруду"],["fish_all","網","Рыболов","Поймай всех рыб пруда"],["ningyo","魚","Легенда пруда","Поймай нингё"],["guest1","客","Гостеприимство","Угости гостя-ёкая"],["friends","友","Друг ёкаев","Угости каждого гостя трижды"],
@@ -2917,7 +2970,7 @@ fLoad("food");fLoad("garden");
 function festBoot(){
   guestTick();festChip();tabDots();setInterval(guestTick,3000);setInterval(gardenTick,4000);
   const F=festNow();if(!F)return;const P=festProg(F);if(P.seen)return;
-  setTimeout(function go(){if(!QS.started||scene.on||overlaysOpen()||drag.active){setTimeout(go,3000);return;}P.seen=1;save();openCal();},4500);
+  setTimeout(function go(){if(scene.on||overlaysOpen()||drag.active){setTimeout(go,3000);return;}P.seen=1;save();openCal();},4500);
 }
 $("calBtn").addEventListener("click",()=>{audioInit();openCal();});
 $("calClose").addEventListener("click",()=>{$("cal").hidden=true;});
@@ -2926,7 +2979,35 @@ $("fchip").addEventListener("click",()=>{audioInit();openCal();});
 $("gdGive").addEventListener("click",ev=>{ev.stopPropagation();guestGive();});
 $("gdLater").addEventListener("click",ev=>{ev.stopPropagation();$("gdlg").hidden=true;festChip();});
 
-function itemLock(i){if(i.story)return"🔒 сюжет";if(i.gift)return"🎁 от гостя";if(i.reward)return"🎁 награда";if(i.fest&&!festOn(i.fest)){const F=FEST.find(F=>F.id===i.fest);return"📅 "+(F?F.n:"праздник");}return"";}
+function itemLock(i){if(i.src)return i.src;if(i.story)return"🔒 сюжет";if(i.gift)return"🎁 от гостя";if(i.reward)return"🎁 награда";if(i.fest&&!festOn(i.fest)){const F=FEST.find(F=>F.id===i.fest);return"📅 "+(F?F.n:"праздник");}return"";}
+
+// ───────────────────────── Add-on plumbing: shared panel, dialog, «家 Дом» hub, items, rooms, tabs ─────────────────────────
+// a full-screen panel like the album; [data-x] buttons inside go to hook "click"
+function openPanel(title,html,id){const P=$("xpanel"),B=$("xpBody"),same=!P.hidden&&P.dataset.id===(id||""),top=B.scrollTop;P.dataset.id=id||"";$("xpTitle").textContent=title;B.innerHTML=html;B.scrollTop=same?top:0;P.hidden=false;}
+function panelIs(id){const P=$("xpanel");return !P.hidden&&P.dataset.id===id;}
+function closePanel(){const P=$("xpanel");if(P.hidden)return;P.hidden=true;const id=P.dataset.id;P.dataset.id="";hkAll("panelClose",id);}
+$("xpClose").addEventListener("click",closePanel);
+$("xpBody").addEventListener("click",ev=>{const b=ev.target.closest("[data-x]");if(b){audioInit();hk("click",b.dataset.x,b);}});
+// a small dialog over the room, like the guest's: head, text, a picture and one or two buttons
+const XD={ok:null,no:null};
+function dlg(o){$("xdHead").textContent=o.head||"";$("xdText").textContent=o.text||"";const im=$("xdImg");im.innerHTML=o.img||"";im.hidden=!o.img;
+  $("xdOk").textContent=o.ok||"Хорошо";const no=$("xdNo");no.hidden=!o.no;no.textContent=o.no||"";XD.ok=o.onOk||null;XD.no=o.onNo||null;$("xdlg").hidden=false;}
+function dlgClose(){$("xdlg").hidden=true;}
+$("xdOk").addEventListener("click",ev=>{ev.stopPropagation();const f=XD.ok;dlgClose();f&&f();});
+$("xdNo").addEventListener("click",ev=>{ev.stopPropagation();const f=XD.no;dlgClose();f&&f();});
+// «家 Дом»: every add-on shows its card here (hook "hub" returns html); hook "hubDot" lights the button
+function openHub(){const cards=hkAll("hub").join("");openPanel("Дом Муси",`<p class="lead">Всё, что происходит в доме и вокруг него.</p>`+(cards||`<p class="lead">Пока тихо.</p>`),"hub");}
+function hubDot(){$("homeBtn").classList.toggle("dot",!!hk("hubDot"));}
+$("homeBtn").addEventListener("click",()=>{audioInit();openHub();});
+// things from add-ons: [{id,n,c,w,h,a,p,at:[atlas,x,y],src:"🐾 находка",hint:"…"}], atlases {key:[w,h]} → assets/items/atlas_<key>.webp
+function addItems(list,atl){if(atl)Object.assign(IATL,atl);for(const i of list){if(IT[i.id])continue;ITEMS.push(i);IT[i.id]=i;if(!ICATS.includes(i.c))ICATS.push(i.c);if(i.glow)LIGHT_PT[i.id]=i.glow;}}
+// rooms from add-ons: {id,jp,ru,hint,label,layers:[[name,depth]…],l3,fog,tint,mote,focus,cat,outdoor,tray:()=>html}
+const ROOMX={};
+function addRoom(d){ROOMX[d.id]=d;if(!ROOMS.some(r=>r.id===d.id))ROOMS.push({id:d.id,jp:d.jp,ru:d.ru,hint:d.hint});LAYERS[d.id]=d.layers;if(d.l3)L3[d.id]=d.l3;if(d.fog)FOG3[d.id]=d.fog;
+  TINT[d.id]=d.tint||"rgba(20,22,20,.2)";if(d.mote)MOTE3[d.id]=d.mote;if(d.focus!=null)BG_FOCUS[d.id]=d.focus;if(d.cat){ROOMCAT[d.id]=d.cat;ROOMCATS.add(d.cat);}if(d.outdoor&&!OUTDOOR.includes(d.id))OUTDOOR.push(d.id);}
+// the story tab stays pinned at the left; rooms an add-on keeps closed (hook "tabLock") show a lock
+function buildTabs(){$("tabs").innerHTML=`<button class="stab" data-tab="story" aria-label="Сюжет"><b>物語</b><span>Сюжет</span></button>`+ROOMS.map(r=>{const lk=hk("tabLock",r.id);return`<button role="tab" data-room="${r.id}" class="${lk?"lock":""}" aria-selected="${r.id===S.room}"><b>${r.jp}</b><span>${lk?"🔒 ":""}${r.ru}</span></button>`;}).join("");}
+function plugBoot(){buildTabs();ui();tabDots();hkAll("boot");hubDot();setInterval(()=>{hkAll("sec");hubDot();tabDots();},1000);}
 
 // ───────────────────────── Boot ─────────────────────────
 grainPat=ctx.createPattern(makeGrain(),"repeat");fogTex=makeFog();
@@ -2936,7 +3017,7 @@ const LI=loadImages();regItems();for(const sl in S.wear)if(S.wear[sl]&&WSPR[S.we
   resize();ui();hudTick();weatherLabel();pet.idle.next=now()+1.5;
   react("😺",2.2);sakura.until=now()+8;sakura.next=now()+rand(40,80);
   $("loading").style.opacity=0;setTimeout(()=>$("loading").remove(),500);
-  requestAnimationFrame(frame);storyBoot();festBoot();
+  requestAnimationFrame(frame);storyBoot();festBoot();plugBoot();
 });
 })();
 </script>
