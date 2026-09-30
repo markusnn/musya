@@ -767,7 +767,7 @@ function drawWear(g,st,f,k){
 const WSPR={"k_sakura":{im:"k_sakura",dx:0,dy:205,w:220},"k_seigaiha":{im:"k_seigaiha",dx:0,dy:205,w:220},"k_tsuru":{im:"k_tsuru",dx:0,dy:205,w:220},"k_asagao":{im:"k_asagao",dx:0,dy:205,w:220},"k_momiji":{im:"k_momiji",dx:0,dy:205,w:220},"k_yagasuri":{im:"k_yagasuri",dx:0,dy:205,w:220},"k_ichimatsu":{im:"k_ichimatsu",dx:0,dy:205,w:220},"k_kiku":{im:"k_kiku",dx:0,dy:205,w:220},"k_asanoha":{im:"k_asanoha",dx:0,dy:205,w:220},"k_hotaru":{im:"k_hotaru",dx:0,dy:205,w:220},"k_fuji":{im:"k_fuji",dx:0,dy:205,w:220},"k_miko":{im:"k_miko",dx:0,dy:205,w:220},"w_kabuto":{im:"w_kabuto",dx:0,dy:-24,w:150},"w_eboshi":{im:"w_eboshi",dx:0,dy:-58,w:60,rot:-0.08},"w_tsuno":{im:"w_tsuno",dx:0,dy:-8,w:168},"w_sugegasa":{im:"w_sugegasa",dx:0,dy:-22,w:215},"w_tenugui":{im:"w_tenugui",dx:4,dy:26,w:146},"w_kiku":{im:"w_kiku",dx:0,dy:-4,w:150},"w_fuji":{im:"w_fuji",dx:0,dy:22,w:176},"w_foxears":{im:"w_foxears",dx:0,dy:-30,w:160},"w_hanakan":{im:"w_hanakan",dx:-60,dy:14,w:60},"w_lotus":{im:"w_lotus",dx:0,dy:-18,w:84},"w_momiji":{im:"w_momiji",dx:0,dy:-2,w:150},"w_tsuru":{im:"w_tsuru",dx:10,dy:-30,w:86},"w_goldhorns":{im:"w_goldhorns",dx:0,dy:-26,w:140},"hachimaki":{im:"w_hachimaki",dx:4,dy:28,w:150},"kitsune":{im:"mk_kitsune",dx:56,dy:26,w:78,rot:0.35},"tengu":{im:"mk_tengu",dx:56,dy:26,w:78,rot:0.35},"w_eri":{im:"w_eri",dx:0,dy:196,w:150},"w_bowtie":{im:"w_bowtie",dx:0,dy:158,w:58},"w_bigsuzu":{im:"w_bigsuzu",dx:0,dy:168,w:108},"w_pearls":{im:"w_pearls",dx:0,dy:160,w:110},"w_magatama":{im:"w_magatama",dx:0,dy:168,w:110},"w_scarf2":{im:"w_scarf2",dx:0,dy:178,w:150},"w_bandana":{im:"w_bandana",dx:0,dy:180,w:118},"w_sakura":{im:"w_sakura",dx:0,dy:158,w:116},"scarf":{im:"w_scarf",dx:0,dy:178,w:150},"mk_kitsune":{im:"mk_kitsune",dx:56,dy:26,w:78,rot:0.35},"mk_kitsune_b":{im:"mk_kitsune_b",dx:56,dy:26,w:78,rot:0.35},"mk_neko":{im:"mk_neko",dx:56,dy:26,w:78,rot:0.35},"mk_usagi":{im:"mk_usagi",dx:56,dy:26,w:78,rot:0.35},"mk_oni_r":{im:"mk_oni_r",dx:56,dy:26,w:78,rot:0.35},"mk_oni_b":{im:"mk_oni_b",dx:56,dy:26,w:78,rot:0.35},"mk_hannya":{im:"mk_hannya",dx:56,dy:26,w:78,rot:0.35},"mk_okame":{im:"mk_okame",dx:56,dy:26,w:78,rot:0.35},"mk_hyottoko":{im:"mk_hyottoko",dx:56,dy:26,w:78,rot:0.35},"mk_tengu":{im:"mk_tengu",dx:56,dy:26,w:78,rot:0.35},"mk_tanuki":{im:"mk_tanuki",dx:56,dy:26,w:78,rot:0.35},"mk_kappa":{im:"mk_kappa",dx:56,dy:26,w:78,rot:0.35},"om_luck":{im:"om_luck",dx:0,dy:186,w:26,cord:1},"om_health":{im:"om_health",dx:0,dy:186,w:26,cord:1},"om_study":{im:"om_study",dx:0,dy:186,w:26,cord:1},"om_love":{im:"om_love",dx:0,dy:186,w:26,cord:1},"om_ward":{im:"om_ward",dx:0,dy:186,w:26,cord:1},"om_road":{im:"om_road",dx:0,dy:186,w:26,cord:1},"om_home":{im:"om_home",dx:0,dy:186,w:26,cord:1},"om_cat":{im:"om_cat",dx:0,dy:186,w:26,cord:1},"om_sleep":{im:"om_sleep",dx:0,dy:186,w:26,cord:1},"om_money":{im:"om_money",dx:0,dy:186,w:26,cord:1},"om_fire":{im:"om_fire",dx:0,dy:186,w:26,cord:1},"om_water":{im:"om_water",dx:0,dy:186,w:26,cord:1},"om_kid":{im:"om_kid",dx:0,dy:186,w:26,cord:1},"om_art":{im:"om_art",dx:0,dy:186,w:26,cord:1},"om_ghost":{im:"om_ghost",dx:0,dy:186,w:26,cord:1},"om_moon":{im:"om_moon",dx:0,dy:186,w:26,cord:1}};
 const WATLAS={"w":900,"h":528,"r":{"w_eboshi":[0,0,90,150],"w_kabuto":[92,0,190,150],"w_hanakan":[284,0,100,140],"w_eri":[386,0,170,120],"w_fuji":[558,0,200,120],"w_scarf":[0,152,180,120],"w_scarf2":[182,152,180,120],"w_sugegasa":[364,152,250,110],"w_bandana":[616,152,150,100],"w_tsuno":[0,274,200,100],"w_foxears":[202,274,180,90],"w_tsuru":[384,274,120,90],"w_bigsuzu":[506,274,140,80],"w_goldhorns":[648,274,170,80],"w_hachimaki":[0,376,170,80],"w_lotus":[172,376,120,80],"w_magatama":[294,376,140,80],"w_tenugui":[436,376,170,80],"w_kiku":[608,376,180,70],"w_momiji":[0,458,180,70],"w_pearls":[182,458,140,50],"w_sakura":[324,458,160,50],"w_bowtie":[486,458,90,44]}};
 // painted clothes live in one atlas image; masks and omamori reuse the room-item pictures
-const KATLAS={"w":888,"h":576,"r":{"k_sakura":[0,0,220,190],"k_seigaiha":[222,0,220,190],"k_tsuru":[444,0,220,190],"k_asagao":[666,0,220,190],"k_momiji":[0,192,220,190],"k_yagasuri":[222,192,220,190],"k_ichimatsu":[444,192,220,190],"k_kiku":[666,192,220,190],"k_asanoha":[0,384,220,190],"k_hotaru":[222,384,220,190],"k_fuji":[444,384,220,190],"k_miko":[666,384,220,190]}};
+const KATLAS={"w":936,"h":654,"r":{"k_sakura":[0,0,232,216],"k_seigaiha":[234,0,232,216],"k_tsuru":[468,0,232,216],"k_asagao":[702,0,232,216],"k_momiji":[0,218,232,216],"k_yagasuri":[234,218,232,216],"k_ichimatsu":[468,218,232,216],"k_kiku":[702,218,232,216],"k_asanoha":[0,436,232,216],"k_hotaru":[234,436,232,216],"k_fuji":[468,436,232,216],"k_miko":[702,436,232,216]}};
 function wAtlas(im){return WATLAS.r[im]?["wear_atlas",WATLAS,"assets/wear/atlas.webp"]:KATLAS.r[im]?["kimono_atlas",KATLAS,"assets/wear/kimono.webp"]:null;}
 function loadWear(id){const A=wAtlas(id),key=A?A[0]:id;if(DIMG[key]||loadWear[key])return;loadWear[key]=1;if(!A){loadItem(id);return;}ldImg(A[2],im=>{DIMG[key]=im;if(S.room==="wardrobe"&&S.trayMode.wardrobe!=="decor")ui();});}
 function wearThumb(im){const A=wAtlas(im);if(!A)return IT[im]?itemThumb(IT[im],66,34):"";const T=A[1],r=T.r[im],k=Math.min(66/r[2],34/r[3]);return`<span style="display:inline-block;width:${r[2]*k}px;height:${r[3]*k}px;background:url(${A[2]}) -${r[0]*k}px -${r[1]*k}px/${T.w*k}px ${T.h*k}px no-repeat"></span>`;}
@@ -3757,6 +3757,221 @@ X.lan={S:LAN,day:()=>{const ev=lanDay();if(ev){EV=ev;}return ev;},arrive:()=>{if
   pt:i=>{const G=lanGeo(i,now());return[G.px,G.py+G.off+G.h/2];},gx:()=>{const g=rgDef();const [x,y]=imgToStage(guestX(),GY,CAT_D);return[x,y-(g?g.h:300)*BGM.k*.5];},
   set:o=>Object.assign(LAN,o),back:n=>{const d=today();d.setDate(d.getDate()-n);LAN.day=dayKey(d);}};
 }
+// ── visitors.js
+{
+// ───────────────────────── Night visitors: yōkai come to things + a treat left on the floor (like Neko Atsume) ─────────────────────────
+// A room with the right things placed (S.placed) and a plate with a liked treat → 3–10 min later (real time, also while the game is
+// closed) a visitor comes, eats and stays 1–3 h or until tapped. First meeting: a unique gift; later: a small present. S.ext.vis.
+const VS=[
+ {id:"karakasa",mon:"m_vs_karakasa",n:"Каракаса-обакэ",room:"engawa",h:330,anim:"hop",lure:{c:["Зонтики"],ids:["gf_kitsune_kasa","f_r_753","tk_kasa"],n:1},likes:["ds_tempura","ds_inari","ds_ramen"],gift:"vs_geta",small:["v_shiitake","v_obaketake"],gv:"оставил",
+  hint:"Любит, когда на веранде стоят зонтики и есть тэмпура",short:"веранда · зонтик · тэмпура",
+  first:"Кап-кап… Прыгал мимо — гляжу, на веранде стоят мои бумажные родичи. И тэмпура! Можно я у вас немножко посохну?",
+  later:["Обещают дождь. Самое время прыгать!","Язык у меня длинный, а тэмпура кончилась быстро…","Сто лет простоял в углу. А теперь хожу в гости!"],
+  desc:"Старый бумажный зонт, проживший сто лет, открывает глаз, высовывает язык и скачет на одной ноге в гэта. Самый озорной из цукумогами — ожившей утвари эпохи Эдо."},
+ {id:"kamaitachi",mon:"m_vs_kamaitachi",n:"Кама-итати",room:"engawa",h:340,anim:"spin",lure:{c:["Фурины"],ids:["v2_furin3","v_suzu"],n:1},likes:["u_any","ds_yakizakana","ds_unadon"],gift:"vs_kusuri",small:["u_ayu","u_yamame"],gv:"оставили",
+  hint:"Прилетают с ветром, когда на веранде звенит фурин, и любят рыбу",short:"веранда · фурин · рыба",
+  first:"Ш-ш-ших! Фурин звенел так звонко, что мы прилетели на звук. Рыбу съели втроём — не сердись!",
+  later:["Первый толкает, второй режет, третий лечит. А рыбу едим все вместе.","Вжух — и мы здесь. Вжух — и нас нет.","Твой фурин поёт, когда мы рядом. Слышишь?"],
+  desc:"Три ласки верхом на вихре. Первая сбивает с ног, вторая режет лапами-серпами, третья тут же мажет рану целебной мазью — поэтому порез не болит и не кровит. Предание снежных краёв, особенно Этиго."},
+ {id:"bakezori",mon:"m_vs_bakezori",n:"Бакэ-дзори",room:"entrance",h:230,anim:"hop",lure:{ids:["e2_getabako","v_geta","tk_zori","tk_geta","o_slippers","vs_geta"],n:1},likes:["ds_onigiri","ds_yakiimo","ds_edamame"],gift:"vs_waraji",small:["v_imo","v_edamame"],gv:"оставил",
+  hint:"Прибегает к воротам, где стоит обувь, и любит онигири",short:"вход · обувь · онигири",
+  first:"Карари-кори! У ворот стоит обувь — значит, тут любят ходить в гости. Спасибо за онигири: меня сплели из рисовой соломы, рис мне как родной.",
+  later:["Карари-кори, кароринь-корорин!","Три глаза, два зуба — это не про меня, это про гэта.","Береги свою обувь — и она никогда не убежит."],
+  desc:"Соломенная сандалия, которую не берегли, оживает и носится ночью по дому с песенкой «Карари-кори, три глаза, два зуба!». Старую обувь чинят и хранят — тогда она не обижается."},
+ {id:"kozo",mon:"m_vs_kozo",n:"Хитоцумэ-кодзо",room:"games",h:330,anim:"sway",lure:{c:["Игрушки"],n:2},likes:["ds_dango","ds_takoyaki","ds_tamagoyaki"],gift:"vs_mekago",small:["v_ichigo","v_kabocha"],gv:"оставил",
+  hint:"Заглядывает в «Игры», если там лежат две игрушки и есть данго",short:"игры · 2 игрушки · данго",
+  first:"Ой! Я только посмотреть на игрушки… Можно одну данго? Честно-честно никому не скажу, как у вас весело.",
+  later:["Я записываю в книжечку хорошие дома. Ваш — первый!","Не смотри так. У меня всего один глаз, мне неловко.","Тофу я несу бабушке. А данго — себе."],
+  desc:"Одноглазый мальчик-монах. В Эдо верили, что в 8-й день 2-го и 12-го месяца он обходит дома и записывает, кто как живёт. От него вешали у дверей корзину мэкаго: у неё столько «глаз», что кодзо смущается и уходит."},
+ {id:"azuki",mon:"m_vs_azuki",n:"Адзуки-арай",room:"courtyard",h:290,anim:"sway",lure:{c:["Посуда"],ids:["c2_well","c2_lotus"],n:1},likes:["ds_daifuku","ds_taiyaki","ds_mochi"],gift:"vs_zaru",small:["v_edamame","v_ichigo"],gv:"оставил",
+  hint:"Шуршит у пруда, если там стоит чаша, и любит сладкое с бобами",short:"дворик · чаша · дайфуку",
+  first:"Шоки-шоки, шоки-шоки… Чаша у пруда — как раз по мне. И сладкое с бобами! Мою адзуки триста лет, а попробовал впервые.",
+  later:["Шоки-шоки… Бобы должны быть чистыми, как лунный свет.","Не говори никому, что я не страшный.","Вода у вас в пруду мягкая. Бобы довольны."],
+  desc:"«Шоки-шоки…» — слышно ночью у реки: это Адзуки-арай моет красные бобы в решете. Видели его редко, чаще только слышали. Поёт: «Бобы помыть или человека поймать?» — но на деле очень застенчив."},
+ {id:"nuppeppo",mon:"m_vs_nuppeppo",n:"Нуппэппо",room:"onsen",h:230,anim:"blob",lure:{c:["Онсэн"],n:2},likes:["ds_mochi","ds_nimono","ds_miso"],gift:"vs_plush",small:["v_daikon","v_kabocha"],gv:"оставил",
+  hint:"Робко приходит в онсэн, где две банные вещи, и обожает моти",short:"онсэн · 2 банные вещи · моти",
+  first:"…Здравствуй. Прости, что я такой… бесформенный. В тёплом пару не так стыдно. А моти похож на меня. Он был очень вкусный.",
+  later:["…Можно я просто посижу? Я тихо.","…Мне говорили, что я некрасивый. А Муся не убежала.","…Тёплая вода — как объятия."],
+  desc:"Бесформенный ком мягкой плоти с намёком на лицо. Бродит ночами у заброшенных храмов, никого не трогает. Торияма Сэкиэн нарисовал его в 1776 году. Этот — застенчивый и похож на моти."},
+ {id:"yosuzume",mon:"m_vs_yosuzume",n:"Ёсудзумэ",room:"kitchen",h:118,anim:"birds",night:1,lure:{ids:["k_komedawara","k_hagama","k_onigiri","k_bento"],n:1},likes:["ds_onigiri","ds_edamame","ds_asazuke"],gift:"vs_tsuzura",small:["v_edamame","v_negi"],gv:"оставила",
+  hint:"Ночью прилетает на кухню, где пахнет рисом, и клюёт онигири",short:"кухня · ночь · рис · онигири",
+  first:"Ти-ти-ти! На кухне пахнет рисом — я и прилетела. Мы, воробьи, помним добро. Помнишь сказку про воробья с отрезанным язычком?",
+  later:["Ти-ти-ти! Горные тропы сегодня тихие.","Рисинку тебе, рисинку мне.","Ночью я пою, чтобы путник не сбился с дороги."],
+  desc:"Ночной воробей из преданий Эхимэ и Вакаямы. Его «ти-ти-ти» слышат в темноте на горных дорогах; говорят, он летит перед волком-провожатым окури-ōками. В доме это просто милая ночная птичка."},
+ {id:"moku",mon:"m_vs_mokumokuren",n:"Мокумокурэн",room:"bedroom",h:400,anim:"blink",y:1196,lure:{c:["Свитки"],ids:["g2_go","v_shogi","b_books"],n:1},likes:["ds_ramen","ds_yakizakana","ds_tamagoyaki"],gift:"vs_goban",small:["v_nasu","v_obaketake"],gv:"оставили",
+  hint:"Смотрит из сёдзи спальни, где висит свиток или лежит доска го",short:"спальня · свиток · рамэн",
+  first:"Шёпот из-за бумаги: «Мы любим читать через плечо. Свиток у тебя красивый. А тарелка пустая — не спрашивай как».",
+  later:["«Мы видели, как Муся спит. Очень сладко».","«Сыграем в го? Мы всегда знаем, куда ты посмотришь».","«Не заклеивай нас. Нам нравится смотреть»."],
+  desc:"Глаза в сёдзи старого дома: из каждой клеточки бумаги кто-то смотрит. Торияма Сэкиэн (1781) шутит, что это игрок в го так долго глядел на доску, что глаза остались в клетках. Смотрит, но не трогает."}
+];
+const VSI={};for(const v of VS)VSI[v.id]=v;
+const VS_EYES=[[92,88,22,15],[190,90,17,12],[286,96,24,16],[130,190,15,11],[256,200,26,18],[94,300,20,14],[190,296,14,10],[290,304,19,13],[178,396,23,16]];
+const VS_RN={engawa:"Веранда",entrance:"Вход",games:"Игры",courtyard:"Дворик",onsen:"Онсэн",kitchen:"Кухня",bedroom:"Спальня"};
+const VS_ROOMS=Object.keys(VS_RN);
+Object.assign(MON,{m_vs_karakasa:[300,460],m_vs_bakezori:[280,370],m_vs_kozo:[300,500],m_vs_azuki:[380,400],m_vs_kamaitachi:[400,440],m_vs_nuppeppo:[340,340],m_vs_yosuzume:[270,270],m_vs_mokumokuren:[380,480]});
+for(const v of VS)BESTIARY.push(["vs_"+v.id,v.mon,v.n,v.desc]);
+STAMPS.push(["vs_first","客","Ночной гость","Встреть ёкая, пришедшего на угощение"],["vs_all","宴","Все ночные гости","Встреть всех восьмерых ночных гостей"]);
+{const C="Подарки ночных гостей",A={vs_scroll:[0,0,150,440],vs_mekago:[152,0,180,170],vs_waraji:[334,0,170,150],vs_goban:[506,0,200,150],vs_tsuzura:[708,0,170,140],vs_plush:[0,442,150,130],vs_geta:[152,442,170,110],vs_zaru:[324,442,200,110],vs_kusuri:[526,442,150,100]},
+  row=(id,n,a,hint)=>({id,n,c:C,w:A[id][2],h:A[id][3],a,p:0,at:["vs",A[id][0],A[id][1]],src:"👣 ночной гость",hint});
+ addItems([row("vs_geta","Гэта на одном зубце","b","Подарок того, кто любит зонтики на веранде"),row("vs_kusuri","Ракушка с мазью кама-итати","b","Оставят те, кто прилетает на звон фурина"),
+  row("vs_waraji","Оберег — крошечные варадзи","t","Подарок того, кто прибегает к обуви у ворот"),row("vs_mekago","Корзина мэкаго","b","Оставит одноглазый любитель игрушек"),
+  row("vs_zaru","Решето с бобами адзуки","b","Подарок того, кто шуршит у пруда"),row("vs_plush","Плюшевый нуппэппо","b","Оставит застенчивый гость онсэна"),
+  row("vs_tsuzura","Корзинка цудзура","b","Подарок ночной птички с кухни"),row("vs_goban","Доска го, что подмигивает","b","Оставят глаза из сёдзи спальни"),
+  row("vs_scroll","Свиток «Ночные гости»","t","Награда за встречу со всеми восемью")],{vs:[1000,572]});}
+document.head.insertAdjacentHTML("beforeend",`<style>.vs-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(156px,1fr));gap:8px;margin:0 0 12px}.vs-c{display:flex;gap:8px;align-items:center;padding:8px;border-radius:12px;background:#0a0d0c;border:1px solid var(--line)}
+.vs-c img{height:64px;width:54px;object-fit:contain;flex:none}.vs-c.no img{filter:brightness(0) opacity(.42)}.vs-c b{display:block;font-size:13px;line-height:1.25}.vs-c small{display:block;font-size:11px;line-height:1.3;color:var(--muted)}
+.vs-pk{color:inherit;font:inherit;cursor:pointer}.vs-pk .vs-h{color:var(--sakura)}.story-body .vs-hn{font-size:13px;color:var(--muted);margin:2px 0}</style>`);
+
+// ── state ──
+const vsD=()=>{const D=S.ext.vis||(S.ext.vis={r:{},m:{}});D.r=D.r||{};D.m=D.m||{};return D;};
+const vsM=id=>vsD().m[id]||(vsD().m[id]={n:0,met:0,miss:0});
+const vsLikes=(v,f)=>v.likes.includes(f)||v.likes.includes("u_any")&&EATFISH.includes(f);
+function vsLureThing(v){let n=0,first=null;for(const id in S.placed){const q=S.placed[id],i=IT[id];if(q.r!==v.room||!i)continue;if((v.lure.c||[]).includes(i.c)||(v.lure.ids||[]).includes(id)){n++;if(!first)first={id,x:q.x,y:q.y};}}return n>=v.lure.n?first:null;}
+const vsHere=()=>Object.values(vsD().r).filter(R=>R.st==="here").length;
+const vsMid=()=>(view.W/2-BGM.dx)/BGM.k;
+function vsAnchor(room,v){const mid=vsMid(),th=(v?[v]:VS.filter(q=>q.room===room)).map(vsLureThing).find(Boolean);
+  if(th)return Math.round(th.x+(th.x<mid?-1:1)*150);return Math.round(mid+(Math.random()<.5?-1:1)*300);}
+function vsSmall(v,m){if(m.n%3===0)return null;return pick(v.small);}   // every third later visit brings joy instead of food
+// one event at time T (ms): departures turn the plate into "left" (a small present waits); arrivals respect «max 2 in the house»
+function vsArrive(room,R,T,live){const v=VSI[R.v];if(vsHere()>=2){const U=Math.min(...Object.values(vsD().r).filter(q=>q.st==="here").map(q=>q.until));R.at=U+rand(3,10)*60000;return;}
+  R.st="here";R.until=R.at+rand(60,180)*60000;if(live)R.x=vsAnchor(room,v);else R.fresh=1;const m=vsM(v.id);m.n++;
+  if(live){if(S.room===room){vsA[room]={in:now()};if(!petAway())react(m.met?"😺":"🙀",2);tone(660,.5,"sine",.03);setTimeout(()=>tone(990,.6,"sine",.02),160);}else toast(`👣 Кто-то пришёл: «${VS_RN[room]}»`);}}
+function vsLeave(room,R,live){R.st="left";R.g=vsSmall(VSI[R.v],vsM(R.v));const m=vsM(R.v);if(!m.met)m.miss++;if(live&&S.room===room)vsGhost[room]={v:R.v,x:R.x,out:now()};}
+function vsStep(T=Date.now(),live=true){
+  const D=vsD();let ch=false;
+  for(let guard=0;guard<24;guard++){   // process due events in time order (the boot catch-up can hold several)
+    let best=null;for(const room in D.r){const R=D.r[room],e=R.st==="pend"?R.at:R.st==="here"?R.until:null;if(e!=null&&e<=T&&(!best||e<best[0]))best=[e,room];}
+    if(!best)break;const R=D.r[best[1]];ch=true;
+    if(R.st==="here")vsLeave(best[1],R,live);
+    else if(scene.on&&S.room===best[1])R.at=T+60000;
+    else vsArrive(best[1],R,best[0],live);}
+  for(const room in D.r){const R=D.r[room];   // plates that can call someone now
+    if(R.st==="pend"&&!vsLureThing(VSI[R.v])){R.st="wait";delete R.v;ch=true;}
+    if(R.st!=="wait")continue;
+    const c=VS.filter(v=>v.room===room&&vsLikes(v,R.f)&&(!v.night||dayTint()[1])&&vsLureThing(v));if(!c.length)continue;
+    const v=c.find(q=>!vsM(q.id).met)||pick(c);Object.assign(R,{st:"pend",v:v.id,at:T+rand(3,10)*60000});ch=true;}
+  if(ch){save();if(live&&VS_ROOMS.includes(S.room)&&(S.trayMode[S.room]||"play")==="play")ui();}
+  return ch;}
+// catch up on what happened while the game was closed (before any boot hook asks for the «away» postcard line)
+let vsAway=null;{const D=vsD(),before=JSON.stringify(D.r);vsStep(Date.now(),false);
+  const came=Object.entries(D.r).filter(([r,R])=>R.fresh&&(R.st==="here"||R.st==="left"));for(const R of Object.values(D.r))delete R.fresh;
+  if(came.length&&before!==JSON.stringify(D.r)){const [r,R]=came[0];vsAway={i:"👣",t:`Пока тебя не было, в комнате «${VS_RN[r]}» кто-то съел ${FOOD[R.f]?FOOD[R.f].n.toLowerCase():"угощение"} 👣`};}}
+
+// ── drawing ──
+const vsA={},vsGhost={};
+function vsPos(room,v,R){   // plate + visitor image coords: near the lure, off Musya, inside what a phone shows
+  const mid=vsMid(),l=-BGM.dx/BGM.k,r=(view.W-BGM.dx)/BGM.k,m=MON[v?v.mon:"m_vs_kozo"],hw=(v?v.h:260)*m[0]/m[1]/2*(v&&v.anim==="birds"?2.4:1),cat=70*view.s/BGM.k;
+  let side=(R.x??mid+1)<mid?-1:1;if(room==="entrance"&&S.guest&&S.guest.state==="here")side=-1;
+  let x=R.x??mid+side*300;const need=cat+hw+10;if((x-mid)*side<need)x=mid+side*need;
+  const lo=l+hw+14,hi=r-hw-14;if(lo<hi){x=clamp(x,lo,hi);if(Math.abs(x-mid)<need){const alt=mid-side*need;if(alt>=lo&&alt<=hi){x=alt;side=-side;}}}else x=(l+r)/2;
+  const y=v&&v.y||vsFront(room,x,hw);return{x,y,px:clamp(x-side*hw*.55,l+60,r-60),py:Math.min(y+18,1322),side};}
+// stand in front of floor things that would hide the visitor (cached for half a second)
+const vsFC={};
+function vsFront(room,x,hw){const key=room+"|"+Math.round(x),c=vsFC[key],t=now();if(c&&t-c.t<.5)return c.y;let y=1262;
+  for(const id in S.placed){const q=S.placed[id],m=DMETA[id];if(q.r!==room||!m||m[2]!=="b")continue;const [qx,qy]=propAt(id,q.x,q.y);if(qx+m[0]/2>x-hw*.8&&qx-m[0]/2<x+hw*.8&&qy>=y-8)y=Math.max(y,qy+12);}
+  y=Math.min(y,1330);vsFC[key]={t,y};return y;}
+function vsPlate(x,y,f,eaten,t,left){
+  const [sx,sy]=imgToStage(x,y,CAT_D),k=BGM.k*1.45;
+  ctx.save();ctx.fillStyle="rgba(0,0,0,.3)";ctx.beginPath();ctx.ellipse(sx,sy+4*k,50*k,14*k,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle="#d8d0bf";ctx.beginPath();ctx.ellipse(sx,sy,46*k,15*k,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#34507a";ctx.lineWidth=3*k;ctx.beginPath();ctx.ellipse(sx,sy,40*k,12*k,0,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle="#ebe5d8";ctx.beginPath();ctx.ellipse(sx,sy-1*k,30*k,8*k,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  if(!eaten&&f)fDraw(ctx,f,sx,sy-12*k,54*k);
+  else{ctx.fillStyle="rgba(170,130,80,.8)";for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(sx+(i*13%29-14)*k,sy+((i*7)%9-4)*k*.6,1.6*k,0,Math.PI*2);ctx.fill();}}
+  if(left)drawEmoji(ctx,"🎁",sx,sy-20*k+Math.sin(t*2.4)*3*k,22*view.s,.95);}
+function vsBody(v,x,y,t,al){
+  const k=BGM.k,[sx,sy]=imgToStage(x,y,CAT_D),w=v.h*MON[v.mon][0]/MON[v.mon][1]*k;
+  ctx.save();ctx.globalAlpha=al*.9;ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(sx,sy,w*(v.anim==="birds"?1.6:.42),w*.1,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  const a=v.anim;
+  if(a==="hop")drawMon(v.mon,x,y-Math.abs(Math.sin(t*3.1))*16,v.h,CAT_D,al,"b",Math.sin(t*3.1)*.05);
+  else if(a==="spin")drawMon(v.mon,x+Math.sin(t*5)*8,y-6-Math.sin(t*2)*6,v.h,CAT_D,al,"b",Math.sin(t*3.7)*.035);
+  else if(a==="blob")drawMon(v.mon,x,y+Math.sin(t*1.6)*2,v.h*(1+.02*Math.sin(t*1.6)),CAT_D,al);
+  else if(a==="birds"){for(const [dx,s,fl,ph] of [[-95,.8,false,1.3],[0,1,false,0],[92,.86,true,2.2]]){const pk=Math.max(0,Math.sin(t*2.3+ph*3))**8;drawMon(v.mon,x+dx,y+(s<1?-8:0),v.h*s,CAT_D,al,"b",(fl?-1:1)*-pk*.35,fl);}}
+  else if(a==="blink"){drawMon(v.mon,x,y,v.h,CAT_D,al);const h=v.h*k,W=h*380/480,e=VS_EYES[Math.floor(t/1.7)%VS_EYES.length],u=t%1.7;
+    if(u<.2){const ex=sx-W/2+e[0]/380*W,ey=sy-h+e[1]/480*h;ctx.save();ctx.globalAlpha=al;ctx.fillStyle="#cdbf9e";ctx.beginPath();ctx.ellipse(ex,ey,e[2]/380*W*1.12,e[3]/480*h*1.2*Math.sin(u/.2*Math.PI),0,0,Math.PI*2);ctx.fill();ctx.restore();}}
+  else drawMon(v.mon,x,y+Math.sin(t*2)*3,v.h,CAT_D,al);}
+hook("draw",(t,front)=>{
+  if(scene.on)return;const room=S.room,R=vsD().r[room],line=catLineY()+6;
+  if(R){const v=R.v&&VSI[R.v],P=vsPos(room,v,R);
+    if((P.py>line)===front)vsPlate(P.px,P.py,R.f,R.st==="here"||R.st==="left",t,R.st==="left");
+    if(R.st==="here"&&v&&(P.y>line)===front){const A=vsA[room]||(vsA[room]={in:t});vsBody(v,P.x,P.y,t,clamp((t-A.in)/1.4,0,1));}}
+  const G=vsGhost[room];if(G){const v=VSI[G.v],al=1-(t-G.out)/1.6;if(al<=0)delete vsGhost[room];else{const P=vsPos(room,v,{x:G.x});if((P.y>line)===front)vsBody(v,P.x,P.y,t,al);}}
+});
+function vsBox(room,R){const v=VSI[R.v],P=vsPos(room,v,R),[sx,sy]=imgToStage(P.x,P.y,CAT_D),h=v.h*BGM.k*(v.anim==="hop"?1.1:1),w=h*MON[v.mon][0]/MON[v.mon][1]*(v.anim==="birds"?2.6:1);return{x0:sx-w/2,x1:sx+w/2,y0:sy-h,y1:sy+6,P};}
+hook("hit",(x,y)=>{
+  if(scene.on)return false;const room=S.room,R=vsD().r[room];if(!R)return false;
+  if(R.st==="here"){const b=vsBox(room,R);if(x>b.x0&&x<b.x1&&y>b.y0&&y<b.y1){vsMeet(room);return true;}}
+  const P=vsPos(room,R.v&&VSI[R.v],R),[px_,py_]=imgToStage(P.px,P.py,CAT_D),k=BGM.k*1.45;
+  if(Math.abs(x-px_)<56*k&&y>py_-44*k&&y<py_+20*k){vsPlateTap(room);return true;}
+  return false;});
+
+// ── meeting: the dialog, the gift, discovery ──
+function vsMeet(room){
+  const D=vsD(),R=D.r[room],v=VSI[R.v],m=vsM(v.id);audioInit();let text,img;
+  if(!m.met){m.met=Date.now();disc("visitor",v.id);if(!ST.seen.includes("vs_"+v.id))ST.seen.push("vs_"+v.id);S.owned.add(v.gift);loadItem(v.gift);
+    text=`${v.first} В подарок ${v.gv}: «${IT[v.gift].n}» — ищи в 🧺 Вещи.`;img=itemThumb(IT[v.gift],72,60);award("vs_first");
+    if(VS.every(q=>vsM(q.id).met)&&!S.owned.has("vs_scroll")){S.owned.add("vs_scroll");award("vs_all");text+=" Все восемь гостей встречены — в 🧺 Вещи ждёт свиток «Ночные гости».";}}
+  else{const g=vsSmall(v,m);text=pick(v.later)+" ";
+    if(g){give(g);text+=`В кладовой теперь: ${FOOD[g].n}.`;img=fThumb(g,60,44);}else{S.needs.joy=clamp(S.needs.joy+15,0,100);text+="От этой встречи на душе тепло: радость +15.";img=`<span style="font-size:34px">💗</span>`;}}
+  vsGhost[room]={v:v.id,x:R.x,out:now()+99};delete D.r[room];
+  chime([784,988,1318]);if(!petAway())react("😻",2);save();ui();hubDot();
+  dlg({head:`${v.n} · ${m.n===1?"первая встреча":"визит "+m.n}`,text,img,ok:"До встречи",onOk:()=>{const G=vsGhost[room];if(G)G.out=now();}});}
+function vsPlateTap(room){
+  const D=vsD(),R=D.r[room];if(!R)return;audioInit();
+  if(R.st==="left"){const v=VSI[R.v],g=R.g;delete D.r[room];
+    if(g){give(g);toast(`Кто-то приходил и оставил: ${FOOD[g].n}`);}else{S.needs.joy=clamp(S.needs.joy+10,0,100);toast("Тарелка пустая. Кто-то приходил 👣");}
+    sfx("chime");if(!petAway())react(vsM(v.id).met?"😺":"🙀",1.6);save();ui();hubDot();return;}
+  if(R.st==="here"){toast("Нажми на гостя — он ждёт");return;}
+  dlg({head:"Угощение на полу",text:`На тарелке — ${FOOD[R.f].n.toLowerCase()}. ${R.st==="pend"?"Кажется, кто-то уже почуял запах и спешит сюда…":"Пока никто не пришёл. Гости приходят на то, что любят, и только если в комнате стоят нужные им вещи."}`,
+    img:fThumb(R.f,60,44),ok:"Пусть стоит",no:"Убрать",onNo:()=>{give(R.f);delete D.r[room];tone(300,.1,"triangle",.04);save();ui();}});}
+
+// ── the tray button, the treat picker ──
+hook("tray",(tray,room)=>{
+  if(!VS_ROOMS.includes(room)||(S.trayMode[room]||"play")!=="play"||tray.querySelector('[data-x="vs:tray"]'))return;const R=vsD().r[room];
+  const [ico,nm]=!R?["🍡","Оставить угощение"]:R.st==="here"?["👣","Гость пришёл!"]:R.st==="left"?["🎁","Пустая тарелка"]:["🍡","Угощение ждёт"];
+  const b=`<button class="item wide" data-x="vs:tray"><span class="ico">${ico}</span><span class="nm">${nm}</span></button>`,row=tray.querySelector(".items");
+  if(row)row.insertAdjacentHTML("afterbegin",b);else tray.querySelector(".glist")?.insertAdjacentHTML("beforebegin",`<div class="items">${b}</div>`);});
+function vsPicker(){
+  const room=S.room,eats=pantryEats(),here=VS.filter(v=>v.room===room);
+  const love=f=>here.some(v=>vsM(v.id).met&&vsLikes(v,f));
+  const tips=here.map(v=>vsM(v.id).met?`<p class="vs-hn">♥ ${v.n} любит: ${v.likes.map(f=>f==="u_any"?"любую рыбу":FOOD[f].n.toLowerCase()).join(", ")}.</p>`:`<p class="vs-hn">👣 ${v.hint}.</p>`).join("");
+  openPanel("Угощение для ночных гостей",`<p class="lead">Тарелка встанет на пол в комнате «${VS_RN[room]}». Гость приходит минут через 3–10 — если любит это угощение и в комнате стоят нужные ему вещи. Можно даже закрыть игру.</p>${tips}
+   ${eats.length?`<div class="coll">${eats.map(f=>`<button class="ci on vs-pk" data-x="vs:put:${f}">${fThumb(f,70,44)}<small>${FOOD[f].n}${love(f)?' <span class="vs-h">♥</span>':""}<br>×${S.pantry[f]}</small></button>`).join("")}</div>`
+   :`<p class="lead">В кладовой нет готовых блюд и рыбы. Приготовь что-нибудь на кухне (🍳 Готовить) или налови рыбы в пруду во дворике.</p>`}`,"vs_pick");}
+hook("click",(key,btn)=>{
+  if(!key.startsWith("vs:"))return false;const [,a,arg]=key.split(":"),D=vsD();
+  if(a==="tray"){const R=D.r[S.room];if(R)vsPlateTap(S.room);else vsPicker();return true;}
+  if(a==="put"){const room=S.room;if(D.r[room]||!have(arg)){closePanel();return true;}take(arg);D.r[room]={f:arg,st:"wait",t:Date.now(),x:vsAnchor(room)};
+    closePanel();sfx("pop");toast("Угощение ждёт на полу 🍡");if(!petAway())react("😋",1.4);vsStep();save();ui();return true;}
+  if(a==="go"){closePanel();goRoom(arg);return true;}
+  return false;});
+
+// ── hooks: time, rooms, dots, hub, album, postcard ──
+hook("sec",()=>{vsStep();});
+hook("room",id=>{for(const k in vsGhost)delete vsGhost[k];const R=vsD().r[id];if(R&&R.st==="here"&&!scene.on){vsA[id]={in:now()};if(!petAway())setTimeout(()=>react(vsM(R.v).met?"😺":"🙀",2),700);}});
+hook("hubDot",()=>Object.values(vsD().r).some(R=>R.st==="here"||R.st==="left"));
+hook("tabDot",room=>{const R=vsD().r[room];return !!R&&(R.st==="here"||R.st==="left");});
+hook("away",()=>vsAway);
+hook("hub",()=>{
+  const D=vsD(),met=VS.filter(v=>vsM(v.id).met).length,rs=Object.entries(D.r);
+  const now_=rs.filter(([,R])=>R.st==="here").map(([r,R])=>`<b>${VSI[R.v].n}</b> — «${VS_RN[r]}»`),left=rs.filter(([,R])=>R.st==="left").map(([r])=>`«${VS_RN[r]}»`),wait=rs.filter(([,R])=>R.st==="wait"||R.st==="pend").map(([r,R])=>`«${VS_RN[r]}» (${FOOD[R.f].n.toLowerCase()})`);
+  const go=[...new Set(rs.filter(([,R])=>R.st==="here"||R.st==="left").map(([r])=>r))];
+  return`<div class="hubc"><h4>👣 Ночные гости <i>夜の客</i></h4><p>Ёкаи приходят сами, если в комнате стоят нужные вещи и на полу ждёт угощение (кнопка 🍡 в комнате). Встречено: ${met} из ${VS.length}.</p>
+   ${now_.length?`<p>Сейчас в доме: ${now_.join(", ")}.</p>`:""}${left.length?`<p>Пустая тарелка с подарком: ${left.join(", ")}.</p>`:""}${wait.length?`<p>Угощение ждёт: ${wait.join(", ")}.</p>`:""}
+   ${VS.filter(v=>!vsM(v.id).met).map(v=>`<p class="vs-hn">👣 ${v.short}</p>`).join("")}
+   ${go.length?`<div class="row">${go.map(r=>`<button class="btn primary" data-x="vs:go:${r}">В «${VS_RN[r]}»</button>`).join("")}</div>`:""}</div>`;});
+hook("album",el=>{
+  const met=VS.filter(v=>vsM(v.id).met).length;
+  el.insertAdjacentHTML("beforeend",`<h3 class="bh">Ночные гости</h3><p class="lead">Ёкаи, которые приходят на вещи и угощение. Встречено ${met} из ${VS.length}.</p><div class="vs-g">${VS.map(v=>{const m=vsM(v.id);
+    return m.met?`<div class="vs-c"><img src="assets/mon/${v.mon}.webp" alt=""><div><b>${v.n}</b><small>«${VS_RN[v.room]}» · визитов: ${m.n}<br>♥ ${v.likes.map(f=>f==="u_any"?"рыба":FOOD[f].n.toLowerCase()).join(", ")}</small></div></div>`
+     :`<div class="vs-c no"><img src="assets/mon/${v.mon}.webp" alt=""><div><b>???</b><small>${v.hint}.${m.miss?"<br>Уже приходил, пока тебя не было…":""}</small></div></div>`;}).join("")}</div>`);});
+
+// test handle: X.vs.skip(ms) moves every timer back (time travel), X.vs.put(room,food) leaves a plate, X.vs.come(room) makes the pending guest arrive now
+X.vs={VS,D:vsD,step:vsStep,meet:vsMeet,pos:r=>{const R=vsD().r[r];return R&&vsPos(r,R.v&&VSI[R.v],R);},
+  skip(ms){for(const R of Object.values(vsD().r))for(const k of ["at","until","t"])if(R[k])R[k]-=ms;vsStep();},
+  put(room,f){give(f);take(f);vsD().r[room]={f,st:"wait",t:Date.now(),x:vsAnchor(room)};vsStep();},
+  come(room){const R=vsD().r[room];if(R&&R.st==="pend")R.at=Date.now()-1;vsStep();},
+  tap(room){const b=vsBox(room,vsD().r[room]),r=cv.getBoundingClientRect();cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:r.left+(b.x0+b.x1)/2,clientY:r.top+(b.y0+b.y1)/2,pointerId:9,bubbles:true}));}};
+}
 // ── rumors.js
 {
 // ───────────────────────── «Слухи и час быка»: guests whisper rumours; at the right hour, in the right room, a quiet sign appears ─────────────────────────
@@ -3941,6 +4156,183 @@ document.head.insertAdjacentHTML("beforeend",`<style>.rm-list{display:flex;flex-
 .story-body .hubc p.rm-now{color:#f0d9a0}.story-body .hubc p.rm-more{font-size:12px;color:var(--muted)}</style>`);
 X.rm={RUM,st,live,here,moonAge,unlockAll(){const R=st();for(const r of RUM)if(!R.k.includes(r.id)){R.k.push(r.id);R.who[r.id]="Каппа";}save();},
   spot(id){const r=RI[id];return rmPt(...r.pt());},tap(id){const b=cv.getBoundingClientRect(),[x,y]=this.spot(id);cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:b.left+x,clientY:b.top+y,bubbles:true,pointerId:1,isPrimary:true}));},reveal(id){reveal(RI[id]);},wake(){roomT=now()-10;}};
+}
+// ── haunt.js
+{
+// ───────────────────────── Одержимая комната (idea #13): once a day a yōkai hides in one room ─────────────────────────
+// S.ext.haunt = {day,room,yk,spot,found,wrong,told,n (catches in total),got:[yōkai ids found]}
+const HN_ROOMS=["engawa","kitchen","onsen","bedroom","wardrobe","games","entrance","courtyard"];
+// Hiding spots in image coords. k: up = rises from behind a horizontal edge at (x,y) · down = hangs head-down below an edge ·
+// sl/sr = peeks left/right from behind a vertical edge x, standing on y · water = rises from water · out = seeps out of a painting/steam/dark.
+// prop: follows a movable prop (its offset), row: that prop's floor row (same 3D plane as the prop). n: «где» for texts.
+const HN_SPOTS={
+  engawa:[{x:1398,y:1100,d:.92,k:"sl",n:"за сёдзи"},{x:1246,y:1088,d:.42,k:"sr",s:.6,prop:"p_eng_toro",n:"за каменным фонарём"},
+    {x:640,y:330,d:.42,k:"down",n:"в кроне сосны"},{x:560,y:985,d:.42,k:"up",n:"в кустах у веранды"}],
+  kitchen:[{x:1265,y:852,d:.8,k:"up",prop:"p_kit_kamado",row:1155,n:"за печкой-камадо"},{x:520,y:636,d:.5,k:"up",n:"за окном"},
+    {x:1250,y:432,d:.5,k:"up",s:.8,n:"среди пиал на полке"},{x:1440,y:40,d:.5,k:"down",n:"под потолком у фонаря"}],
+  onsen:[{x:1250,y:1070,d:.55,k:"water",n:"в воде онсэна"},{x:600,y:765,d:.28,k:"up",n:"за изгородью"},
+    {x:1560,y:915,d:.55,k:"up",n:"в кустах у купальни"},{x:520,y:1020,d:.55,k:"out",n:"в пару над водой"}],
+  bedroom:[{x:1250,y:1236,d:.8,k:"up",n:"за футоном"},{x:1100,y:560,d:.4,k:"out",n:"за сёдзи"},
+    {x:470,y:1070,d:.5,k:"sr",n:"в нише токонома"},{x:1350,y:62,d:.4,k:"down",n:"под потолком"},{x:405,y:1300,d:.8,k:"sr",prop:"p_bed_andon",row:1305,n:"за андоном"}],
+  wardrobe:[{x:1180,y:140,d:.5,k:"up",n:"за ширмой"},{x:640,y:1070,d:.5,k:"sr",n:"за створкой ширмы"},
+    {x:700,y:380,d:.5,k:"out",n:"в нарисованной сакуре"},{x:1682,y:1070,d:.5,k:"sr",n:"за краем ширмы"}],
+  games:[{x:1200,y:1100,d:.45,k:"sr",n:"за столбом тории"},{x:470,y:490,d:.45,k:"down",n:"на перекладине тории"},
+    {x:440,y:1250,d:.8,k:"sr",s:.8,prop:"p_gam_toro0",row:1255,n:"за каменным фонарём"}],
+  entrance:[{x:690,y:955,d:.38,k:"sr",n:"за столбом тории"},{x:1060,y:545,d:.38,k:"down",n:"на воротах тории"},
+    {x:491,y:1260,d:.85,k:"sr",prop:"p_ent_toro",row:1264,n:"за каменным фонарём"},{x:1500,y:1030,d:.85,k:"up",n:"за чашей для омовения"}],
+  courtyard:[{x:1320,y:925,d:.55,k:"up",prop:"p_crt_rock1",n:"за валуном в заводи"},{x:560,y:1060,d:.55,k:"water",n:"в пруду"},
+    {x:520,y:520,d:.3,k:"out",n:"за струями водопада"},{x:1250,y:45,d:.95,k:"down",n:"под стрехой"}]
+};
+const HN_YK={
+  warashi:{mon:"m_warashi",n:"Дзасики-вараси",it:"hn_koma",eye:"250,240,232",sign:"sleeve",
+    say:["Нашли… Теперь вы водите. Завтра я спрячусь лучше.","Хи-хи. Я только чуть-чуть подвинула вещи. Дому так веселее."]},
+  tanuki:{mon:"m_tanuki",n:"Тануки",it:"hn_tokkuri",eye:"255,190,80",sign:"tail",tail:["#9a7248","#3e2a1a"],
+    say:["Эх, а я почти превратился в чайник. Ладно, держите на память.","Меня выдал хвост? Опять этот хвост…"]},
+  kitsune:{mon:"m_kitsune",n:"Кицунэ",it:"hn_fur",eye:"255,210,90",sign:"tail",tail:["#efe8dc","#e0b070"],
+    say:["Зоркая у вас кошка. Лисы таких уважают.","Я просто проходила мимо. С хвостом. Сквозь стену."]},
+  kappa:{mon:"m_kappa",n:"Каппа",it:"hn_scale",eye:"230,230,90",sign:"ripple",
+    say:["Ой, не трясите — блюдце расплещется! Ваша взяла.","Я искал огурцы. Огурцов нет. Зато нашли меня."]},
+  nekomata:{mon:"m_nekomata",n:"Нэкомата",it:"hn_fluff",eye:"190,255,120",sign:"tail2",tail:["#d88a3a","#f2ece2"],
+    say:["Мяу. Это я переставила вещи: кошкам виднее, где им стоять.","Два хвоста спрятать труднее, чем один. Ваша взяла."]},
+  akaname:{mon:"m_akaname",n:"Аканамэ",it:"hn_claw",eye:"255,220,60",sign:"tongue",
+    say:["Я только облизал тут немножко… Зато теперь всё чисто!","Не смотрите так. Грязь сама себя не слижет."]},
+  obake:{mon:"m_obake",n:"Тётин-обакэ",it:"hn_wick",eye:"255,245,220",sign:"glow",one:1,
+    say:["Тсс… я просто фонарь. Обычный старый фонарь. …Ладно, нашли.","Сто лет висел без дела — вот и ожил. Поиграем ещё?"]},
+  rokuro:{mon:"m_rokuro",n:"Рокурокуби",it:"hn_hair",eye:"240,240,255",sign:"hair",scary:1,
+    say:["Шея затекла — всё утро выглядывала. Спасибо, что нашли.","Голова тут, а тело спит в соседней комнате. Не будите его."]}
+};
+const HN_IDS=Object.keys(HN_YK);
+// trophies: one small painted thing per yōkai, all in assets/items/atlas_hn.webp (art/haunt_art.py)
+const HN_CAT="Трофеи охоты на ёкаев",HN_AT=[["hn_tokkuri","Бутылочка сакэ тануки",110,170,"b",112,0,"tanuki"],["hn_fur","Клочок лисьего меха",150,110,"b",448,0,"kitsune"],
+  ["hn_scale","Чешуйка каппы",120,110,"b",600,0,"kappa"],["hn_wick","Фитилёк тётин-обакэ",100,150,"b",224,0,"obake",[50,55]],["hn_hair","Прядь рокурокуби",110,200,"t",0,0,"rokuro"],
+  ["hn_fluff","Клубочек шерсти нэкоматы",130,110,"b",722,0,"nekomata"],["hn_koma","Волчок дзасики-вараси",120,130,"b",326,0,"warashi"],["hn_claw","Коготок аканамэ",120,90,"b",854,0,"akaname"]];
+addItems(HN_AT.map(([id,n,w,h,a,x,y,yk,glow])=>Object.assign({id,n,c:HN_CAT,w,h,a,p:0,at:["hn",x,y],src:"👻 одержимая комната",hint:hnHint(yk)},glow?{glow}:{})),{hn:[1024,200]});
+function hnHint(yk){return({tanuki:"Найди тануки в одержимой комнате",kitsune:"Найди кицунэ в одержимой комнате",kappa:"Найди каппу в одержимой комнате",
+  obake:"Найди тётин-обакэ в одержимой комнате",rokuro:"Найди рокурокуби в одержимой комнате",nekomata:"Найди нэкомату в одержимой комнате",
+  warashi:"Найди вараси в одержимой комнате",akaname:"Найди аканамэ в одержимой комнате"})[yk];}
+STAMPS.push(["hn_first","憑","Охотница на ёкаев","Найди ёкая в одержимой комнате"],["hn_seven","七","Семь проказников","Найди 7 разных ёкаев в одержимых комнатах"],
+  ["hn_thirty","狩","Гроза проказников","Найди спрятавшихся ёкаев 30 раз"]);
+
+const hnHash=s=>{let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return h>>>0;};
+const hnRng=seed=>()=>{seed=(seed+0x6D2B79F5)|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};
+const hnRC={};
+// room of a day: a fixed walk from 2025-01-01 that never repeats yesterday's room (same on every reload)
+function hnRoomFor(dk){if(hnRC[dk])return hnRC[dk];const [y,m,d]=dk.split("-").map(Number),n=Math.round((Date.UTC(y,m-1,d)-Date.UTC(2025,0,1))/864e5);
+  let r=hnHash("hn0")%8;if(n<0)r=hnHash(dk)%8;else for(let i=1;i<=n;i++)r=(r+1+hnHash("hn"+i)%7)%8;return hnRC[dk]=HN_ROOMS[r];}
+function hnH(){return S.ext.haunt||(S.ext.haunt={day:"",n:0,got:[]});}
+function hnRoll(){const h=hnH(),dk=dayKey();if(h.day===dk)return;const R=hnRng(hnHash("hn:"+dk));let room=hnRoomFor(dk);
+  if(!ROOMS.some(r=>r.id===room)||hk("tabLock",room))room=HN_ROOMS.find(r=>ROOMS.some(q=>q.id===r)&&!hk("tabLock",r))||"engawa";
+  const pool=HN_IDS.filter(y=>S.scary||!HN_YK[y].scary),fresh=pool.filter(y=>!h.got.includes(y)),from=fresh.length?fresh:pool;
+  Object.assign(h,{day:dk,room,yk:from[Math.floor(R()*from.length)],spot:Math.floor(R()*HN_SPOTS[room].length),found:0,wrong:0,told:0});save();}
+const hnOn=()=>{const h=hnH();return h.day===dayKey()&&S.room===h.room&&!scene.on;};
+const rt={inT:0,tellAt:-9,tellKind:0,nextTell:0,nextWob:0,nextFx:0,nextGaze:0,flick:-9,shove:null,rev:null,off:0,debug:false};
+
+// projection of a spot: edge point on stage + stage px per image px at that depth
+function hnP(sp){let x=sp.x,y=sp.y,row=sp.row??null;if(sp.prop){const o=vpos[sp.prop]||S.dpos[sp.prop]||[0,0];x+=o[0];y+=o[1];if(row!=null)row+=o[1];}
+  curRow=row;const a=imgToStage(x,y,sp.d),b=imgToStage(x+100,y,sp.d);curRow=null;const ks=Math.hypot(b[0]-a[0],b[1]-a[1])/100;
+  const hS=300*ks*(sp.s||1),o={up:[0,-.12],down:[0,.12],sl:[-.12,-.72],sr:[.12,-.72],water:[0,-.06],out:[0,0]}[sp.k];
+  return{ex:a[0],ey:a[1],ks,hS,tx:a[0]+o[0]*hS,ty:a[1]+o[1]*hS,y};}
+function hnVisible(sp){const p=hnP(sp);return p.tx>24&&p.tx<view.W-24&&p.ty>30&&p.ty<view.H-30;}
+function hnSpot(){const h=hnH();return HN_SPOTS[h.room][h.spot]||HN_SPOTS[h.room][0];}
+function hnMove(avoid){const h=hnH(),L=HN_SPOTS[h.room],c=L.map((s,i)=>i).filter(i=>i!==avoid&&hnVisible(L[i]));if(!c.length)return false;h.spot=pick(c);h.wrong=0;save();return true;}
+const hnFront=(sp,p)=>sp.d>CAT_D+.01||(Math.abs(sp.d-CAT_D)<.01&&p.y>catLineY()+6);
+
+// ── sounds (only when scary happenings are on)
+const hnSnd=()=>S.scary&&snd.on&&snd.ctx;
+function hnKnock(){if(!hnSnd())return;[0,.32].forEach(d=>setTimeout(()=>{tone(92,.14,"triangle",.09);tone(62,.18,"sine",.07);},d*1000));}
+function hnGiggle(){if(!hnSnd())return;[1250,1480,1320,1560,1400].forEach((f,i)=>setTimeout(()=>tone(f*(.97+Math.random()*.06),.09,"triangle",.014),i*85));}
+function hnCreak(){if(!hnSnd())return;const c=snd.ctx,t=c.currentTime,o=c.createOscillator(),g=c.createGain(),f=c.createBiquadFilter();o.type="sawtooth";
+  o.frequency.setValueAtTime(150,t);o.frequency.linearRampToValueAtTime(92,t+.7);f.type="bandpass";f.frequency.value=620;f.Q.value=6;
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.05,t+.08);g.gain.exponentialRampToValueAtTime(.0001,t+.78);o.connect(f);f.connect(g);g.connect(c.destination);o.start(t);o.stop(t+.8);}
+
+// ── every second: time in the room, the day's roll, the house acting up
+hook("boot",()=>{hnRoll();});
+hook("room",()=>{rt.inT=0;rt.off=0;rt.nextTell=now()+2;rt.nextWob=now()+1.5;rt.nextFx=now()+rand(6,10);rt.nextGaze=0;const h=hnH();
+  if(h.day===dayKey()&&S.room===h.room&&!h.found&&!h.told){h.told=1;save();setTimeout(()=>{if(S.room===h.room)toast("Здесь кто-то есть… Вещи сдвинуты");},1600);}});
+hook("sec",()=>{hnRoll();const h=hnH();if(!hnOn()||h.found||overlaysOpen()||document.hidden)return;const t=now();rt.inT++;
+  if(rt.inT>=5&&!hnVisible(hnSpot())){if(++rt.off>=6){hnMove(-1);rt.off=0;}}else rt.off=0;
+  if(t>rt.nextWob){rt.nextWob=t+rand(4,9);const L=roomThings().filter(it=>it.id!==dragId);if(L.length){const it=pick(L);wob[it.id]=t;
+    if(Math.random()<.4)rt.shove={id:it.id,t0:t,dx:rand(-16,16),dy:rand(-4,4)};if(hnSnd()&&Math.random()<.3)tone(rand(180,240),.08,"triangle",.03);}}
+  if(t>rt.nextFx){rt.nextFx=t+rand(10,20);if(S.scary){rt.flick=t;const r=Math.random();if(r<.3)hnKnock();else if(r<.6)hnGiggle();else if(r<.85)hnCreak();}}
+  if(rt.inT>=20&&t>rt.nextGaze&&!petAway()&&pet.action==="idle"&&!rt.rev){rt.nextGaze=t+rand(12,20);const p=hnP(hnSpot());
+    pointer.x=p.tx;pointer.y=p.ty;pointer.known=true;pet.gazeUntil=t+4;if(Math.random()<.45)react(S.scary?"🙀":"😼",1.6);rt.tellAt=t+.3;}
+  if(t>rt.nextTell&&t-rt.tellAt>1.8){rt.tellAt=t;rt.tellKind++;rt.nextTell=t+rand(3,6);}});
+hook("tick",(t,dt)=>{const sv=rt.shove;if(!sv)return;const e=t-sv.t0;if(e>2||!hnOn()){rt.shove=null;return;}const vp=vpos[sv.id];if(!vp||dragId===sv.id)return;
+  const env=e<.2?e/.2:Math.max(0,1-(e-.2)/1.6),k=Math.min(.9,dt*11),tg=S.dpos[sv.id]||[0,0];vp[0]=tg[0]+sv.dx*env/(1-k);vp[1]=tg[1]+sv.dy*env/(1-k);});
+
+// ── drawing: tells, the reveal, the flicker
+function hnEyes(x,y,r,col,one,al,t){const bl=Math.sin(t*5.3)>.9?.12:1;for(const d of one?[0]:[-1,1]){const gx=x+d*r*1.7,rr=one?r*1.6:r,gr=ctx.createRadialGradient(gx,y,0,gx,y,rr*2.6);
+  gr.addColorStop(0,`rgba(${col},${.55*al})`);gr.addColorStop(1,`rgba(${col},0)`);ctx.fillStyle=gr;ctx.fillRect(gx-rr*2.6,y-rr*2.6,rr*5.2,rr*5.2);
+  ctx.fillStyle=`rgba(${col},${al})`;ctx.beginPath();ctx.ellipse(gx,y,rr*.75,rr*.5*bl,0,0,Math.PI*2);ctx.fill();ctx.fillStyle=`rgba(10,8,6,${al})`;ctx.beginPath();ctx.ellipse(gx,y,rr*.22,rr*.42*bl,0,0,Math.PI*2);ctx.fill();}}
+function hnTail(x,y,dx,dy,L,w,cols,al,t,ph=0){const nx=-dy,ny=dx,wav=Math.sin(t*4+ph)*L*.35,mx=x+dx*L*.5+nx*wav*.5,my=y+dy*L*.5+ny*wav*.5,ex=x+dx*L+nx*wav,ey=y+dy*L+ny*wav;
+  ctx.save();ctx.globalAlpha=al;ctx.lineCap="round";ctx.strokeStyle="rgba(255,226,180,.22)";ctx.lineWidth=w*1.8;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(mx,my,ex,ey);ctx.stroke();ctx.strokeStyle=cols[0];ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x,y);ctx.quadraticCurveTo(mx,my,ex,ey);ctx.stroke();
+  ctx.strokeStyle=cols[1];ctx.lineWidth=w*.95;ctx.beginPath();ctx.moveTo(mix(mx,ex,.45),mix(my,ey,.45));ctx.lineTo(ex,ey);ctx.stroke();ctx.restore();}
+function hnTell(sp,p,t){const h=hnH(),Y=HN_YK[h.yk],e=t-rt.tellAt;if(e<0||e>1.6)return;const al=Math.min(1,e/.25,(1.6-e)/.4),r=Math.max(2.6,.03*p.hS);
+  const dir={up:[0,-1],down:[0,1],sl:[-1,0],sr:[1,0],water:[0,-1],out:[0,-1]}[sp.k],sign=rt.tellKind%2&&sp.k!=="out"?Y.sign:"eyes";
+  if(sign==="eyes"||sign==="glow"){if(sign==="glow"){const g=ctx.createRadialGradient(p.tx,p.ty,0,p.tx,p.ty,p.hS*.35);g.addColorStop(0,`rgba(255,170,90,${.35*al})`);g.addColorStop(1,"rgba(255,170,90,0)");ctx.fillStyle=g;ctx.fillRect(p.tx-p.hS*.35,p.ty-p.hS*.35,p.hS*.7,p.hS*.7);}
+    hnEyes(p.tx,p.ty,r,Y.eye,Y.one,al,t);return;}
+  const bx=sp.k==="sl"||sp.k==="sr"?p.ex:p.ex+p.hS*.06,by=sp.k==="sl"||sp.k==="sr"?p.ey-p.hS*.18:p.ey;
+  if(sign==="tail")hnTail(bx,by,dir[0],dir[1],p.hS*.22,p.hS*.07,Y.tail,al,t);
+  else if(sign==="tail2"){hnTail(bx,by,dir[0],dir[1],p.hS*.2,p.hS*.055,Y.tail,al,t);hnTail(bx+p.hS*.05,by,dir[0],dir[1],p.hS*.18,p.hS*.055,[Y.tail[1],Y.tail[0]],al,t,1.7);}
+  else if(sign==="ripple"){ctx.save();ctx.strokeStyle=`rgba(200,230,225,${.6*al})`;ctx.lineWidth=1.4;for(let i=0;i<3;i++){const u=((e*.8+i/3)%1);ctx.globalAlpha=1-u;ctx.beginPath();ctx.ellipse(p.tx,p.ty+r*2,p.hS*.05+u*p.hS*.3,(p.hS*.05+u*p.hS*.3)*.28,0,0,Math.PI*2);ctx.stroke();}ctx.restore();hnEyes(p.tx,p.ty,r,Y.eye,0,al*.8,t);}
+  else if(sign==="tongue"){const u=Math.max(0,Math.sin(e*7));ctx.save();ctx.globalAlpha=al;ctx.fillStyle="#c9424a";ctx.beginPath();ctx.ellipse(p.tx+dir[0]*p.hS*.08*u,p.ty+dir[1]*p.hS*.08*u+r*2,p.hS*.03,p.hS*.07*u+1,dir[0]?Math.PI/2:0,0,Math.PI*2);ctx.fill();ctx.restore();hnEyes(p.tx,p.ty-r,r,Y.eye,0,al,t);}
+  else if(sign==="sleeve"){ctx.save();ctx.globalAlpha=al;const sx=p.tx+dir[0]*p.hS*.02,sy=p.ty+p.hS*.05,w=p.hS*.12,sw=Math.sin(e*3)*w*.15;ctx.fillStyle="#a8262a";ctx.beginPath();ctx.ellipse(sx+sw,sy,w*.6,w,dir[0]*.4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="rgba(250,230,230,.8)";for(let i=0;i<4;i++){ctx.beginPath();ctx.arc(sx+sw+Math.cos(i*1.7)*w*.35,sy+Math.sin(i*2.3)*w*.6,w*.09,0,Math.PI*2);ctx.fill();}ctx.restore();}
+  else if(sign==="hair"){ctx.save();ctx.globalAlpha=al*.9;ctx.strokeStyle="#0a0a0c";ctx.lineWidth=1.2;for(let i=0;i<14;i++){const x0=p.tx+(i-7)*r*.5;ctx.beginPath();ctx.moveTo(x0,p.ty-r*2);ctx.quadraticCurveTo(x0+Math.sin(e*2+i)*r,p.ty+p.hS*.08,x0+Math.sin(i)*r,p.ty+p.hS*.16);ctx.stroke();}ctx.restore();hnEyes(p.tx,p.ty,r*.8,Y.eye,0,al,t);}}
+function hnMon(id,x,y,hS,al,rot,anchor){const im=MIMG[id],m=MON[id];if(!im||!m||al<=0)return;const w=m[0]*hS/m[1];ctx.save();ctx.globalAlpha=Math.min(1,al);ctx.translate(x,y);if(rot)ctx.rotate(rot);ctx.drawImage(im,-w/2,anchor==="c"?-hS/2:-hS,w,hS);ctx.restore();}
+function hnReveal(sp,p,t){const v=rt.rev,e=t-v.t,Y=HN_YK[v.yk],m=MON[Y.mon];if(!m)return;const u=smooth(clamp(e/1.1,0,1)),tilt=Math.sin(Math.max(0,e-1.1)*2.4)*.07*Math.min(1,Math.max(0,e-1.1)),
+    al=e>v.end?Math.max(0,1-(e-v.end)/.6):1,hS=p.hS*(Y.mon==="m_rokuro"?.62:1),w=m[0]*hS/m[1],show=sp.k==="sl"||sp.k==="sr"?.45:.62;
+  ctx.save();ctx.beginPath();
+  if(sp.k==="up"||sp.k==="water"){ctx.rect(0,0,view.W,p.ey);ctx.clip();hnMon(Y.mon,p.ex,p.ey+hS-show*hS*u,hS,al,tilt,"b");}
+  else if(sp.k==="down"){ctx.rect(0,p.ey,view.W,view.H);ctx.clip();hnMon(Y.mon,p.ex,p.ey-hS+show*hS*u,hS,al,Math.PI+tilt,"b");}
+  else if(sp.k==="sl"){ctx.rect(0,0,p.ex,view.H);ctx.clip();hnMon(Y.mon,p.ex+w/2-show*w*u,p.ey,hS,al,-.2*u+tilt,"b");}
+  else if(sp.k==="sr"){ctx.rect(p.ex,0,view.W,view.H);ctx.clip();hnMon(Y.mon,p.ex-w/2+show*w*u,p.ey,hS,al,.2*u+tilt,"b");}
+  else{const sc=.6+.4*u;ctx.rect(0,0,view.W,view.H);ctx.clip();hnMon(Y.mon,p.ex,p.ey,hS*sc,al*u,tilt,"c");}
+  ctx.restore();
+  if(sp.k==="water"){ctx.save();ctx.strokeStyle=`rgba(200,230,225,${.5*al})`;ctx.lineWidth=1.5;for(let i=0;i<3;i++){const q=((e*.6+i/3)%1);ctx.globalAlpha=(1-q)*al;ctx.beginPath();ctx.ellipse(p.ex,p.ey,w*.35+q*w*.6,(w*.35+q*w*.6)*.22,0,0,Math.PI*2);ctx.stroke();}ctx.restore();}
+  if(e<.9||(e>v.end&&e<v.end+.6)){const q=e<.9?e/.9:(e-v.end)/.6;ctx.save();for(let i=0;i<6;i++){const a=i*1.05,R=p.hS*(.12+q*.3),x=p.tx+Math.cos(a)*R,y=p.ty+Math.sin(a)*R*.6,g=ctx.createRadialGradient(x,y,0,x,y,p.hS*.14);
+    g.addColorStop(0,`rgba(225,228,222,${.35*(1-q)})`);g.addColorStop(1,"rgba(225,228,222,0)");ctx.fillStyle=g;ctx.fillRect(x-p.hS*.14,y-p.hS*.14,p.hS*.28,p.hS*.28);}ctx.restore();}
+  if(e>v.end+.7)rt.rev=null;}
+hook("draw",(t,front)=>{const h=hnH();if(!hnOn())return;const L=HN_SPOTS[h.room];
+  if(rt.debug&&front)L.forEach((sp,i)=>{const p=hnP(sp);ctx.save();ctx.strokeStyle=i===h.spot?"#ff4":"#4ff";ctx.lineWidth=2;ctx.beginPath();ctx.arc(p.tx,p.ty,Math.max(28,.38*p.hS),0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle="#f44";ctx.fillRect(p.ex-3,p.ey-3,6,6);ctx.fillStyle="#fff";ctx.font="bold 12px sans-serif";ctx.fillText(i+" "+sp.k,p.tx+4,p.ty-4);ctx.restore();});
+  if(rt.rev){const sp=L[rt.rev.spot],p=hnP(sp);if(hnFront(sp,p)===front)hnReveal(sp,p,t);return;}
+  if(h.found)return;const sp=hnSpot(),p=hnP(sp);if(hnFront(sp,p)===front)hnTell(sp,p,t);});
+hook("overlay",t=>{if(!S.scary||!hnOn()||hnH().found)return;const e=t-rt.flick;if(e<0||e>.8)return;
+  if([.02,.14,.3,.46].some((v,i)=>e>v&&e<v+.05+(i%2)*.05)){ctx.fillStyle="rgba(3,4,8,.42)";ctx.fillRect(0,0,view.W,view.H);}});
+
+// ── taps: the right spot reveals the yōkai, a wrong one only makes it giggle (three wrong taps and it runs to another spot)
+hook("hit",(x,y)=>{const h=hnH();if(!hnOn()||h.found||rt.rev)return false;const L=HN_SPOTS[h.room];let best=-1,bd=1e9;
+  L.forEach((sp,i)=>{const p=hnP(sp),d=Math.hypot(x-p.tx,y-p.ty);if(d<Math.max(28,.38*p.hS)&&d<bd){bd=d;best=i;}});if(best<0)return false;
+  if(best===h.spot){hnFound();return true;}
+  const t=now();floatFx.push({g:"💨",x,y,t});if(snd.on&&snd.ctx)tone(300,.1,"triangle",.035);hnGiggle();h.wrong=(h.wrong||0)+1;
+  if(h.wrong>=3){if(hnMove(h.spot)){toast("Хи-хи! Ёкай перебежал в другое место");hnCreak();}}else rt.nextTell=Math.min(rt.nextTell,t+1.2);save();return true;});
+function hnFound(){const h=hnH(),Y=HN_YK[h.yk],t=now();h.found=1;h.n=(h.n||0)+1;if(!h.got.includes(h.yk))h.got.push(h.yk);
+  rt.rev={t,spot:h.spot,yk:h.yk,end:9};sfx("pop");if(!petAway()){react("🙀",1.2);setTimeout(()=>react("😸",2),1500);}
+  const p=hnP(hnSpot());pointer.x=p.tx;pointer.y=p.ty;pointer.known=true;pet.gazeUntil=t+6;
+  S.needs.joy=clamp(S.needs.joy+12,0,100);disc("haunt",h.yk);if(!ST.seen.includes(h.yk)&&BESTIARY.some(b=>b[0]===h.yk))ST.seen.push(h.yk);
+  const got=IT[Y.it]&&!S.owned.has(Y.it)?Y.it:null;if(got)S.owned.add(got);save();
+  setTimeout(()=>{chime([784,988,1175]);dlg({head:"Нашёлся: "+Y.n,text:"«"+Y.say[(h.n-1)%Y.say.length]+"»"+(got?" Трофей: "+IT[got].n+".":" Муся довольна — теперь в доме тихо."),
+    img:got?`<div style="display:flex;align-items:center;gap:10px">${itemThumb(IT[got],64,64)}<span style="opacity:.8">«🧺 Вещи» → ${HN_CAT}</span></div>`:"",ok:"Ура!"});
+    award("hn_first");if(h.got.length>=7)award("hn_seven");if(h.n>=30)award("hn_thirty");},2600);}
+
+// ── where the player sees it: a card in «家 Дом», a dot on 家 and on the room tab — no pop-ups
+const hnRoomRu=id=>(ROOMS.find(r=>r.id===id)||{}).ru||id;
+hook("hub",()=>{hnRoll();const h=hnH(),Y=HN_YK[h.yk]||{},total=HN_IDS.filter(y=>S.scary||!HN_YK[y].scary||h.got.includes(y)).length;
+  const hint=h.found?`Нашёлся ${Y.n}. Завтра спрячется кто-то ещё.`:h.told?"Следи за мелочами: глаза, хвост, шорох. Муся подскажет.":"Ёкай переставил вещи и где-то спрятался.";
+  return`<div class="hubc"><h4>👻 Одержимая комната <i>憑き部屋</i></h4><p>${h.found?"Было неспокойно":"Сегодня неспокойно"}: <b>${hnRoomRu(h.room)}</b>. ${hint}</p>`+
+    `<p style="opacity:.75;margin:6px 0 0">Найдено ёкаев: ${h.got.length} из ${total} · всего поймано: ${h.n||0}</p>`+
+    (h.found?"":`<div class="row"><button class="btn" data-x="hn:go">Пойти туда</button></div>`)+`</div>`;});
+hook("click",k=>{if(k!=="hn:go")return false;closePanel();goRoom(hnH().room);return true;});
+hook("hubDot",()=>{const h=hnH();return h.day===dayKey()&&!h.found;});
+hook("tabDot",r=>{const h=hnH();return h.day===dayKey()&&!h.found&&r===h.room;});
+
+// test handles
+X.hn={H:hnH,rt,spots:HN_SPOTS,yk:HN_YK,roomFor:hnRoomFor,
+  force(room,yk,spot=0){const h=hnH();Object.assign(h,{day:dayKey(),room,yk:yk||h.yk||"tanuki",spot,found:0,wrong:0,told:0});rt.rev=null;save();},
+  pt(i){const h=hnH(),p=hnP(HN_SPOTS[h.room][i??h.spot]),r=cv.getBoundingClientRect();return[Math.round(r.left+p.tx),Math.round(r.top+p.ty)];},
+  tap(i){const [x,y]=X.hn.pt(i);cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:x,clientY:y,pointerId:7,bubbles:true}));},
+  tell(k){rt.tellAt=now();if(k!=null)rt.tellKind=k;},flick(){rt.flick=now();}};
 }
 // ── dreams.js
 {
@@ -4898,6 +5290,55 @@ GAMES.push({id:"gc_gacha",hidden:true,n:"Гатяпон",tag:"ガチャガチャ
 });
 X.gc={open:gcOpen,give:gcGive,swap:gcSwap,st:gcS,left:gcLeft,frame:gcFrame,force:null,
   turn(){if(G.id==="gc_gacha")G.st.goal=Math.PI*2;},crankTap(){if(G.id!=="gc_gacha")return;const L=gcLay(G);G.def.down(G,L.hx,L.hy,now());G.def.up(G);},tap(){if(G.id==="gc_gacha"&&G.st.ph==="ready")G.def.down(G,G.st.cx,G.st.cy,now());}};
+}
+// ── kimono3d.js
+{
+// Volumetric kimono. art/wear/kimono.py paints each kimono per pixel onto a body model measured from the sitting frames
+// (cell = frame px 84..316 × 176..392, 1:1). Here, once per (kimono, strip, frame): the cell is fitted to the frame,
+// cut by the kitten's own eroded alpha (the fur fringe stays on top), shaded at the real contour (inner rim shadow,
+// head and paw shadows), then the head, raised paws, tail and knead cushion are cut out so they stay in front. Cached.
+const K3={x:84,y:176,w:232,h:216,max:24};
+Object.assign(KATLAS,{w:936,h:654,r:{k_sakura:[0,0,232,216],k_seigaiha:[234,0,232,216],k_tsuru:[468,0,232,216],k_asagao:[702,0,232,216],k_momiji:[0,218,232,216],k_yagasuri:[234,218,232,216],k_ichimatsu:[468,218,232,216],k_kiku:[702,218,232,216],k_asanoha:[0,436,232,216],k_hotaru:[234,436,232,216],k_fuji:[468,436,232,216],k_miko:[702,436,232,216]}});
+// body shift of each frame against the model (median body centre, rows 268..306)
+const K3DX={rest:[0,2,1,2,0,1,2,1],purr:[-2,1,-1,0,0,2,0,0],treat:[0,1,4,0,0,2,3,3],highfive:[2,2,-1,0,0,2,-2,0],knead:[-1,1,-1,-1,-1,4,-3,0],groom:[0,4,0,-2,-2,-1,0,-4],gaze9:[0,0,0,0,0,-2,0,-2],gaze10:[-2,0,1,0,0,0,1,0]};
+// raised paws that stay in front of the cloth: [cx,cy,rx,ry] in frame px
+const K3PAW={treat:{0:[133,240,26,24],1:[135,180,22,22],2:[150,190,20,22],3:[133,268,26,24]},
+  highfive:{1:[150,250,26,26],2:[125,205,22,26],3:[148,195,24,24],4:[125,160,26,32],5:[135,170,26,30],6:[152,238,26,26]},
+  groom:{1:[150,254,24,24],2:[146,238,24,28],3:[198,200,22,26],4:[228,170,22,24],5:[238,165,22,22],6:[146,272,24,24]}};
+const K3TAIL=[[222,372],[228,357],[250,347],[280,330],[299,318],[316,325],[323,350],[317,373],[297,389],[250,393],[220,391]];
+const K3KNEAD=[[[293,262],[320,252],[350,280],[352,332],[338,368],[300,368],[293,322]],   // tail
+  [[0,416],[0,322],...Array.from({length:25},(_,i)=>[i*16,313+((i*16-192)/100)**2*9]),[384,416]]];   // cushion in front of the lap
+const k3cache=new Map();let k3out=null;
+function k3cv(w,h){const c=document.createElement("canvas");c.width=w;c.height=h;return c;}
+// head ellipse from the detected eyes, else from the crown anchor
+function k3head(st,f){const E=EYES[st]&&EYES[st][f];if(E){const d=Math.hypot(E[2]-E[0],E[3]-E[1]);return[(E[0]+E[2])/2,(E[1]+E[3])/2,1.33*d,.9*d,Math.atan2(E[3]-E[1],E[2]-E[0])];}
+  const A=ANCH[st][f];return[A[0]*2,A[1]*2+64,76,52,0];}
+function k3soft(q,cx,cy,rx,ry,a,col,fe){q.save();q.translate(cx,cy);q.rotate(a);q.scale(rx,ry);const gr=q.createRadialGradient(0,0,0,0,0,1);gr.addColorStop(0,col);gr.addColorStop(Math.max(0,1-fe),col);gr.addColorStop(1,"rgba(0,0,0,0)");q.fillStyle=gr;q.beginPath();q.arc(0,0,1,0,Math.PI*2);q.fill();q.restore();}
+function k3poly(q,pts){q.beginPath();pts.forEach(([x,y],i)=>i?q.lineTo(x,y):q.moveTo(x,y));q.closePath();q.fill();}
+function k3build(id,st,f){
+  const im=DIMG.kimono_atlas,fr=IMG[st],r=KATLAS.r[id];if(!im||!fr||!r)return null;
+  const dx=(K3DX[st]||[])[f]||0,ox=K3.x-4+dx,oy=K3.y,c=k3cv(K3.w+8,K3.h),q=c.getContext("2d");q.translate(-ox,-oy);
+  q.drawImage(im,r[0],r[1],r[2],r[3],K3.x+dx,K3.y,r[2],r[3]);
+  // cloth only inside the fur silhouette, eroded ~2px so fur tufts show at the contour
+  q.globalCompositeOperation="destination-in";for(const [ex,ey] of[[-2,0],[2,0],[0,-2],[0,2]])q.drawImage(fr,f*384,0,384,416,ex,ey,384,416);
+  // shading at the real contour: inner shadow from the outside of the silhouette (light from the upper left)
+  if(!k3out)k3out=k3cv(384,416);const o=k3out.getContext("2d");o.globalCompositeOperation="source-over";o.clearRect(0,0,384,416);o.fillStyle="#000";o.fillRect(0,0,384,416);
+  o.globalCompositeOperation="destination-out";o.drawImage(fr,f*384,0,384,416,0,0,384,416);
+  q.globalCompositeOperation="source-atop";q.save();q.shadowColor="rgba(8,6,12,.62)";q.shadowBlur=9;q.shadowOffsetX=-3;q.shadowOffsetY=2;q.drawImage(k3out,0,0);q.restore();
+  const [hx,hy,hrx,hry,ha]=k3head(st,f),paw=(K3PAW[st]||{})[f];
+  k3soft(q,hx+5,hy+hry*.9+6,hrx*.74,hry*.5,ha,"rgba(10,6,10,.5)",.9);                    // the head's shadow on the collar
+  if(paw)k3soft(q,paw[0]+4,paw[1]+6,paw[2]*1.05,paw[3]*1.05,0,"rgba(10,6,10,.42)",.6);    // the paw's shadow on the cloth
+  // what stays in front of the kimono
+  q.globalCompositeOperation="destination-out";k3soft(q,hx,hy,hrx,hry,ha,"#000",.12);if(paw)k3soft(q,paw[0],paw[1],paw[2],paw[3],0,"#000",.2);
+  q.fillStyle="#000";q.shadowColor="#000";q.shadowBlur=3;for(const p of st==="knead"?K3KNEAD:[K3TAIL])k3poly(q,p);
+  return {c,ox,oy};}
+hook("drawBody",(g,st,f,k,id)=>{
+  if(!KATLAS.r[id])return;if(!DIMG.kimono_atlas){loadWear(id);return true;}
+  const key=id+":"+st+":"+f;let e=k3cache.get(key);
+  if(e)k3cache.delete(key);else{e=k3build(id,st,f);if(!e)return true;}
+  k3cache.set(key,e);if(k3cache.size>K3.max)k3cache.delete(k3cache.keys().next().value);   // LRU
+  g.save();g.scale(k/2,k/2);g.drawImage(e.c,e.ox,e.oy);g.restore();return true;});
+X.kimono3d={cache:k3cache,build:k3build};
 }
 // ═════ end of add-ons ═════
 
