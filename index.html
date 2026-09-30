@@ -2039,6 +2039,7 @@ function ROOMCAT_TAP(it,I,t){const id=it.id;
 function itemTap(it){
   const I=IT[it.id],t=now(),id=it.id;wob[id]=t;boost[id]=t;audioInit();S.needs.joy=clamp(S.needs.joy+1,0,100);
   if(I.glow&&!["Реликвии"].includes(I.c)&&I.c!=="Фонари"&&I.c!=="Светильники"){S.lightsOff[id]=!S.lightsOff[id];tone(S.lightsOff[id]?300:600,.08,"square",.04);react(S.lightsOff[id]?"🙀":"😸",1.2);save();return;}
+  if(hk("itemTap",it,I,t))return;
   if(ROOMCAT_TAP(it,I,t))return;
   switch(I.c){
     case"Омамори":case"Эма":chime([1318,1760]);fxAt(it,["✨"],3);react("😌",1.2);break;
@@ -2254,6 +2255,7 @@ function storyBoot(){
 setInterval(()=>{qev("tick");},2000);
 
 $("albumBody").addEventListener("click",ev=>{if(ev.target.closest("#openJournal")){$("album").hidden=true;openJournal();}});
+$("albumBody").addEventListener("click",ev=>{const b=ev.target.closest("[data-x]");if(b){audioInit();$("album").hidden=true;hk("click",b.dataset.x,b);}});   // add-on buttons inside the album
 
 // ───────────────────────── Calendar: real-date festivals ─────────────────────────
 // ?date=2027-01-01 in the address shows the game on another day (time of day stays real)
@@ -3006,10 +3008,264 @@ const ROOMX={};
 function addRoom(d){ROOMX[d.id]=d;if(!ROOMS.some(r=>r.id===d.id))ROOMS.push({id:d.id,jp:d.jp,ru:d.ru,hint:d.hint});LAYERS[d.id]=d.layers;if(d.l3)L3[d.id]=d.l3;if(d.fog)FOG3[d.id]=d.fog;
   TINT[d.id]=d.tint||"rgba(20,22,20,.2)";if(d.mote)MOTE3[d.id]=d.mote;if(d.focus!=null)BG_FOCUS[d.id]=d.focus;if(d.cat){ROOMCAT[d.id]=d.cat;ROOMCATS.add(d.cat);}if(d.outdoor&&!OUTDOOR.includes(d.id))OUTDOOR.push(d.id);}
 // the story tab stays pinned at the left; rooms an add-on keeps closed (hook "tabLock") show a lock
-function buildTabs(){$("tabs").innerHTML=`<button class="stab" data-tab="story" aria-label="Сюжет"><b>物語</b><span>Сюжет</span></button>`+ROOMS.map(r=>{const lk=hk("tabLock",r.id);return`<button role="tab" data-room="${r.id}" class="${lk?"lock":""}" aria-selected="${r.id===S.room}"><b>${r.jp}</b><span>${lk?"🔒 ":""}${r.ru}</span></button>`;}).join("");}
+function buildTabs(){$("tabs").innerHTML=`<button class="stab" data-tab="story" aria-label="Сюжет"><b>物語</b><span>Сюжет</span></button>`+ROOMS.map(r=>{const lk=hk("tabLock",r.id);return`<button role="tab" data-room="${r.id}" class="${lk?"lock":""}" aria-selected="${r.id===S.room}"><b>${lk?"🔒":r.jp}</b><span>${r.ru}</span></button>`;}).join("");}
 function plugBoot(){buildTabs();ui();tabDots();hkAll("boot");hubDot();setInterval(()=>{hkAll("sec");hubDot();tabDots();},1000);}
 
 // ═════ add-ons (built from feat/*.js by tools/build.py — edit them there) ═════
+// ── rooms.js
+{
+// ───────────────────────── «Дом открывается постепенно»: rooms that open one by one ─────────────────────────
+// The kura (storehouse), the attic, the tea house and the shrine stand closed. The first one still closed is being
+// cleared: three stages, each a task caught from game events, at most one stage ticked per calendar day. The kura
+// also opens with the key from the first story. The tea house and the shrine are painted by the rooms2 add-on: they
+// join the queue only when ROOMX has them. This block paints nothing itself: art/rooms_art.py made the pictures.
+const RS=S.ext.rooms||(S.ext.rooms={});for(const k of ["open","prog","done","fresh","act"])RS[k]=RS[k]||{};
+const RO_ORDER=["kura","attic","chashitsu","hokora"];
+// pictures: art/rooms_art.py → assets/items/atlas_att|kra.webp (items), assets/layers/ro_boards.webp (boards, padlock, cobweb)
+const RO_IT=[{"id":"at_nagamochi","n":"Сундук нагамоти","c":"Чердак","w":300,"h":190,"a":"b","p":160,"at":["att",758,382]},{"id":"at_tansu","n":"Пыльный комод тансу","c":"Чердак","w":220,"h":270,"a":"b","p":200,"at":["att",406,0]},{"id":"at_kiribako","n":"Стопка ящиков из павловнии","c":"Чердак","w":180,"h":210,"a":"b","p":90,"at":["att",242,382]},{"id":"at_hina_doll","n":"Забытая кукла итимацу","c":"Чердак","w":120,"h":150,"a":"b","p":120,"at":["att",516,604]},{"id":"at_hoshigaki","n":"Связка сушёной хурмы","c":"Чердак","w":110,"h":280,"a":"t","p":50,"at":["att",294,0]},{"id":"at_herbs","n":"Пучки сушёных трав","c":"Чердак","w":200,"h":190,"a":"t","p":40,"at":["att",1060,382]},{"id":"at_nawa","n":"Моток соломенной верёвки","c":"Чердак","w":180,"h":110,"a":"b","p":20,"at":["att",698,786]},{"id":"at_kumo","n":"Паутина в углу","c":"Чердак","w":200,"h":200,"a":"t","p":10,"at":["att",424,382]},{"id":"at_mino","n":"Соломенный плащ мино","c":"Чердак","w":170,"h":250,"a":"t","p":70,"at":["att",760,0]},{"id":"at_sugegasa","n":"Старая шляпа сугэгаса","c":"Чердак","w":220,"h":110,"a":"b","p":40,"at":["att",880,786]},{"id":"at_zaru","n":"Стопка бамбуковых сит","c":"Чердак","w":170,"h":150,"a":"b","p":30,"at":["att",638,604]},{"id":"at_kago","n":"Корзина со старыми клубками","c":"Чердак","w":160,"h":170,"a":"b","p":40,"at":["att",222,604]},{"id":"at_andon","n":"Пыльный андон","c":"Чердак","w":110,"h":220,"a":"b","p":90,"glow":[55,115],"at":["att",1206,0]},{"id":"at_itoguruma","n":"Прялка итогурума","c":"Чердак","w":240,"h":220,"a":"b","p":150,"at":["att",0,382]},{"id":"at_books","n":"Стопка старых книг","c":"Чердак","w":150,"h":120,"a":"b","p":40,"at":["att",152,786]},{"id":"at_wagasa","n":"Рваный зонтик вагаса","c":"Чердак","w":130,"h":260,"a":"b","p":30,"at":["att",628,0]},{"id":"at_kagami","n":"Мутное зеркало","c":"Чердак","w":130,"h":200,"a":"b","p":80,"at":["att",626,382]},{"id":"at_mokuba","n":"Деревянная лошадка","c":"Чердак","w":220,"h":180,"a":"b","p":120,"at":["att",0,604]},{"id":"at_daruma","n":"Выцветший дарума","c":"Чердак","w":120,"h":130,"a":"b","p":30,"at":["att",1124,604]},{"id":"at_tako","n":"Старый воздушный змей","c":"Чердак","w":180,"h":240,"a":"t","p":50,"at":["att",1024,0]},{"id":"at_chochin","n":"Сложенный фонарь тётин","c":"Чердак","w":90,"h":130,"a":"t","p":30,"at":["att",1246,604]},{"id":"at_furoshiki","n":"Узелок фуросики","c":"Чердак","w":150,"h":110,"a":"b","p":30,"at":["att",1102,786]},{"id":"at_geta","n":"Старые гэта","c":"Чердак","w":140,"h":70,"a":"b","p":20,"at":["att",304,918]},{"id":"at_hoki","n":"Веник хоки","c":"Чердак","w":90,"h":250,"a":"b","p":20,"at":["att",932,0]},{"id":"at_nezumitori","n":"Мышеловка без мышей","c":"Чердак","w":120,"h":70,"a":"b","p":15,"at":["att",446,918]},{"id":"at_hashigo","n":"Лестница хасиго","c":"Чердак","w":160,"h":380,"a":"b","p":60,"at":["att",0,0]},{"id":"at_tsuzura","n":"Плетёный короб цудзура","c":"Чердак","w":200,"h":150,"a":"b","p":90,"at":["att",810,604]},{"id":"at_futon","n":"Свёрнутый старый футон","c":"Чердак","w":240,"h":120,"a":"b","p":60,"at":["att",304,786]},{"id":"at_tokei","n":"Часы с маятником","c":"Чердак","w":130,"h":310,"a":"b","p":180,"at":["att",162,0]},{"id":"at_haribako","n":"Шкатулка для рукоделия","c":"Чердак","w":150,"h":130,"a":"b","p":50,"at":["att",0,786]},{"id":"at_f_letter","n":"Письмо без адреса","c":"Чердак","w":150,"h":100,"a":"b","p":60,"src":"🐾 находка на чердаке","hint":"Эта вещь найдётся в сундуке на чердаке — роется Муся раз в день","at":["att",0,918]},{"id":"at_f_buriki","n":"Жестяная рыбка","c":"Чердак","w":150,"h":100,"a":"b","p":80,"src":"🐾 находка на чердаке","hint":"Эта вещь найдётся в сундуке на чердаке — роется Муся раз в день","at":["att",152,918]},{"id":"at_f_ohajiki","n":"Мешочек стекляшек охадзики","c":"Чердак","w":130,"h":110,"a":"b","p":60,"src":"🐾 находка на чердаке","hint":"Эта вещь найдётся в сундуке на чердаке — роется Муся раз в день","at":["att",1254,786]},{"id":"at_f_photo","n":"Старая фотография","c":"Чердак","w":130,"h":160,"a":"b","p":80,"src":"🐾 находка на чердаке","hint":"Эта вещь найдётся в сундуке на чердаке — роется Муся раз в день","at":["att",384,604]},{"id":"at_f_neko","n":"Фарфоровая кошка без уха","c":"Чердак","w":110,"h":140,"a":"b","p":90,"src":"🐾 находка на чердаке","hint":"Эта вещь найдётся в сундуке на чердаке — роется Муся раз в день","at":["att",1012,604]},{"id":"at_f_musicbox","n":"Музыкальная шкатулка","c":"Чердак","w":150,"h":120,"a":"b","p":120,"src":"🐾 находка на чердаке","hint":"Эта вещь найдётся в сундуке на чердаке — роется Муся раз в день","at":["att",546,786]},{"id":"kr_tawara","n":"Рисовые мешки тавара","c":"Кура","w":250,"h":190,"a":"b","p":90,"at":["kra",284,292]},{"id":"kr_komodaru","n":"Бочка сакэ в соломе","c":"Кура","w":150,"h":170,"a":"b","p":120,"at":["kra",992,292]},{"id":"kr_misodaru","n":"Бочка мисо","c":"Кура","w":170,"h":160,"a":"b","p":100,"at":["kra",284,504]},{"id":"kr_kame","n":"Глиняный кувшин камэ","c":"Кура","w":150,"h":190,"a":"b","p":70,"at":["kra",536,292]},{"id":"kr_umeboshi","n":"Кувшин умэбоси","c":"Кура","w":120,"h":140,"a":"b","p":60,"at":["kra",1012,504]},{"id":"kr_kiribako","n":"Ящики из павловнии","c":"Кура","w":200,"h":180,"a":"b","p":90,"at":["kra",790,292]},{"id":"kr_tansu","n":"Лестничный комод кайдан-дансу","c":"Кура","w":220,"h":290,"a":"b","p":260,"at":["kra",0,0]},{"id":"kr_chest","n":"Окованный сундук","c":"Кура","w":240,"h":170,"a":"b","p":180,"at":["kra",1144,292]},{"id":"kr_senryobako","n":"Денежный сундук сэнрёбако","c":"Кура","w":200,"h":140,"a":"b","p":220,"at":["kra",1134,504]},{"id":"kr_chochin","n":"Фонарь хозяина кура","c":"Кура","w":100,"h":190,"a":"t","p":60,"glow":[50,104],"at":["kra",688,292]},{"id":"kr_shelf","n":"Полка с кувшинами","c":"Кура","w":260,"h":280,"a":"b","p":150,"at":["kra",222,0]},{"id":"kr_tokkuri","n":"Кувшинчики токкури","c":"Кура","w":150,"h":110,"a":"b","p":40,"at":["kra",304,676]},{"id":"kr_masu","n":"Мерки для риса масу","c":"Кура","w":160,"h":100,"a":"b","p":30,"at":["kra",608,676]},{"id":"kr_usu","n":"Ступа и молот для моти","c":"Кура","w":220,"h":250,"a":"b","p":140,"at":["kra",950,0]},{"id":"kr_hakari","n":"Весы-безмен","c":"Кура","w":170,"h":260,"a":"t","p":60,"at":["kra",778,0]},{"id":"kr_soroban","n":"Счёты соробан","c":"Кура","w":190,"h":80,"a":"b","p":40,"at":["kra",892,676]},{"id":"kr_daifukucho","n":"Торговая книга дайфукутё","c":"Кура","w":130,"h":210,"a":"t","p":50,"at":["kra",0,292]},{"id":"kr_yoroibitsu","n":"Доспехи предков в ящике","c":"Кура","w":200,"h":250,"a":"b","p":280,"at":["kra",1172,0]},{"id":"kr_zeni","n":"Связка монет мон","c":"Кура","w":140,"h":60,"a":"b","p":40,"at":["kra",1084,676]},{"id":"kr_nekoe","n":"Картина с кошкой от мышей","c":"Кура","w":150,"h":210,"a":"t","p":60,"at":["kra",132,292]},{"id":"kr_sumi","n":"Мешок древесного угля","c":"Кура","w":180,"h":150,"a":"b","p":30,"at":["kra",456,504]},{"id":"kr_oke","n":"Деревянная кадка","c":"Кура","w":170,"h":150,"a":"b","p":40,"at":["kra",638,504]},{"id":"kr_jo","n":"Старинный замок эбису-дзё","c":"Кура","w":140,"h":170,"a":"t","p":70,"at":["kra",0,504]},{"id":"kr_daikon","n":"Вяленый дайкон на верёвке","c":"Кура","w":170,"h":280,"a":"t","p":30,"at":["kra",484,0]},{"id":"kr_tebako","n":"Лаковая шкатулка тэбако","c":"Кура","w":150,"h":110,"a":"b","p":90,"at":["kra",456,676]},{"id":"kr_ishiusu","n":"Каменные жернова","c":"Кура","w":200,"h":150,"a":"b","p":110,"at":["kra",810,504]},{"id":"kr_hibachi","n":"Жаровня хибати","c":"Кура","w":160,"h":140,"a":"b","p":90,"at":["kra",0,676]},{"id":"kr_tetsubin","n":"Чугунный чайник тэцубин","c":"Кура","w":140,"h":140,"a":"b","p":60,"at":["kra",162,676]},{"id":"kr_shoyu","n":"Бочонок соевого соуса","c":"Кура","w":140,"h":170,"a":"b","p":70,"at":["kra",142,504]},{"id":"kr_komebukuro","n":"Мешочек риса","c":"Кура","w":120,"h":90,"a":"b","p":20,"at":["kra",770,676]},{"id":"kr_byobu","n":"Сложенная ширма","c":"Кура","w":120,"h":270,"a":"b","p":110,"at":["kra",656,0]}];
+const RO_ATL={"att":[1400,1018],"kra":[1400,816]},RO_SPR={"b0":[0,4,1000,104],"b1":[0,120,1000,104],"b2":[0,236,1000,104],"lock":[0,360,164,196],"web":[168,360,200,200]};
+addItems(RO_IT,RO_ATL);
+const RO_L=[["wall",0.4],["floor",0.8],["near",1.4]],RO_L3={wall:{g:1140},floor:{g:1140},near:{ext:.22}};
+addRoom({id:"kura",jp:"蔵",ru:"Кура",hint:"Старая кладовая: рис, сакэ и мисо, а на полках — ящики из павловнии. Внизу — чем заняться.",label:"Кладовая",
+  layers:RO_L,l3:RO_L3,mote:[1,.86,.66],tint:"rgba(18,16,12,.32)",cat:"Кура",tray:()=>roTray("kura")});
+addRoom({id:"attic",jp:"屋根裏",ru:"Чердак",hint:"Пыльный чердак: сундуки, хурма на верёвках и луна в круглом окошке. Сундук можно перерыть раз в день.",label:"Чердак",
+  layers:RO_L,l3:RO_L3,mote:[1,.85,.62],tint:"rgba(20,14,8,.3)",cat:"Чердак",tray:()=>roTray("attic")});
+
+// what is done at each stage (a) and what the player does for it (t, caught as qev(ev,d)); w = where to do it
+const W_={harvest:"Дворик → 🌱 Огород",cook:"Кухня → 🍳 Готовить",guest:"Вход: гость-ёкай приходит раз в день",put:"Любая комната → 🧺 Вещи",
+  fish:"Дворик → 🎣 Рыбалка",game:"Вкладка «Игры»",bath:"Онсэн: намыль Мусю и смой ковшом",pray:"Вход → 🙏 Помолиться",kaidan:"Спальня → Кайдан на ночь"};
+const isFish=d=>!!d&&!!FOOD[d.id]&&FOOD[d.id].k==="fish",isGame=d=>{const g=GAMES.find(x=>x.id===(d&&d.id));return !g||!g.hidden;};
+const RO={
+ kura:{n:"Кура",t:"Запертая кладовая",ok:"Кура открыта",
+  p:"Каменная кладовая за домом. Дверь толщиной в ладонь заперта с прошлого века, изнутри пахнет рисом и старым деревом. По ночам там кто-то шуршит. Наверное, мыши.",
+  st:[{a:"Разобрать завал у двери",t:"Собери 3 урожая на огороде",ev:"harvest",n:3},{a:"Смазать ржавые петли",t:"Приготовь 2 блюда",ev:"cook",n:2},
+      {a:"Отодвинуть засов",t:"Угости гостя у ворот",ev:"guest",n:1}]},
+ attic:{n:"Чердак",t:"Заколоченный чердак",ok:"Чердак открыт",
+  p:"Люк на чердак заколочен тремя досками. Сверху пахнет пылью и сушёной хурмой, а в щель видно круглое окошко с луной. Муся сидит под люком и не сводит с него глаз.",
+  st:[{a:"Снять первую доску",t:"Поставь 5 вещей в комнатах",ev:"put",n:5},{a:"Снять вторую доску",t:"Поймай 2 рыбы",ev:"fish",n:2,test:isFish},
+      {a:"Открыть люк",t:"Сыграй в мини-игру",ev:"game",n:1,test:isGame}]},
+ chashitsu:{n:"Чайный домик",t:"Заросший чайный домик",ok:"Чайный домик открыт",
+  p:"За бамбуком в глубине сада прячется чайный домик. Войти в него можно только склонившись — через низкую дверцу нидзиригути. Её затянуло плющом, а на пороге стоит чья-то забытая чашка.",
+  st:[{a:"Срезать плющ с дверцы",t:"Искупай Мусю в онсэне",ev:"bath",n:1},{a:"Вымести сухие листья",t:"Приготовь 2 блюда",ev:"cook",n:2},
+      {a:"Отворить нидзиригути",t:"Угости гостя у ворот",ev:"guest",n:1}]},
+ hokora:{n:"Святилище",t:"Забытое святилище",ok:"Святилище открыто",
+  p:"У старой тропы, за воротами, стоит крошечное святилище. Верёвка симэнава истлела, лисы у входа поросли мхом. Кто-то всё же оставляет там рисовые колобки — и никто не видел, кто.",
+  st:[{a:"Расчистить тропинку",t:"Собери 3 урожая на огороде",ev:"harvest",n:3},{a:"Сплести новую симэнаву",t:"Помолись у храма у входа",ev:"place",n:1,test:a=>a==="pray",w:"pray"},
+      {a:"Зажечь лампадку",t:"Прочитай кайдан на ночь",ev:"kaidan",n:1}]}
+};
+const roWhere=s=>W_[s.w||s.ev]||"";
+function roKey(){return !!(QS.done||S.owned.has("r_key"));}
+function roLocked(id){return RO_ORDER.includes(id)&&!!ROOMX[id]&&!RS.open[id];}
+function roCur(){return RO_ORDER.find(roLocked)||null;}
+function roReady(id){const s=RO[id].st[RS.done[id]||0];return !!s&&(RS.prog[id]||0)>=s.n;}
+// the key from the first story opens the kura at once (quietly at boot, with a toast when the story has just ended)
+function roSync(quiet){if(RS.open.kura||!ROOMX.kura||!roKey())return;RS.open.kura=Date.now();RS.fresh.kura=1;disc("room","kura");save();buildTabs();tabDots();hubDot();
+  if(!quiet)setTimeout(()=>{toast("🗝 Ключ подошёл — кура открыта");chime([659,880,1046]);},1200);}
+
+// ── the closed-room panel: a darkened look inside, boards on top, three stages ──
+let roB=null,roPv=null;ldImg("assets/layers/ro_boards.webp",im=>{roB=im;if(panelIs("ro")&&roPv)roDraw(roPv);});
+const RO_BP=[[360,128,-.16],[360,226,.11],[360,322,-.05]];
+let roAn=null,roLoop=false;   // the board that is falling off right now: {id,i,t}
+function roDraw(id){const cv=$("roPrev");if(!cv)return;const g=cv.getContext("2d"),W=cv.width,H=cv.height,t=now(),k=RS.done[id]||0,anim=roAn&&roAn.id===id&&t-roAn.t<1?roAn:null;
+  g.fillStyle="#0a0806";g.fillRect(0,0,W,H);
+  for(const [ln] of LAYERS[id]||[]){const im=LIMG[id+"_"+ln];if(im)g.drawImage(im,0,250,1800,1100,0,0,W,H);}
+  g.fillStyle="rgba(8,6,4,.58)";g.fillRect(0,0,W,H);
+  const vg=g.createRadialGradient(W/2,H*.55,H*.18,W/2,H*.55,W*.62);vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(0,0,0,.78)");g.fillStyle=vg;g.fillRect(0,0,W,H);
+  if(roB){const w=RO_SPR.web;g.globalAlpha=.75;g.drawImage(roB,w[0],w[1],w[2],w[3],0,0,180,180);g.globalAlpha=1;
+    for(let i=0;i<3;i++){const [x,y,a]=RO_BP[i],s=RO_SPR["b"+i];let dy=0,da=0,al=1;
+      if(anim&&anim.i===i){const e=clamp((t-anim.t)/.9,0,1);if(e>=1)continue;dy=e*e*280;da=e*.55*(i%2?1:-1);al=1-e*e;}else if(i<k)continue;
+      g.save();g.globalAlpha=al;g.translate(x,y+dy);g.rotate(a+da);g.shadowColor="rgba(0,0,0,.65)";g.shadowBlur=16;g.shadowOffsetY=7;g.drawImage(roB,s[0],s[1],s[2],s[3],-430,-45,860,90);g.restore();}
+    if(id==="kura"&&!(anim&&k>=3)){const L=RO_SPR.lock;g.drawImage(roB,L[0],L[1],L[2],L[3],W/2-44,190,88,105);}}
+  if(anim&&!roLoop){roLoop=true;requestAnimationFrame(function f(){if(panelIs("ro")&&roAn&&now()-roAn.t<1){roDraw(roPv);requestAnimationFrame(f);}else{roLoop=false;if(panelIs("ro"))roDraw(roPv);}});}}
+function roPanel(id,anim){const I=RO[id],cur=roCur(),k=RS.done[id]||0,today_=RS.day===dayKey();
+  const rows=I.st.map((s,i)=>{if(i<k)return`<li class="ok">${s.a}</li>`;if(id!==cur||i>k)return`<li class="ro-dim">${s.a}</li>`;
+    if(today_)return`<li>${s.a}<small>Сегодня уже потрудились — этот этап завтра.</small></li>`;const p=Math.min(RS.prog[id]||0,s.n);
+    return p>=s.n?`<li class="ro-go">${s.a}<small>${s.t} — готово! Можно браться за доски.</small></li>`:`<li>${s.a}: <em>${s.t}</em>${s.n>1?` · ${p}/${s.n}`:""}<small>${roWhere(s)}</small></li>`;}).join("");
+  const btn=id===cur&&!today_&&roReady(id)?`<div class="row"><button class="btn primary" data-x="ro:tick:${id}">${k===2?"🔓":"🔨"} ${I.st[k].a}</button></div>`:"";
+  openPanel(I.t,`<canvas id="roPrev" class="ro-prev" width="720" height="440"></canvas><p>${I.p}</p>${id!==cur&&cur?`<p class="lead">Сначала нужно расчистить «${RO[cur].n}».</p>`:""}<ol class="qtasks ro-st">${rows}</ol>${btn}`+
+    `${id==="kura"?`<p class="lead">🗝 Или найди ключ — его отдаст история «Дом, где погас фонарь».</p>`:""}<p class="lead">Один этап в день: старые доски держатся крепко.</p>`,"ro");
+  if(anim)roAn=Object.assign({id},anim);roPv=id;roDraw(id);}
+function roTick(id){if(id!==roCur()||!roReady(id)||RS.day===dayKey())return;const k=RS.done[id]||0;
+  RS.done[id]=k+1;RS.prog[id]=0;RS.day=dayKey();save();knock();tabDots();hubDot();
+  if(k+1<3){roPanel(id,{i:k,t:now()});setTimeout(()=>toast("✓ "+RO[id].st[k].a),300);return;}
+  RS.open[id]=Date.now();disc("room",id);save();roPanel(id,{i:2,t:now()});chime([784,1046,1318,1568]);
+  setTimeout(()=>{closePanel();buildTabs();goRoom(id);tabDots();hubDot();toast("✨ "+RO[id].ok+"!");
+    const b=document.querySelector(`#tabs [data-room="${id}"]`);if(b)b.scrollIntoView({inline:"center",block:"nearest"});
+    setTimeout(()=>{if(!petAway()&&!scene.on){burst(14);react("😻",2);S.needs.joy=clamp(S.needs.joy+10,0,100);}},900);},1100);}
+
+// ── tasks are caught from game events; only the room being cleared counts, and not on a day a stage was ticked ──
+hook("ev",(ev,d)=>{const id=roCur();if(!id||RS.day===dayKey())return;const s=RO[id].st[RS.done[id]||0];if(!s||s.ev!==ev||s.test&&!s.test(d))return;
+  const p=RS.prog[id]||0;if(p>=s.n)return;RS.prog[id]=p+1;save();
+  if(p+1>=s.n){setTimeout(()=>{toast(`🔨 ${RO[id].n}: этап готов — загляни`);chime([784,1046]);},900);tabDots();hubDot();}});
+hook("gate",id=>{if(!roLocked(id))return;audioInit();roPanel(id);return true;});
+hook("tabLock",id=>roLocked(id)?"закрыто":"");
+hook("tabDot",r=>!!RS.fresh[r]||r===roCur()&&roReady(r)&&RS.day!==dayKey());
+hook("hubDot",()=>{const c=roCur();return c&&roReady(c)&&RS.day!==dayKey()||Object.keys(RS.fresh).some(r=>ROOMX[r]);});
+hook("room",id=>{if(RS.fresh[id]){delete RS.fresh[id];save();tabDots();}});
+hook("sec",()=>{if(!RS.open.kura&&!scene.on&&roKey())roSync(false);});
+hook("boot",()=>{const ids=RO_ORDER.filter(id=>ROOMX[id]),mine=ids.map(id=>ROOMS.find(r=>r.id===id)).filter(Boolean),rest=ROOMS.filter(r=>!ids.includes(r.id));
+  ROOMS.length=0;ROOMS.push(...rest,...mine);roSync(true);buildTabs();tabDots();});
+hook("hub",()=>{const ids=RO_ORDER.filter(id=>ROOMX[id]);if(!ids.length)return"";const cur=roCur();
+  const chips=ids.map(id=>`<span class="ro-chip${roLocked(id)?"":" on"}">${roLocked(id)?"🔒":"✓"} ${RO[id].n}</span>`).join("");let body;
+  if(!cur)body=`<p>Все комнаты дома открыты. На чердаке сундук каждый день прячет что-нибудь новое.</p>`;
+  else{const k=RS.done[cur]||0,s=RO[cur].st[k],p=Math.min(RS.prog[cur]||0,s.n);
+    body=`<p><b>${RO[cur].t}</b> · этап ${k+1} из 3: ${s.a[0].toLowerCase()+s.a.slice(1)}.</p><p>${RS.day===dayKey()?"Сегодня уже потрудились — следующий этап завтра.":roReady(cur)?"Задание выполнено — можно браться за доски!":`<em>${s.t}</em>${s.n>1?` · ${p}/${s.n}`:""}. ${roWhere(s)}.`}</p>`;}
+  return`<div class="hubc"><h4>🏚 Закрытые комнаты <i>開かずの間</i></h4><div class="ro-chips">${chips}</div>${body}${cur?`<div class="row"><button class="btn" data-x="ro:open:${cur}">Заглянуть</button></div>`:""}</div>`;});
+
+// ── what Musya can do in the two rooms (the tray of ROOMX rooms) ──
+function roTray(r){const d=RS.act,dk=dayKey(),b=(k,i,n,x)=>`<button class="item wide" data-x="ro:${k}"><span class="ico">${i}</span><span class="nm">${n}${x?" · ✓":""}</span></button>`;
+  return r==="attic"?b("chest","🧰","Порыться в сундуке",d.chest===dk)+b("window",dayTint()[1]?"🌕":"🌤","Смотреть в окошко")+b("dust","💨","Сдуть пыль")
+    :b("miso","🛢","Открыть бочку мисо",d.miso===dk)+b("rice","🌾","Пересчитать мешки риса")+b("mice","🐭","Послушать мышей");}
+const RO_PANTRY=["v_shiitake","v_kabocha","v_imo","v_daikon","v_shiitake","v_imo"];
+function roChest(){const finds=RO_IT.filter(i=>i.src&&!S.owned.has(i.id));RS.digs=(RS.digs||0)+1;
+  if(finds.length&&(RS.digs===2||(RS.dry||0)>=3||Math.random()<.2)){const i=pick(finds);S.owned.add(i.id);disc("find",i.id);RS.dry=0;save();ui();
+    toast(`✨ В сундуке: ${i.n}!`);chime([1046,1318,1568]);react("😻",2);return;}
+  RS.dry=(RS.dry||0)+1;
+  if(Math.random()<.62){const id=Math.random()<.08?"v_obaketake":pick(RO_PANTRY);give(id);save();toast(`🧺 В сундуке: ${FOOD[id].n} → в кладовую`);sfx("coin");react("😸",1.6);}
+  else{S.needs.joy=clamp(S.needs.joy+10,0,100);save();toast("🧶 В сундуке — старый клубок");start("yarn");}}
+function roAct(a){if(petAway()){toast("Муси нет дома");return;}if(scene.on)return;const d=RS.act,dk=dayKey(),at=(ix,iy)=>imgToStage(ix,iy,.4);
+  if(a==="chest"){if(d.chest===dk){toast("Сундук уже перерыт — завтра ещё");react("😼",1.4);return;}d.chest=dk;save();ui();walkTo({x:470},"box","🧐");setTimeout(roChest,2600);return;}
+  if(a==="window"){walkTo({x:1150},"peek",dayTint()[1]?"🌕":"☁️");const [x,y]=at(1190,560);setTimeout(()=>{for(let i=0;i<4;i++)floatFx.push({g:"✨",x:x+rand(-30,30),y:y+rand(-30,30),t:now()+i*.2});chime([1318,1568]);},1800);S.needs.joy=clamp(S.needs.joy+4,0,100);return;}
+  if(a==="dust"){const t=now();for(let i=0;i<6;i++)floatFx.push({g:"💨",x:pet.x+rand(-60,60)*view.s,y:view.floor-rand(40,140)*view.s,t:t+i*.08});react("🤧",1.8);setTimeout(()=>{tone(700,.06,"square",.03);tone(420,.12,"triangle",.04);},500);S.needs.clean=clamp(S.needs.clean-2,0,100);return;}
+  if(a==="miso"){if(d.miso===dk){toast("Бочку уже открывали — завтра ещё");react("😝",1.4);return;}d.miso=dk;give("ds_miso");save();ui();pet.food="🥣";walkTo({x:1150},"treat","😋");setTimeout(()=>toast("🥣 Из мисо сварили суп — он в кладовой"),1500);return;}
+  if(a==="rice"){walkTo({x:656},"hide","🙈");const [x,y]=at(656,1000);["1","2","3","4","5","6"].forEach((g,i)=>setTimeout(()=>{floatFx.push({g,x:x+rand(-40,40),y:y-rand(0,60),t:now()});tone(520+i*60,.08,"triangle",.03);},1600+i*450));S.needs.joy=clamp(S.needs.joy+5,0,100);return;}
+  if(a==="mice"){start("gift");[.3,.5,1.4].forEach(s=>setTimeout(()=>tone(3200+rand(-300,300),.04,"sine",.02),s*1000));react("👂",1.4);S.needs.joy=clamp(S.needs.joy+4,0,100);}}
+hook("click",key=>{if(!key.startsWith("ro:"))return;const [,a,id]=key.split(":");
+  if(a==="open"&&RO[id]){roPanel(id);return true;}if(a==="tick"){roTick(id);return true;}roAct(a);return true;});
+hook("panelClose",id=>{if(id==="ro")roPv=null;});
+// reactions for the attic and kura things — needs one core line in itemTap (see the report); harmless without it
+hook("itemTap",(it,I,t)=>{const id=it.id;if(!/^(at|kr)_/.test(id))return;
+  if(/tokei/.test(id)){[0,.5,1,1.5].forEach((s,i)=>setTimeout(()=>tone(i%2?1100:1400,.05,"square",.02),s*1000));react("😼",1.4);return true;}
+  if(/hina_doll|f_neko|kagami/.test(id)){scareSound();react("🙀",1.6);fxAt(it,["👁"],1);return true;}
+  if(/nezumitori|komebukuro|nekoe/.test(id)){[0,.15].forEach(s=>setTimeout(()=>tone(3000,.05,"sine",.02),s*1000));walkTo(it,"poke","😼");return true;}
+  if(/nagamochi|tsuzura|kiribako|chest|senryobako|tebako|yoroibitsu/.test(id)){tone(140,.35,"sawtooth",.02);fxAt(it,["✨"],2);react("😺",1.2);return true;}
+  if(/kumo/.test(id)){react("🤧",1.4);return true;}
+  if(/kago|futon|tawara/.test(id)){walkTo(it,/futon/.test(id)?"sleep":"knead","😽");return true;}
+  if(/mokuba|buriki|ohajiki|nawa|zaru/.test(id)){walkTo(it,"poke","😸");return true;}
+  if(/f_letter|f_photo/.test(id)){chime([659,784]);toast(id==="at_f_letter"?"Письмо без адреса. Почерк — детский":"На фото — этот дом и кошка на крыльце");return true;}
+  if(/hoshigaki|herbs|daikon|mino|chochin|hakari|daifukucho|tako/.test(id)){tone(700,.2,"sine",.02);return true;}});
+
+document.head.insertAdjacentHTML("beforeend",`<style>.ro-prev{width:100%;height:auto;aspect-ratio:720/440;display:block;border-radius:12px;margin:4px 0 14px;background:#0a0806;box-shadow:0 0 0 1px var(--line)}
+.ro-st{margin-bottom:14px}.ro-st li small{display:block;font-size:12px;color:var(--muted);margin-top:2px}.ro-st li.ro-dim{opacity:.45}.ro-st li.ro-go{color:var(--sakura)}
+.ro-chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 6px}.ro-chip{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}.ro-chip.on{color:var(--paper);border-color:rgba(238,163,187,.45)}</style>`);
+X.ro={RS,cur:roCur,panel:roPanel,tick:roTick,locked:roLocked,ready:roReady,act:roAct,newDay(){RS.day="";delete RS.act.chest;delete RS.act.miso;}};
+}
+// ── rooms2.js
+{
+// ───────── Rooms 2 (idea #10): the tea house 茶室 and the forest shrine 祠 — painted depth layers (art/rooms2_art.py),
+// ~30 things each (atlases cha/hok), tray actions: matcha and the scroll; the bell and an offering for the stone foxes.
+// The lock system (feat/rooms.js) finds both rooms through ROOMX. State: S.ext.rooms2 {v,bell,fox,gift:{day,id},tea,scroll}
+const R2M={"cha":{"kama":[1119,1216],"ro":[1119,1218],"andon":[300,1000],"scroll":[682,196,808,824],"vase":[610,1060],"window":[1190,560,190]},"hok":{"bell":[860,750],"rope":[860,880],"offer":[978,900],"hokora":[750,600,1050,930],"eyes":[[672,876],[1128,876]],"lanterns":[[330,859],[1470,859]],"foxes":[[560,800,720,1102],[1080,800,1240,1102]]},"atlas":{"cha":[1400,1014],"hok":[1400,988]}};
+addItems([{"id":"ch_matcha","n":"Чаван со взбитым маття","c":"Чайный домик","w":170,"h":120,"a":"b","p":60,"at":["cha",858,664]},{"id":"ch_ido","n":"Корейский чаван идо","c":"Чайный домик","w":170,"h":120,"a":"b","p":90,"at":["cha",1030,664]},{"id":"ch_egaratsu","n":"Чаван с осенними травами","c":"Чайный домик","w":160,"h":116,"a":"b","p":70,"at":["cha",0,836]},{"id":"ch_pawbowl","n":"Чаван с отпечатком лапки","c":"Чайный домик","w":160,"h":116,"a":"b","p":80,"at":["cha",162,836]},{"id":"ch_chaire","n":"Чайница тяирэ в шёлковом мешочке","c":"Чайный домик","w":170,"h":150,"a":"b","p":90,"at":["cha",232,664]},{"id":"ch_natsume","n":"Нацумэ с золотыми журавлями","c":"Чайный домик","w":130,"h":120,"a":"b","p":110,"at":["cha",1202,664]},{"id":"ch_chasen","n":"Бамбуковый венчик часэн","c":"Чайный домик","w":110,"h":170,"a":"b","p":40,"at":["cha",982,432]},{"id":"ch_chashaku","n":"Ложечка тясяку и её футляр","c":"Чайный домик","w":150,"h":190,"a":"b","p":50,"at":["cha",446,432]},{"id":"ch_kama","n":"Чугунный котёл кама","c":"Чайный домик","w":190,"h":180,"a":"b","p":160,"at":["cha",790,432]},{"id":"ch_furo","n":"Бронзовая жаровня фуро с котлом","c":"Чайный домик","w":230,"h":290,"a":"b","p":240,"at":["cha",528,0]},{"id":"ch_mizusashi","n":"Кувшин для воды мидзусаси","c":"Чайный домик","w":140,"h":200,"a":"b","p":120,"at":["cha",304,432]},{"id":"ch_hishaku","n":"Черпак хисяку на подставке","c":"Чайный домик","w":250,"h":130,"a":"b","p":60,"at":["cha",606,664]},{"id":"ch_kensui","n":"Чаша для слива кэнсуй","c":"Чайный домик","w":160,"h":100,"a":"b","p":40,"at":["cha",818,836]},{"id":"ch_ichigo","n":"Свиток «Одна встреча — одна жизнь»","c":"Чайный домик","w":130,"h":430,"a":"t","p":130,"at":["cha",0,0]},{"id":"ch_hibi","n":"Свиток «Каждый день — хороший день»","c":"Чайный домик","w":130,"h":430,"a":"t","p":130,"at":["cha",132,0]},{"id":"ch_kissako","n":"Свиток «Выпей чаю»","c":"Чайный домик","w":130,"h":430,"a":"t","p":130,"at":["cha",264,0]},{"id":"ch_tsuki","n":"Свиток «Луна и осенние травы»","c":"Чайный домик","w":130,"h":430,"a":"t","p":140,"at":["cha",396,0]},{"id":"ch_tsubaki","n":"Камелия в бамбуковой вазе","c":"Чайный домик","w":120,"h":250,"a":"b","p":80,"at":["cha",872,0]},{"id":"ch_kago","n":"Корзинка с полевыми цветами","c":"Чайный домик","w":180,"h":250,"a":"b","p":90,"at":["cha",994,0]},{"id":"ch_kakebana","n":"Висячая ваза с вьюнком","c":"Чайный домик","w":110,"h":280,"a":"t","p":70,"at":["cha",760,0]},{"id":"ch_wagashi","n":"Вагаси на лаковой тарелке","c":"Чайный домик","w":190,"h":110,"a":"b","p":50,"at":["cha",324,836]},{"id":"ch_higashi","n":"Сухие сладости хигаси","c":"Чайный домик","w":180,"h":90,"a":"b","p":40,"at":["cha",980,836]},{"id":"ch_sensu","n":"Чайный веер сэнсу","c":"Чайный домик","w":170,"h":60,"a":"b","p":30,"at":["cha",0,954]},{"id":"ch_tatami","n":"Половинка татами","c":"Чайный домик","w":300,"h":110,"a":"b","p":60,"at":["cha",516,836]},{"id":"ch_andon","n":"Андон чайного домика","c":"Чайный домик","w":130,"h":250,"a":"b","p":100,"glow":[65,124],"at":["cha",1176,0]},{"id":"ch_teshoku","n":"Свеча на подставке тэсёку","c":"Чайный домик","w":80,"h":220,"a":"b","p":60,"glow":[40,34],"at":["cha",222,432]},{"id":"ch_furosaki","n":"Низкая ширма фуросаки","c":"Чайный домик","w":260,"h":170,"a":"b","p":140,"at":["cha",1094,432]},{"id":"ch_tana","n":"Полочка для утвари","c":"Чайный домик","w":220,"h":230,"a":"b","p":160,"at":["cha",0,432]},{"id":"ch_tetsubin","n":"Чугунный чайник тэцубин","c":"Чайный домик","w":190,"h":190,"a":"b","p":110,"at":["cha",598,432]},{"id":"ch_sumitori","n":"Корзинка для угля с пером","c":"Чайный домик","w":200,"h":150,"a":"b","p":60,"at":["cha",404,664]},{"id":"ch_kogo","n":"Коробочка для благовоний «Кошка»","c":"Чайный домик","w":140,"h":90,"a":"b","p":70,"at":["cha",1162,836]},{"id":"ch_tsukubai","n":"Каменный умывальник цукубай","c":"Чайный домик","w":230,"h":170,"a":"b","p":150,"at":["cha",0,664]},{"id":"hk_torii_moss","n":"Мшистые каменные тории","c":"Святилище","w":240,"h":250,"a":"b","p":150,"at":["hok",578,0]},{"id":"hk_senbon","n":"Коридор красных тории","c":"Святилище","w":280,"h":250,"a":"b","p":200,"at":["hok",820,0]},{"id":"hk_fox_scroll","n":"Лиса со свитком","c":"Святилище","w":170,"h":250,"a":"b","p":150,"at":["hok",1102,0]},{"id":"hk_fox_ine","n":"Лиса с рисовым колосом","c":"Святилище","w":170,"h":250,"a":"b","p":150,"at":["hok",0,302]},{"id":"hk_fox_small","n":"Фарфоровые лисички","c":"Святилище","w":200,"h":130,"a":"b","p":70,"at":["hok",424,746]},{"id":"hk_ema_fox","n":"Стойка с лисьими эма","c":"Святилище","w":250,"h":220,"a":"b","p":70,"at":["hok",952,302]},{"id":"hk_ema_cat","n":"Эма с котёнком","c":"Святилище","w":130,"h":120,"a":"t","p":40,"at":["hok",626,746]},{"id":"hk_omikuji_tree","n":"Деревце с омикудзи","c":"Святилище","w":170,"h":250,"a":"b","p":90,"at":["hok",172,302]},{"id":"hk_saisen","n":"Ящик для подношений с лисьим гербом","c":"Святилище","w":210,"h":160,"a":"b","p":80,"at":["hok",1000,554]},{"id":"hk_gohei_gold","n":"Золотой жезл гохэй","c":"Святилище","w":110,"h":250,"a":"b","p":70,"at":["hok",344,302]},{"id":"hk_toro","n":"Мшистый каменный фонарь","c":"Святилище","w":150,"h":260,"a":"b","p":170,"glow":[75,110],"at":["hok",426,0]},{"id":"hk_suzu","n":"Бубенцы судзу на шнуре","c":"Святилище","w":100,"h":290,"a":"t","p":90,"at":["hok",122,0]},{"id":"hk_heishi","n":"Кувшинчики сакэ хэйси","c":"Святилище","w":140,"h":150,"a":"b","p":50,"at":["hok",1212,554]},{"id":"hk_mochi","n":"Моти-подношение на подставке","c":"Святилище","w":170,"h":180,"a":"b","p":60,"at":["hok",494,554]},{"id":"hk_kitsune_mask","n":"Маска лисы-невесты","c":"Святилище","w":130,"h":180,"a":"t","p":70,"at":["hok",666,554]},{"id":"hk_kakehi","n":"Бамбуковый жёлоб с водой","c":"Святилище","w":260,"h":190,"a":"b","p":120,"at":["hok",0,554]},{"id":"hk_sugi","n":"Саженец криптомерии","c":"Святилище","w":150,"h":250,"a":"b","p":70,"at":["hok",456,302]},{"id":"hk_moss","n":"Мшистые камни","c":"Святилище","w":220,"h":110,"a":"b","p":50,"at":["hok",950,746]},{"id":"hk_iwakura","n":"Священный камень ивакура","c":"Святилище","w":230,"h":190,"a":"b","p":130,"at":["hok",262,554]},{"id":"hk_minihokora","n":"Маленькая хокора","c":"Святилище","w":200,"h":250,"a":"b","p":180,"at":["hok",608,302]},{"id":"hk_aburaage","n":"Абураагэ для лисы","c":"Святилище","w":160,"h":90,"a":"b","p":30,"at":["hok",0,898]},{"id":"hk_inari","n":"Инари-суси на подносе","c":"Святилище","w":180,"h":100,"a":"b","p":40,"at":["hok",1172,746]},{"id":"hk_senbazuru","n":"Гирлянда бумажных журавликов","c":"Святилище","w":120,"h":300,"a":"t","p":60,"at":["hok",0,0]},{"id":"hk_ofuda","n":"Талисман офуда","c":"Святилище","w":70,"h":200,"a":"t","p":30,"at":["hok",1204,302]},{"id":"hk_nobori","n":"Красные флажки Инари","c":"Святилище","w":200,"h":290,"a":"b","p":70,"at":["hok",224,0]},{"id":"hk_fern","n":"Папоротник у камня","c":"Святилище","w":200,"h":170,"a":"b","p":30,"at":["hok",798,554]},{"id":"hk_lantern_fox","n":"Фонарь с лисьим гербом","c":"Святилище","w":110,"h":200,"a":"t","p":60,"glow":[55,110],"at":["hok",1276,302]},{"id":"hk_yomeiri","n":"Фигурки «Лисья свадьба»","c":"Святилище","w":300,"h":150,"a":"b","p":190,"at":["hok",0,746]},{"id":"hk_kagura","n":"Бубенцы кагура с лентами","c":"Святилище","w":140,"h":230,"a":"b","p":80,"at":["hok",810,302]},{"id":"hk_shinsen","n":"Рис, соль и вода для ками","c":"Святилище","w":190,"h":120,"a":"b","p":40,"at":["hok",758,746]},{"id":"hk_kusudama","n":"Бумажный шар кусудама","c":"Святилище","w":120,"h":150,"a":"b","p":50,"at":["hok",302,746]}],{cha:R2M.atlas.cha,hok:R2M.atlas.hok});
+DTINT.chashitsu="rgba(34,22,10,.18)";DTINT.hokora="rgba(10,20,16,.3)";
+STAMPS.push(["ro2_tea","茶","Первая чашка маття","Завари маття в чайном домике"],["ro2_fox","狐","Угощение для лис","Оставь подношение у святилища"]);
+const r2=()=>S.ext.rooms2||(S.ext.rooms2={}),R2={tea:-99,swing:-99,glint:-99,peek:-99,puff:-99,offer:false,cup:null,fire:null,nextFire:now()+20};
+const r2btn=(k,i,n,pr="")=>`<button class="item wide" data-x="ro2:${k}"><span class="ico">${i}</span><span class="nm">${n}</span>${pr}</button>`;
+addRoom({id:"chashitsu",jp:"茶室",ru:"Чайный домик",label:"Чайная",cat:"Чайный домик",
+  hint:"Завари маття — Муся любит смотреть на пар над котлом. А в нише висит свиток: полюбуйся им.",
+  layers:[["wall",0.4],["alcove",0.5],["floor",0.8],["near",1.4]],l3:{wall:{g:1140},alcove:{on:"wall",dz:.05},floor:{g:1140},near:{ext:.22}},
+  mote:[1,.86,.62],tint:"rgba(22,18,10,.26)",
+  tray:()=>r2btn("tea","🍵","Заварить маття")+r2btn("scroll","📜","Полюбоваться свитком")});
+addRoom({id:"hokora",jp:"祠",ru:"Святилище",label:"У святилища",cat:"Святилище",outdoor:true,
+  hint:"Позвони в колокол и поклонись — раз в день ками дарят маленькое благословение. Лисы любят угощение.",
+  layers:[["sky",0.06],["trees",0.22],["shrine",0.45],["floor",0.8],["near",1.5]],l3:{trees:{ext:.35},shrine:{ext:.25},floor:{g:1100}},
+  fog:[[14,.45],[8,.3]],tint:"rgba(10,16,14,.3)",
+  tray:()=>{if(!R2.offer)return r2btn("bell","🔔","Позвонить и поклониться")+r2btn("offer","🍙","Оставить подношение");
+    const own=["i_aburaage",...pantryEats()];
+    return r2btn("offer","↩","Назад")+own.map(id=>`<button class="item" data-x="ro2:give:${id}"><span class="ico">${fThumb(id,56,32)}</span><span class="nm">${FOOD[id].n}</span><span class="pr own">${id==="i_aburaage"?"лисам":"×"+S.pantry[id]}</span></button>`).join("");}});
+
+// ── helpers: a point on a painted plane → stage; row = the image y where the thing stands (its depth)
+function r2pt(ix,iy,d,row){curD=d;curRow=row??null;const p=imgToStage(ix,iy,d);curD=CAT_D;curRow=null;return p;}
+function r2in(x,y,box,d,row){const [ax,ay]=r2pt(box[0],box[1],d,row),[bx,by]=r2pt(box[2],box[3],d,row);return x>=Math.min(ax,bx)&&x<=Math.max(ax,bx)&&y>=Math.min(ay,by)&&y<=Math.max(ay,by);}
+function r2glow(x,y,r,rgb,a){if(a<=.003||r<=1)return;const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${rgb},${a})`);g.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);}
+function r2steam(x,y,t,k,n,rise,boost){for(let i=0;i<n;i++){const ph=(t*.3*(boost?1.8:1)+i/n)%1,sx=x+Math.sin(t*1.3+i*2+ph*5)*14*k*3*ph,sy=y-ph*rise*k,r=(12+34*ph)*k*2;r2glow(sx,sy,r,"236,234,226",.16*Math.sin(Math.PI*ph)*(boost?1.8:1));}}
+function r2sprite(id,x,y,sc,alpha=1){if(!DIMG[id]||!DMETA[id])return;curD=CAT_D;curRow=y;drawSprite(ctx,id,x,y,0,null,alpha,sc,true);curD=CAT_D;curRow=null;}
+function r2watch(ix,iy,d,row,sec){if(petAway()||scene.on)return;const [x,y]=r2pt(ix,iy,d,row);pointer.x=x;pointer.y=y;pointer.known=true;pet.gazeUntil=now()+sec;if(pet.action!=="sleep")start("idle");}
+const joy=(n,e=0)=>{S.needs.joy=clamp(S.needs.joy+n,0,100);S.needs.energy=clamp(S.needs.energy+e,0,100);};
+
+// ── 茶室: a tiny tea moment — the kettle breathes, a bowl appears on the tatami, the whisk dances, Musya watches
+function brew(){const t=now();if(t-R2.tea<7)return;R2.tea=t;const M=R2M.cha;
+  r2watch(M.kama[0],M.kama[1]-120,CAT_D,M.kama[1],6);if(!petAway())react("👀",1.4);tone(196,1.2,"sine",.035);
+  const ix=(pet.x-BGM.dx)/BGM.k+(pet.x<view.W*.62?150:-150);R2.cup={t:t+1.2,x:visX(ix,70),y:catLineY()+46};
+  for(let i=0;i<9;i++)setTimeout(()=>tone(2600+Math.random()*900,.035,"triangle",.012),1500+i*190);
+  setTimeout(()=>{const d=r2();d.tea=(d.tea||0)+1;chime([523,659,784]);
+    if(petAway()){toast("Маття готов, но Муси нет дома");save();return;}
+    react("😻",2.2);joy(10,4);award("ro2_tea");const c=R2.cup;if(c){c.done=now();r2watch(c.x,c.y-40,CAT_D,c.y,4);const [x,y]=r2pt(c.x,c.y-60,CAT_D,c.y);floatFx.push({g:"✨",x,y,t:now()});}
+    toast(d.tea===1?"Первая чашка маття — Муся в восторге":"Маття готов — Муся греется у чаши");save();},3700);
+}
+function admireScroll(){const M=R2M.cha,d=r2(),first=d.scroll!==dayKey();d.scroll=dayKey();
+  r2watch((M.scroll[0]+M.scroll[2])/2,480,.5,null,7);chime([392,523,587]);
+  const [x,y]=r2pt((M.scroll[0]+M.scroll[2])/2,420,.5);floatFx.push({g:"✨",x,y,t:now()});
+  dlg({head:"一期一会 · Итиго итиэ",text:"«Одна встреча — один раз в жизни». Мастера чая заваривают каждую чашку так, будто этот вечер не повторится. Этот вечер с Мусей тоже не повторится.",ok:"Помолчать вместе",
+    onOk:()=>{if(petAway())return;react("😌",2.4);if(first){joy(6,6);save();}}});
+}
+function drawTea(t,front){const M=R2M.cha,k=BGM.k,night=dayTint()[1];
+  if(!front){const fl=.88+.08*Math.sin(t*5.1)+.05*Math.sin(t*12.7);
+    const [ax,ay]=r2pt(M.andon[0],M.andon[1],CAT_D,1150);r2glow(ax,ay,760*k,"240,180,100",(night?.17:.1)*fl);
+    const [rx,ry]=r2pt(M.ro[0],M.ro[1],CAT_D,M.ro[1]);r2glow(rx,ry,150*k,"255,110,40",.2+.07*Math.sin(t*2.3)+.04*Math.sin(t*7.1));
+    r2sprite("ch_kama",M.kama[0],M.kama[1],.6);
+    const [sx,sy]=r2pt(M.kama[0]+8,M.kama[1]-150,CAT_D,M.kama[1]),brewing=t-R2.tea<4||t-R2.puff<2.5;r2steam(sx,sy,t,k,brewing?7:4,brewing?260:170,brewing);}
+  const c=R2.cup;if(!c||t<c.t)return;const age=t-c.t,al=clamp(Math.min(age/.5,(40-age)/2),0,1);if(al<=0){R2.cup=null;return;}
+  if((c.y>catLineY()+6)!==front)return;
+  r2sprite("ch_matcha",c.x,c.y,.55,al);
+  if(!c.done){const [wx,wy]=r2pt(c.x+Math.sin(age*26)*14,c.y-44,CAT_D,c.y),s=k*1.1;ctx.save();ctx.lineCap="round";ctx.strokeStyle="#b8a468";ctx.lineWidth=5*s;ctx.beginPath();ctx.moveTo(wx,wy-78*s);ctx.lineTo(wx,wy-26*s);ctx.stroke();
+    ctx.strokeStyle="#ddd0a0";ctx.lineWidth=1.2*s;for(let i=0;i<13;i++){const u=i/12-.5;ctx.beginPath();ctx.moveTo(wx+u*8*s,wy-28*s);ctx.quadraticCurveTo(wx+u*44*s,wy-14*s,wx+u*20*s,wy+6*s);ctx.stroke();}ctx.restore();}
+  const [bx,by]=r2pt(c.x,c.y-70,CAT_D,c.y);r2steam(bx,by,t,k*.55,3,150,false);
+}
+
+// ── 祠: the bell (a daily blessing), offerings for the stone foxes, lantern flames, rare foxfire at night
+const R2VEG=["v_kyuri","v_daikon","v_nasu","v_kabocha","v_imo","v_edamame","v_shiitake","v_negi","v_ichigo"];
+function ringBell(){const t=now();if(t-R2.swing<1.4)return;R2.swing=t;const d=r2();
+  chime([1568,2093,1760,2349,2093]);setTimeout(()=>{tone(180,.09,"triangle",.07);setTimeout(()=>tone(180,.09,"triangle",.07),240);},1100);
+  if(!petAway()){start("hide");react("🙏",2.4);}
+  setTimeout(()=>{if(d.bell===dayKey()){toast("Колокол звенит — ками уже слышали тебя");return;}d.bell=dayKey();
+    if(Math.random()<.5){const id=pick(R2VEG);give(id);toast(`У ступенек нашлось: ${FOOD[id].n}`);}
+    else{joy(12);toast("Тёплый ветер из-за кедров — Муся сияет");}
+    if(!petAway())setTimeout(()=>{react("😸",2);burst(6);},900);save();tabDots();},1500);
+  qev("place","ro2_bell");
+}
+function giveFox(id){if(id!=="i_aburaage"&&!have(id))return;take(id);const d=r2(),first=d.fox!==dayKey();d.fox=dayKey();d.gift={day:dayKey(),id};
+  R2.offer=false;R2.glint=now();tone(988,.14,"sine",.04);setTimeout(()=>{tone(1318,.09,"triangle",.03);setTimeout(()=>tone(1175,.12,"triangle",.03),130);},600);
+  if(!petAway()){react("😸",2.2);joy(first?(id==="ds_inari"||id==="i_aburaage"?16:12):3);}
+  award("ro2_fox");toast(first?"Глаза каменных лис блеснули в темноте":"Лисы снова довольны угощением");save();ui();
+}
+function drawShrine(t,front){if(front)return;const M=R2M.hok,k=BGM.k,night=dayTint()[1];
+  M.lanterns.forEach(([lx,ly],i)=>{const fl=.8+.12*Math.sin(t*6.3+i*2)+.08*Math.sin(t*13.1+i),[x,y]=r2pt(lx,ly,CAT_D,1104);r2glow(x,y,190*k,"255,170,80",(night?.24:.12)*fl);r2glow(x,y,22*k,"255,230,170",.5*fl);});
+  // the suzu bell and its red-and-white rope swing when rung
+  const e=t-R2.swing,a=e<6?.42*Math.sin(e*7.5)*Math.exp(-e*.9):.03*Math.sin(t*1.1),[ax,ay]=r2pt(M.bell[0],M.bell[1]-14,.45),L=150;
+  const [ex,ey]=r2pt(M.bell[0]+Math.sin(a)*L,M.bell[1]+Math.cos(a)*L,.45),[bx,by]=r2pt(M.bell[0],M.bell[1],.45),lw=Math.max(2,8*k);
+  ctx.save();ctx.lineCap="round";ctx.strokeStyle="#e9e3d6";ctx.lineWidth=lw;ctx.beginPath();ctx.moveTo(bx,by);ctx.lineTo(ex,ey);ctx.stroke();
+  ctx.setLineDash([lw*1.1,lw*1.1]);ctx.strokeStyle="#b8302a";ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle="#b8302a";ctx.beginPath();ctx.ellipse(ex,ey+lw,lw*.9,lw*1.6,0,0,Math.PI*2);ctx.fill();
+  const br=17*k,g=ctx.createRadialGradient(bx-br*.35,by-br*.35,br*.1,bx,by,br);g.addColorStop(0,"#fff0b0");g.addColorStop(.5,"#d8a840");g.addColorStop(1,"#6a4a18");
+  ctx.fillStyle=g;ctx.beginPath();ctx.arc(bx+Math.sin(a)*br*.6,by,br,0,Math.PI*2);ctx.fill();ctx.restore();
+  if(e<1.6)r2glow(bx,by,90*k,"255,220,140",.25*(1-e/1.6));
+  // today's offering on the stand; the foxes' eyes glint for a while after it
+  const gf=r2().gift;if(gf&&gf.day===dayKey()){const [ox,oy]=r2pt(M.offer[0],M.offer[1]-16,.45);fDraw(ctx,gf.id,ox,oy,58*k);}
+  const ge=Math.max(0,5-(t-R2.glint)),pe=Math.max(0,1.4-(t-R2.peek)),gl=Math.min(1,ge)+pe*.5;
+  if(gl>0)M.eyes.forEach(([ex2,ey2],i)=>{const [x,y]=r2pt(ex2,ey2,CAT_D,1102),p=gl*(.75+.25*Math.sin(t*9+i));r2glow(x,y,30*k,"255,210,110",.7*p);r2glow(x,y,7*k,"255,250,220",.95*p);});
+  // kitsunebi: now and then at night a pale fox-fire drifts between the cedars
+  if(night&&!weather.on&&!R2.fire&&t>R2.nextFire)R2.fire={t,x:pick([380,620,1180,1420]),y:rand(700,820)};
+  const f=R2.fire;if(f){const u=(t-f.t)/7;if(u>=1){R2.fire=null;R2.nextFire=t+rand(35,70);}else{const [x,y]=r2pt(f.x+u*120*Math.sin(f.x),f.y-u*60+Math.sin(t*2)*12,.45),al=Math.sin(Math.PI*u)*(.7+.3*Math.sin(t*11));r2glow(x,y,40*k,"120,200,255",.35*al);r2glow(x,y,10*k,"220,245,255",.8*al);}}
+}
+
+hook("draw",(t,front)=>{if(S.room==="chashitsu")drawTea(t,front);else if(S.room==="hokora")drawShrine(t,front);});
+hook("hit",(x,y)=>{
+  if(S.room==="chashitsu"){const M=R2M.cha;
+    if(r2in(x,y,[M.kama[0]-90,M.kama[1]-170,M.kama[0]+90,M.kama[1]],CAT_D,M.kama[1])){R2.puff=now();tone(262,.5,"sine",.03);if(!petAway())react("😮",1.2);return true;}
+    if(r2in(x,y,M.scroll,.5)){admireScroll();return true;}}
+  if(S.room==="hokora"){const M=R2M.hok;
+    if(r2in(x,y,[M.bell[0]-40,M.bell[1]-30,M.bell[0]+40,M.bell[1]+160],.45)){ringBell();return true;}
+    if(M.foxes.some(b=>r2in(x,y,b,CAT_D,1102))){R2.peek=now();tone(1245,.08,"triangle",.03);return true;}
+    if(R2.fire){const f=R2.fire,[fx,fy]=r2pt(f.x,f.y,.45);if(Math.hypot(x-fx,y-fy)<60*BGM.k){R2.fire=null;R2.nextFire=now()+rand(35,70);tone(740,.4,"sine",.03);if(!petAway())react("🙀",1.4);return true;}}}
+});
+hook("click",k=>{if(!k.startsWith("ro2:"))return;const [,a,id]=k.split(":");
+  if(a==="tea")brew();else if(a==="scroll")admireScroll();else if(a==="bell")ringBell();else if(a==="offer"){R2.offer=!R2.offer;ui();}else if(a==="give")giveFox(id);return true;});
+hook("room",id=>{R2.offer=false;if(id==="chashitsu"||id==="hokora"){const d=r2();if(!d.v){d.v=1;save();}}});
+hook("tabDot",r=>r==="hokora"&&r2().v&&r2().bell!==dayKey()&&!hk("tabLock",r));
+hook("boot",()=>{for(const id of ["ch_kama","ch_matcha","ch_chasen"])loadItem(id);});
+X.rooms2={brew,admireScroll,ringBell,giveFox,M:R2M,st:R2};
+}
 // ── story2.js
 {
 // ───────────────────────── Second story «Кошачья гора» (Nekodake): one chapter per calendar day ─────────────────────────
@@ -3501,6 +3757,191 @@ X.lan={S:LAN,day:()=>{const ev=lanDay();if(ev){EV=ev;}return ev;},arrive:()=>{if
   pt:i=>{const G=lanGeo(i,now());return[G.px,G.py+G.off+G.h/2];},gx:()=>{const g=rgDef();const [x,y]=imgToStage(guestX(),GY,CAT_D);return[x,y-(g?g.h:300)*BGM.k*.5];},
   set:o=>Object.assign(LAN,o),back:n=>{const d=today();d.setDate(d.getDate()-n);LAN.day=dayKey(d);}};
 }
+// ── rumors.js
+{
+// ───────────────────────── «Слухи и час быка»: guests whisper rumours; at the right hour, in the right room, a quiet sign appears ─────────────────────────
+MON.m_rm_tengu=[440,580];MON.m_rm_okiku=[300,620];MON.m_rm_kosode=[520,540];MON.m_rm_chagama=[360,380];
+const RMC="Тайны дома";
+addItems([
+ {id:"rm_chasen",n:"Чайный венчик Бунбуку",c:RMC,w:150,h:150,a:"b",p:0,at:["rm",0,0],src:"👂 слух",hint:"Слух про котелок на кухне — проверь ночью"},
+ {id:"rm_kagami",n:"Зеркальце нэкоматы",c:RMC,w:140,h:180,a:"b",p:0,at:["rm",154,0],src:"👂 слух",hint:"Слух про отражение в онсэне — в сумерки"},
+ {id:"rm_hauchiwa",n:"Веер из перьев тэнгу",c:RMC,w:140,h:210,a:"b",p:0,at:["rm",298,0],src:"👂 слух",hint:"Слух про сосну на веранде — в час быка"},
+ {id:"rm_azuki",n:"Ситечко с фасолью адзуки",c:RMC,w:180,h:110,a:"b",p:0,at:["rm",0,214],src:"👂 слух",hint:"Слух про пруд во дворике — под дождём"},
+ {id:"rm_key",n:"Ключ от амбара Инари",c:RMC,w:110,h:210,a:"t",p:0,at:["rm",184,214],src:"👂 слух",hint:"Слух про лисьи следы у тории — на рассвете"},
+ {id:"rm_moku",n:"Сёдзи с глазами",c:RMC,w:150,h:210,a:"b",p:0,at:["rm",298,214],src:"👂 слух",hint:"Слух про кухонное окно — днём"},
+ {id:"rm_sara",n:"Десятая тарелка",c:RMC,w:160,h:150,a:"b",p:0,at:["rm",0,428],src:"👂 слух",hint:"Слух про сёдзи в спальне — в полночь"},
+ {id:"rm_tsuzumi",n:"Лунный барабанчик",c:RMC,w:160,h:160,a:"b",p:0,at:["rm",164,428],src:"👂 слух",hint:"Слух про барабан во дворике — в полнолуние"},
+ {id:"rm_kosode",n:"Косодэ на вешалке",c:RMC,w:200,h:200,a:"b",p:0,at:["rm",0,592],src:"👂 слух",hint:"Слух про гардероб — в час быка"}
+],{rm:[520,792]});
+STAMPS.push(["rm_first","噂","Слухи не врут","Проверь первый слух"],["rm_ushi","丑","Час быка","Раскрой тайну в час быка, с часу до трёх ночи"],["rm_all","秘","Хранительница тайн","Раскрой все слухи о доме"]);
+BESTIARY.push(
+ ["rm_tengu","m_rm_tengu","Тэнгу","Горный дух с длинным красным носом, в одежде отшельника-ямабуси, с крыльями и веером из перьев. Самый знаменитый — Содзёбо с горы Курама: он учил фехтованию юного Минамото-но Ёсицунэ."],
+ ["rm_okiku","m_rm_okiku","Окику","Служанка из легенды «Банчо Сараясики». Её обвинили в пропаже одной из десяти тарелок, и с тех пор по ночам она считает их до девяти. Затихает, если кто-нибудь скажет: «Десять»."],
+ ["rm_kosode","m_rm_kosode","Косодэ-но-тэ","«Руки из рукавов»: из кимоно, купленного у старьёвщика, по ночам тянутся руки прежней хозяйки. Нарисован Ториямой Сэкиэном в 1779 году."],
+ ["rm_bunbuku","m_rm_chagama","Бунбуку-тягама","Тануки, который превратился в чайный котёл и не сумел превратиться обратно. Этот котёл до сих пор хранят в храме Моринзи в Татэбаяси."],
+ ["rm_moku","","Мокумокурэн","«Множество глаз» в решётках и рваных сёдзи старого дома. Нарисован Ториямой Сэкиэном в 1781 году."],
+ ["rm_azuki","","Адзуки-арай","Тот, кто по ночам моет красную фасоль у воды и поёт. Его почти никто не видел — только слышал: шорх-шорх."]);
+
+// ── time and conditions
+function rmIn(w,h){return w[0]<w[1]?h>=w[0]&&h<w[1]:h>=w[0]||h<w[1];}
+function moonAge(){const S0=Date.UTC(2000,0,6,18,14),P=29.530588853;return(((today().getTime()-S0)/864e5)%P+P)%P;}
+function moonFull(){return Math.abs(moonAge()-14.77)<1.6||festOn("tsukimi");}
+function rmPt(ix,iy,d,row){curRow=row??null;const p=imgToStage(ix,iy,d);curRow=null;return p;}
+function rmMon(id,ix,iy,h,d,row,a,rot=0,flip=false){curRow=row??null;drawMon(id,ix,iy,h,d,a,"b",rot,flip);curRow=null;}
+const SIL={};
+function sil(id,col,blur){const k=id+col;if(SIL[k])return SIL[k];const im=MIMG[id];if(!im||!im.width)return null;const c=document.createElement("canvas");c.width=im.width;c.height=im.height;const g=c.getContext("2d");if(blur)g.filter=`blur(${blur}px)`;g.drawImage(im,0,0);g.filter="none";g.globalCompositeOperation="source-in";g.fillStyle=col;g.fillRect(0,0,c.width,c.height);return SIL[k]=c;}
+function drawSil(c,id,ix,iy,h,d,row,a,rot=0){if(!c||a<=0)return;const m=MON[id],sc=h/m[1]*BGM.k,w=m[0]*sc,hh=m[1]*sc,[x,y]=rmPt(ix,iy,d,row);ctx.save();ctx.globalAlpha=a;ctx.translate(x,y);if(rot)ctx.rotate(rot);ctx.drawImage(c,-w/2,-hh,w,hh);ctx.restore();}
+function monS(id,x,y,hp,a,rot=0){const im=MIMG[id],m=MON[id];if(!im||!m||a<=0)return;const w=m[0]*hp/m[1];ctx.save();ctx.globalAlpha=Math.min(1,a);ctx.translate(x,y);if(rot)ctx.rotate(rot);ctx.drawImage(im,-w/2,-hp,w,hp);ctx.restore();}
+function glow(x,y,r,col,a){if(a<=0)return;const gr=ctx.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,col.replace("A",a));gr.addColorStop(1,col.replace("A",0));ctx.fillStyle=gr;ctx.fillRect(x-r,y-r,r*2,r*2);}
+function eyeAt(x,y,w,open,col="#e8dcc0",iris="#1a120c"){if(open<=.02)return;ctx.save();ctx.translate(x,y);ctx.scale(1,open);ctx.beginPath();ctx.ellipse(0,0,w,w*.55,0,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();ctx.beginPath();ctx.arc(0,0,w*.42,0,Math.PI*2);ctx.fillStyle=iris;ctx.fill();ctx.restore();}
+// sounds (all quiet; nothing plays unless the sound is on)
+let nzBuf=null;
+function noise(dur,freq,vol){if(!snd.on||!snd.ctx)return;const c=snd.ctx;if(!nzBuf){nzBuf=c.createBuffer(1,c.sampleRate,c.sampleRate);const d=nzBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+  const s=c.createBufferSource();s.buffer=nzBuf;const f=c.createBiquadFilter();f.type="bandpass";f.frequency.value=freq;f.Q.value=1.4;const g=c.createGain(),t=c.currentTime;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(g);g.connect(c.destination);s.start(t,Math.random()*.5,dur+.05);}
+function pon(){tone(118,.28,"sine",.13);tone(74,.34,"sine",.1);}
+function clink(){tone(2350,.35,"sine",.02);tone(3140,.25,"sine",.012);}
+
+// ── the rumours: who says what, when, where; the sign; the reveal
+const PINE=[600,330],WIN=[[486,262],[628,318],[766,246],[548,470],[706,540],[790,420]];
+const kam=()=>propAt("p_kit_pot0",1030,705),rock=()=>propAt("p_crt_rock0",1130,985);
+const RUM=[
+ {id:"kama",t:"Котелок на кухне",room:"kitchen",w:[21,5],when:"ночью, с девяти вечера до пяти утра",where:"кухня, котелок на полке",
+  say:"По ночам на кухне котелок на полке сам стучит крышкой — тук-тук, будто кто-то просится наружу. А ведь он пустой…",short:"котелок на полке сам стучит крышкой, а ведь он пустой",
+  pt:()=>{const [x,y]=kam();return[x,y-40,.5];},hr:120,it:"rm_chasen",beast:"rm_bunbuku",who:"Бунбуку-тягама",cute:1,
+  words:"Пом! Ой… Не бойся, я Бунбуку. Когда-то я превратился в чайный котёл, да так и не смог стать обратно тануки. А у тёплой печки ночью так уютно… Можно я посплю тут до утра? Вот, возьми мой венчик — с ним чай выходит пенный-пенный."},
+ {id:"neko",t:"Отражение в онсэне",room:"onsen",w:[17,19],when:"в сумерки, с пяти до семи вечера",where:"онсэн, вода в купальне",
+  say:"В сумерки, когда вода в онсэне темнеет, в ней отражается кошка. Посмотришь — а у отражения два хвоста.",short:"в тёмной воде отражается кошка с двумя хвостами",
+  pt:()=>[visX(780,160),1050,.55],hr:150,it:"rm_kagami",beast:"nekomata",who:"Нэкомата",cute:1,
+  words:"Мяу. Не пугайся, сестрёнка. Кошка, что проживёт долго-долго, однажды увидит в воде свой второй хвост. Я пришла посмотреть, каким будет твой. Пушистым — я так и знала. Возьми зеркальце: в нём иногда видно, кем ты станешь."},
+ {id:"tengu",t:"Тэнгу на сосне",room:"engawa",w:[2,3],when:"в час быка, с двух до трёх ночи",where:"веранда, верхушка старой сосны",
+  say:"В саду у веранды растёт старая сосна. В час быка, с двух до трёх ночи, на её верхушке кто-то сидит — большой, с крыльями. И глаза горят, как угольки.",short:"на верхушке сосны сидит кто-то с крыльями",
+  pt:()=>[PINE[0],PINE[1]+60,.42],hr:150,it:"rm_hauchiwa",beast:"rm_tengu",who:"Тэнгу",
+  words:"Кар!.. То есть доброй ночи. Я тэнгу с горы Курама. Когда-то я учил там фехтованию мальчика Усиваку — потом он стал великим Ёсицунэ. Теперь я стар и люблю тихие сосны: в час быка слышно, как растут иголки. Возьми мой веер — взмахнёшь, и поднимется добрый ветер."},
+ {id:"azuki",t:"Кто-то моет фасоль",room:"courtyard",w:[0,24],cond:()=>weather.on,when:"когда идёт дождь, в любое время",where:"дворик, пруд у водопада",
+  say:"Когда идёт дождь, у пруда во дворике кто-то моет фасоль: шорх-шорх, шорх-шорх. Подойдёшь — никого, только круги на воде.",short:"в дождь у пруда кто-то моет фасоль: шорх-шорх",
+  pt:()=>[visX(1250,130),1045,.55],hr:150,it:"rm_azuki",beast:"rm_azuki",who:"Адзуки-арай",
+  words:"Шорх-шорх… Из тумана над прудом кто-то тихонько поёт: «Помыть ли фасоль… или поймать кого-нибудь да съесть?» — и смеётся. Но у воды никого. Только на камне лежит мокрое ситечко с красной фасолью. Адзуки-арая никто не видел — его можно только услышать.",
+  soft:"Шорх-шорх… Из тумана над прудом кто-то тихонько поёт: «Помыть ли фасоль… помыть ли…» Но у воды никого. Только на камне лежит мокрое ситечко с красной фасолью. Адзуки-арая никто не видел — его можно только услышать."},
+ {id:"fox",t:"Лисьи следы у тории",room:"games",w:[5,7],when:"на рассвете, с пяти до семи утра",where:"лесное святилище, тории",
+  say:"На рассвете, пока все спят, у тории в лесном святилище появляются лисьи следы. К воротам ведут — а обратно не ведут.",short:"у тории лисьи следы, и ведут они только туда",
+  pt:()=>[1150,1150,.8],hr:210,it:"rm_key",beast:"kitsune",who:"Кицунэ",cute:1,
+  words:"Ты встала раньше солнца? Тогда вот тебе лисий секрет: следы на рассвете ведут не туда, откуда пришла лиса, а туда, куда она ещё только пойдёт. Возьми ключик — им в святилищах Инари запирают рисовые амбары. Пусть в этом доме всегда будет рис."},
+ {id:"moku",t:"Глаза в кухонном окне",room:"kitchen",w:[12,15],when:"днём, с полудня до трёх",where:"кухня, окно с решёткой",
+  say:"Днём, когда в доме тихо, в кухонное окно кто-то подглядывает. Не один — много. Сквозь решётку смотрят глаза и моргают по очереди.",short:"сквозь решётку окна смотрят глаза и моргают",
+  pt:()=>[640,400,.5],hr:200,it:"rm_moku",beast:"rm_moku",who:"Мокумокурэн",
+  words:"Мы — Мокумокурэн, «множество глаз». Мы живём в старых решётках и сёдзи и смотрим, всё ли в доме хорошо. Раз ты нас заметила — значит, всё хорошо. Возьми на память уголок сёдзи: мы будем приглядывать за Мусей и оттуда."},
+ {id:"okiku",t:"Кто-то считает тарелки",room:"bedroom",w:[0,1],cond:()=>S.lampOff,when:"в полночь, с двенадцати до часу, андон погашен",where:"спальня, большое сёдзи",
+  say:"Если в полночь погасить андон в спальне, за сёдзи кто-то тихо считает: «Одна… две… три…» — до девяти. И вздыхает.",short:"за сёдзи кто-то считает до девяти и вздыхает",
+  pt:()=>[1100,760,.4],hr:260,it:"rm_sara",beast:"rm_okiku",who:"Окику",
+  words:"…восемь… девять… Ах, ты не спишь? Я Окику. Мне доверили десять тарелок, одна пропала — и с тех пор я всё считаю. …Муся тихо мяукнула, будто сказала «десять». Окику улыбнулась: «Десять… Спасибо. Сегодня я усну. А эту оставь себе — пусть будет десятой»."},
+ {id:"pon",t:"Барабан в полнолуние",room:"courtyard",w:[20,4],cond:moonFull,when:"в полнолуние (и в дни Цукими), с восьми вечера до четырёх утра",where:"дворик, большой камень в пруду",
+  say:"В полнолуние во дворике кто-то бьёт в барабан: пон-пон-покон! Звук идёт от большого камня в пруду. Говорят, так веселятся тануки.",short:"в полнолуние от камня в пруду: пон-пон-покон!",
+  pt:()=>{const [x,y]=rock();return[x,y-160,.55,y];},hr:170,it:"rm_tsuzumi",beast:"tanuki",who:"Тануки-барабанщик",cute:1,
+  words:"Пон-пон-покон! Ой, заметили… Я тануки из храма Сёдзёдзи. Там мы каждое полнолуние устраиваем оркестр: кто в барабан, кто в живот. Настоятель сперва сердился, а потом сам начал подпевать! Держи барабанчик — стучи, когда луна круглая."},
+ {id:"kosode",t:"Рукава в гардеробе",room:"wardrobe",w:[1,3],when:"в час быка, с часу до трёх ночи",where:"гардероб, у ширмы",
+  say:"В час быка в гардеробе шевелятся кимоно. Висят себе на вешалке, а рукава тихонько колышутся — хотя окна закрыты.",short:"рукава кимоно колышутся, хотя окна закрыты",
+  pt:()=>[visX(1180,220),960,.5],hr:220,it:"rm_kosode",beast:"rm_kosode",who:"Косодэ-но-тэ",
+  words:"Из рукавов тянутся бледные руки — тонкие, как у той, кто носила это кимоно давным-давно. Они ничего не хватают: разглаживают складки, поправляют воротник, а одна легонько гладит Мусю по голове — и прячется. На вешалке остаётся маленькое кимоно, как раз по росту Муси."}
+];
+const RI=Object.fromEntries(RUM.map(r=>[r.id,r]));
+function st(){return S.ext.rum||(S.ext.rum={k:["kama"],s:{},who:{kama:"Дзасики-вараси"},nw:1});}
+function known(r){return st().k.includes(r.id);}
+function solved(r){return !!st().s[r.id];}
+function openNow(r){return rmIn(r.w,hourNow())&&(!r.cond||r.cond());}
+function live(r){return known(r)&&!solved(r)&&openNow(r);}
+function here(){return scene.on||overlaysOpen()?null:RUM.find(r=>r.room===S.room&&live(r))||null;}
+let roomT=0,rv=null,nextSnd=0,toastNew=0,FFc="";
+const FF=()=>FFc||(FFc=getComputedStyle(document.body).fontFamily);
+function roomName(id){const r=ROOMS.find(q=>q.id===id);return r?r.ru:id;}
+
+// ── the signs (quiet things inside the painting)
+function sign(r,t,a){
+  if(r.id==="kama"){const [x0,y0]=kam(),[x,y]=rmPt(x0,y0-66,.5),k=BGM.k,jig=(t%1.6)<.22?Math.abs(Math.sin(t*60))*4*k:0;
+    glow(x,y+20*k,90*k,"rgba(255,190,120,A)",.14*a);ctx.save();ctx.globalAlpha=a;ctx.fillStyle="#4a4038";ctx.beginPath();ctx.ellipse(x,y-jig,44*k,8*k,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle="rgba(230,200,150,.5)";ctx.lineWidth=1;ctx.stroke();ctx.fillStyle="#6a5a48";ctx.beginPath();ctx.ellipse(x,y-jig-5*k,8*k,5*k,0,0,Math.PI*2);ctx.fill();
+    for(let i=0;i<3;i++){const u=((t*.35+i/3)%1),sx=x+Math.sin(t+i*2)*10*k+(i-1)*18*k,sy=y-10*k-u*110*k;glow(sx,sy,(14+u*26)*k,"rgba(225,220,210,A)",.34*(1-u)*a);}ctx.restore();}
+  else if(r.id==="neko"){const [ix,iy,d]=r.pt(),w=Math.sin(t*1.7)*6;ctx.save();ctx.globalAlpha=1;rmMon("m_nekomata",ix+w,iy-30,150,d,null,.22*a*(.8+.2*Math.sin(t*2.3)),Math.PI,true);ctx.restore();
+    const [x,y]=rmPt(ix,iy+10,d),k=BGM.k;ctx.save();ctx.strokeStyle=`rgba(200,215,220,${.18*a})`;ctx.lineWidth=1.5;for(let i=0;i<2;i++){const u=(t*.4+i*.5)%1;ctx.beginPath();ctx.ellipse(x,y,(30+u*120)*k,(8+u*30)*k,0,0,Math.PI*2);ctx.globalAlpha=1-u;ctx.stroke();}ctx.restore();}
+  else if(r.id==="tengu"){const [x,y]=rmPt(PINE[0],PINE[1]+70,.42),k=BGM.k,bl=(t%5)<.18?.1:1;glow(x,y,70*k,"rgba(255,150,60,A)",.18*a);eyeAt(x-14*k,y,7*k,bl*a,"#ffb44a","#3a1400");eyeAt(x+16*k,y,7*k,bl*a,"#ffb44a","#3a1400");
+    const u=(t*.12)%1,[fx,fy]=rmPt(PINE[0]+40+Math.sin(t*1.3)*40,PINE[1]+90+u*700,.42);ctx.save();ctx.globalAlpha=a*(1-u)*.8;ctx.translate(fx,fy);ctx.rotate(Math.sin(t*2)*.8);ctx.fillStyle="#2e2620";ctx.beginPath();ctx.ellipse(0,0,4*k*2,16*k*2,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+  else if(r.id==="azuki"){const [ix,iy,d]=r.pt(),k=BGM.k;for(let i=0;i<3;i++){const u=(t*.5+i/3)%1,[x,y]=rmPt(ix+(i-1)*60,iy+(i%2)*14,d);ctx.save();ctx.globalAlpha=a*(1-u)*.5;ctx.strokeStyle="#cfd8d4";ctx.lineWidth=1.4;ctx.beginPath();ctx.ellipse(x,y,(10+u*70)*k,(3+u*18)*k,0,0,Math.PI*2);ctx.stroke();ctx.restore();}
+    for(let i=0;i<5;i++){const [x,y]=rmPt(ix-60+i*28+Math.sin(t+i)*8,iy+6+Math.sin(t*1.3+i*2)*6,d);ctx.save();ctx.globalAlpha=a*.7;ctx.fillStyle="#8a2020";ctx.beginPath();ctx.ellipse(x,y,5*k,3.5*k,0,0,Math.PI*2);ctx.fill();ctx.restore();}}
+  else if(r.id==="fox"){const n=3+Math.floor(t*1.6)%11,k=BGM.k;for(let i=0;i<Math.min(n,10);i++){const u=i/9,ix=1330-u*250+(i%2?14:-14),iy=1215-u*95,[x,y]=rmPt(ix,iy,.8),s=(1.1-u*.4)*k;
+      ctx.save();ctx.globalAlpha=a*.75*(n>11?.5:1)*(1-.5*u);ctx.fillStyle="#dbe8ff";ctx.shadowColor="#9fc0ff";ctx.shadowBlur=10;ctx.beginPath();ctx.ellipse(x,y,9*s,6*s,0,0,Math.PI*2);ctx.fill();for(let j=0;j<4;j++){ctx.beginPath();ctx.arc(x+(j-1.5)*6*s,y-9*s-(j%3?2*s:0),2.8*s,0,Math.PI*2);ctx.fill();}ctx.restore();}
+    const [gx,gy]=rmPt(1070,980,.45);glow(gx+Math.sin(t*.7)*30*k,gy+Math.sin(t*1.1)*20*k,40*k,"rgba(160,200,255,A)",.25*a);}
+  else if(r.id==="moku"){const k=BGM.k;WIN.forEach(([ix,iy],i)=>{const ph=(t*.23+i*.37)%1,o=ph<.2?Math.sin(ph/.2*Math.PI):0;if(o<=0)return;const [x,y]=rmPt(ix,iy,.5);ctx.save();ctx.globalAlpha=a*.9;eyeAt(x,y,16*k*2,o);ctx.restore();});}
+  else if(r.id==="okiku"){const c=sil("m_rm_okiku","#b4c4dc",6),sw=Math.sin(t*.8)*.02;drawSil(c,"m_rm_okiku",1100,1000,560,.4,null,a*(.3+.06*Math.sin(t*1.9)),sw);
+    const ph=t%16,n=Math.floor(ph/1.4);if(n<9){const u=(ph%1.4)/1.4,[x,y]=rmPt(1260,560,.4);ctx.save();ctx.globalAlpha=a*.55*Math.sin(u*Math.PI);ctx.font=`italic ${15*view.s}px ${FF()}`;ctx.textAlign="center";ctx.fillStyle="#c8d4e8";
+      ctx.fillText(["одна…","две…","три…","четыре…","пять…","шесть…","семь…","восемь…","девять…"][n],x,y-u*18);ctx.restore();}}
+  else if(r.id==="pon"){const [ix,iy,d,row]=r.pt(),k=BGM.k,ph=t%2.4,b=ph<.9?Math.abs(Math.sin(ph*Math.PI/.3))*6:0;drawSil(sil("m_tanuki","#0c0c0a",2),"m_tanuki",ix,iy+70,230,d,row,a*.32,0);
+    for(const o of [0,.3,.6])if(ph>o&&ph<o+.8){const u=(ph-o)/.8,[x,y]=rmPt(ix,iy-10,d,row);ctx.save();ctx.globalAlpha=a*(1-u)*.5;ctx.strokeStyle="#efe2b8";ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y-b,(20+u*80)*k,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+  else if(r.id==="kosode"){const [ix,iy,d]=r.pt();drawSil(sil("m_rm_kosode","#120c08",5),"m_rm_kosode",ix+30,iy+170,470,d,null,a*.5,Math.sin(t*.9)*.03);}
+}
+function signSound(r,t){if(t<nextSnd)return;const k={kama:1.6,neko:3.4,tengu:6,azuki:1.3,fox:4.5,moku:5,okiku:1.4,pon:2.4,kosode:4.2}[r.id]||3;nextSnd=t+k;
+  if(r.id==="kama"){tone(640,.05,"square",.02);setTimeout(()=>tone(700,.05,"square",.02),90);}
+  else if(r.id==="neko")tone(1760,.18,"sine",.02);
+  else if(r.id==="tengu"){noise(.35,380,.05);setTimeout(()=>noise(.3,420,.04),260);}
+  else if(r.id==="azuki"){noise(.14,2600,.07);setTimeout(()=>noise(.14,2300,.06),330);}
+  else if(r.id==="fox")tone(2093,.7,"sine",.014);
+  else if(r.id==="moku")tone(90,.4,"sine",.02);
+  else if(r.id==="okiku"){if(t%16/1.4<9)clink();}
+  else if(r.id==="pon"){pon();setTimeout(pon,300);setTimeout(()=>{tone(150,.22,"sine",.12);tone(90,.3,"sine",.08);},600);}
+  else if(r.id==="kosode")noise(.6,5200,.025);}
+
+// ── the reveal: the yōkai shows itself, speaks, leaves a keepsake
+function pose(r,t,a){const [ix,iy,d,row]=r.pt(),e=t-rv.t0;
+  const k=BGM.k;
+  if(r.id==="kama"){const [x0,y0]=kam(),u=smooth(clamp((e-.8)/.8,0,1)),p0=rmPt(x0,y0-10,.5),p1=rmPt(visX(x0+140,110),1245,.8),rise=clamp(e/.6,0,1);
+    monS("m_rm_chagama",mix(p0[0],p1[0],u),mix(p0[1],p1[1],u)-Math.sin(u*Math.PI)*90*k-(1-u)*rise*30*k,mix(140,210,u)*k,a);}
+  else if(r.id==="neko")rmMon("m_nekomata",ix,1150,280,d,null,a);
+  else if(r.id==="tengu"){const u=smooth(clamp((e-.5)/1.3,0,1)),p0=rmPt(PINE[0],PINE[1]+34,.42),p1=rmPt(720,1110,.42);
+    monS("m_rm_tengu",mix(p0[0],p1[0],u),mix(p0[1],p1[1],u)-Math.sin(u*Math.PI)*40*k+Math.sin(e*1.6)*3,mix(260,320,u)*k,a);}
+  else if(r.id==="azuki"){const im=DIMG.rm_azuki;if(im){const [x,y]=rmPt(ix,iy-4,d),k=BGM.k*1.1;ctx.save();ctx.globalAlpha=a;ctx.drawImage(im,x-90*k,y-100*k,180*k,110*k);ctx.restore();}
+    for(let i=0;i<3;i++){const u=(e*.5+i/3)%1,[x,y]=rmPt(ix+(i-1)*50,iy+10,d);ctx.save();ctx.globalAlpha=a*(1-u)*.5;ctx.strokeStyle="#cfd8d4";ctx.beginPath();ctx.ellipse(x,y,(10+u*90)*BGM.k,(3+u*22)*BGM.k,0,0,Math.PI*2);ctx.stroke();ctx.restore();}}
+  else if(r.id==="fox")rmMon("m_kitsune",1070,1108,280,.45,null,a);
+  else if(r.id==="moku"){const k=BGM.k;WIN.forEach(([x0,y0],i)=>{const [x,y]=rmPt(x0,y0,.5),bl=((e+i*.7)%3.2)<.15?.1:1;eyeAt(x,y,18*k*2,Math.min(1,e*2)*bl*a);});}
+  else if(r.id==="okiku")rmMon("m_rm_okiku",visX(1100,150),1262,500,.8,null,a*.92,Math.sin(e*.8)*.01);
+  else if(r.id==="pon"){const b=Math.abs(Math.sin(e*Math.PI/.4))*10;rmMon("m_tanuki",ix,iy+70-b,240,d,row,a);if(e>(rv.nn||0)){rv.nn=e+.8;const [x,y]=rmPt(ix,iy-60,d,row);floatFx.push({g:pick(["♪","♫"]),x,y,t});}}
+  else if(r.id==="kosode")rmMon("m_rm_kosode",ix,iy+180,440,d,null,a,Math.sin(e*.9)*.015);
+}
+function reveal(r){
+  const R=st(),t=now();rv={r,t0:t,out:0};R.s[r.id]=Date.now();S.owned.add(r.it);loadItem(r.it);disc("rumor",r.id);
+  if(!ST.seen.includes(r.beast))ST.seen.push(r.beast);
+  award("rm_first");const h=hourNow();if(h>=1&&h<3)award("rm_ushi");if(RUM.every(solved))award("rm_all");save();
+  if(r.cute)chime([784,988,1318]);else if(S.scary){tone(70,1.6,"sawtooth",.025);tone(104,1.4,"sine",.03);setTimeout(()=>chime([523,622,784]),900);}else chime([659,784,1046]);
+  if(!petAway()){if(!r.cute&&S.scary&&pet.action!=="sleep")start("hide");react(r.cute?"😸":S.scary?"🙀":"😳",2.4);}
+  const [x,y]=rmPt(...r.pt());for(let i=0;i<4;i++)floatFx.push({g:"✨",x:x+rand(-30,30),y:y+rand(-20,20),t:t+i*.15});
+  setTimeout(()=>dlg({head:r.who,text:!S.scary&&r.soft?r.soft:r.words,img:itemThumb(IT[r.it],70,60),ok:"Спасибо",onOk:()=>{if(rv)rv.out=now();toast(`🗝 Тайна дома: «${IT[r.it].n}»`);sfx("chime");}}),r.id==="moku"?2400:r.id==="kama"||r.id==="tengu"?1900:1400);
+  tabDots();hubDot();
+}
+
+// ── hooks
+hook("boot",()=>{st();roomT=now();for(const r of RUM)if(solved(r))loadItem(r.it);});
+hook("room",()=>{roomT=now();if(rv&&rv.r.room!==S.room)rv=null;});
+hook("draw",(t,front)=>{if(front||scene.on)return;
+  if(rv&&rv.r.room===S.room){const a=clamp((t-rv.t0)/1.2,0,1)*(rv.out?1-clamp((t-rv.out)/1.4,0,1):1);if(rv.out&&a<=0){rv=null;return;}
+    const sa=1-clamp((t-rv.t0)/1,0,1);if(sa>0)sign(rv.r,t,sa);pose(rv.r,t,a);return;}
+  const r=here();if(!r)return;const a=clamp((t-roomT-2.5)/3,0,1);if(a<=0)return;sign(r,t,a);if(a>.6)signSound(r,t);});
+hook("hit",(x,y)=>{if(rv||scene.on)return false;const r=here();if(!r||now()-roomT<3)return false;const [sx,sy]=rmPt(...r.pt()),R=Math.max(44,r.hr*BGM.k);
+  if(Math.hypot(x-sx,y-sy)>R)return false;audioInit();reveal(r);return true;});
+hook("ev",(ev,d)=>{if(ev!=="guest")return;const R=st(),r=RUM.find(q=>!R.k.includes(q.id));if(!r)return;const gd=GUESTS.find(g=>g.id===d.id);
+  R.k.push(r.id);R.who[r.id]=gd?gd.n:"Гость";R.nw=1;toastNew=1;save();const el=$("gdText");if(el)el.textContent+=` А на прощание шепчет: «${r.say}»`;hubDot();});
+hook("sec",()=>{if(toastNew&&$("gdlg").hidden&&!scene.on){toastNew=0;setTimeout(()=>toast("👂 Новый слух — загляни в 家"),400);}});
+hook("hubDot",()=>{const R=st();return R.nw||RUM.some(live);});
+hook("tabDot",room=>RUM.some(r=>r.room===room&&live(r)));
+hook("click",key=>{if(!key.startsWith("rm:"))return false;const id=key.slice(3);if(ROOMS.some(q=>q.id===id)){closePanel();goRoom(id);return true;}return false;});
+hook("hub",()=>{const R=st();R.nw=0;hubDot();const K=RUM.filter(known),N=RUM.filter(live),left=RUM.length-K.length;
+  const now_=N.length?`<p class="rm-now">🕯 Самое время: ${N.map(r=>`«${r.t}» — ${r.where}`).join("; ")}.</p><div class="row">${[...new Set(N.map(r=>r.room))].map(id=>`<button class="btn primary" data-x="rm:${id}">Пойти: ${roomName(id)}</button>`).join("")}</div>`:"";
+  return`<div class="hubc"><h4>👂 Слухи <i>噂</i></h4><p>Гости у ворот шепчут о доме. Приди в нужный час в нужное место — там появится тихий знак. Коснись его.</p>${now_}
+   <div class="rm-list">${K.map(r=>`<div class="rm-r${solved(r)?" on":""}"><b>${solved(r)?"✓":"・"} ${r.t}</b><span>${r.when[0].toUpperCase()+r.when.slice(1)} · ${r.where}</span><small>«${r.short[0].toUpperCase()+r.short.slice(1)}» — ${R.who[r.id]||"гость"}</small></div>`).join("")}</div>
+   <p class="rm-more">${left?`Ещё не рассказано слухов: ${left}. Угощай гостей у ворот.`:`Все слухи рассказаны. Раскрыто ${RUM.filter(solved).length} из ${RUM.length}.`}</p></div>`;});
+hook("album",el=>{const n=RUM.filter(solved).length;el.insertAdjacentHTML("beforeend",`<h3 class="bh">Тайны дома</h3><p class="lead">Слухи, которые оказались правдой: ${n} из ${RUM.length}.</p><div class="coll">${RUM.map(r=>{const on=solved(r),b=BESTIARY.find(q=>q[0]===r.beast),img=b&&b[1]?`<img src="assets/mon/${b[1]}.webp" alt="">`:itemThumb(IT[r.it],60,52);
+  return`<div class="ci ${on?"on":""}">${img}<small>${on?r.t:"???"}</small></div>`;}).join("")}</div>`);});
+document.head.insertAdjacentHTML("beforeend",`<style>.rm-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}.rm-r{padding:7px 10px;border-radius:10px;background:#0a0d0c;border:1px solid var(--line)}.rm-r b{display:block;font-size:14px;color:var(--paper)}
+.rm-r span{display:block;font-size:12px;color:var(--sakura);margin-top:2px}.rm-r small{display:block;font-size:12px;line-height:1.35;color:var(--muted);margin-top:3px;font-style:italic}.rm-r.on{opacity:.62}.rm-r.on b{color:#b9c9a4}
+.story-body .hubc p.rm-now{color:#f0d9a0}.story-body .hubc p.rm-more{font-size:12px;color:var(--muted)}</style>`);
+X.rm={RUM,st,live,here,moonAge,unlockAll(){const R=st();for(const r of RUM)if(!R.k.includes(r.id)){R.k.push(r.id);R.who[r.id]="Каппа";}save();},
+  spot(id){const r=RI[id];return rmPt(...r.pt());},tap(id){const b=cv.getBoundingClientRect(),[x,y]=this.spot(id);cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:b.left+x,clientY:b.top+y,bubbles:true,pointerId:1,isPrimary:true}));},reveal(id){reveal(RI[id]);},wake(){roomT=now()-10;}};
+}
 // ── dreams.js
 {
 // ───────────────────────── «Сны Муси» (prefix dr): a thought bubble over sleeping Musya opens her dream ─────────────────────────
@@ -3772,6 +4213,691 @@ hook("album",el=>{const D=drS(),n=DRK.filter(k=>D.seen[k.id]).length;
   el.insertAdjacentHTML("beforeend",`<h3 class="bh">Сонник</h3><p class="lead">Сны Муси: ${n} из ${DRK.length}. Осколков сна собрано: ${D.frag}.${D.eaten?` Баку съел кошмаров: ${D.eaten}.`:""} Уложи Мусю спать и нажми на облачко над ней.</p><div class="dr-book">${DRK.map(K=>{const on=D.seen[K.id];
    return`<div class="dr-d ${on?"":"off"}"><b>${on?K.n:"???"}</b>${on?`<i>${K.jp}</i>`:""}<p>${on?K.line+(on>1?` Снился ${on} раза.`:""):"Этот сон Муся ещё не видела."}</p><div class="dr-its">${K.items.map(id=>{const o=S.owned.has(id);return`<span class="${o?"on":""}">${itemThumb(IT[id],56,52)}${o?IT[id].n:"???"}</span>`;}).join("")}</div></div>`;}).join("")}</div>`);});
 X.dream={next:k=>{drNext=k;},open:k=>{drRun=null;drNap=pet.start;drRun={kind:k||drPickKind(),en:S.needs.energy};openPlace("dream");},avail:drAvail,bubble:drB,kinds:DRK.map(k=>k.id),end:()=>{if(G.id==="dream"){G.st.e=G.st.dur;G.st.t0=now()-G.st.dur;}}};
+}
+// ── candles.js
+{
+// ───────────────────────── «Сто свечей» (hyakumonogatari): every discovery in the game puts out one candle ─────────────────────────
+// Sources: kaidan read, bestiary, fish, recipes, crops, guest friends, festivals, story chapters + every disc(kind,id) of the add-ons.
+// The log keeps the order the candles went out; at 100 the last one burns blue and the player puts it out → Ao-andon comes.
+const CD=S.ext.candles||(S.ext.candles={log:[],ms:0,fin:0});
+const CD_ATL={cd_stand:[0,0,230,200],cd_rosoku:[234,0,150,200],cd_shokudai:[388,0,110,280],cd_hon:[502,0,200,150],cd_aoandon:[706,0,140,260]};
+const CD_FL=[[44,127],[115,123],[186,127],[78,81],[152,81],[96,39],[134,39]];   // stand candles (sprite px), in the order they go out
+const CD_CAT="Сто свечей",CD_SRC="🕯 сто свечей";
+addItems([
+ {id:"cd_rosoku",n:"Расписные свечи",c:CD_CAT,w:150,h:200,a:"b",p:0,glow:[94,40],at:["cd",234,0],src:CD_SRC,hint:"Погаси 25 из ста свечей (家 → Сто свечей)"},
+ {id:"cd_shokudai",n:"Подсвечник сёкудай",c:CD_CAT,w:110,h:280,a:"b",p:0,glow:[69,36],at:["cd",388,0],src:CD_SRC,hint:"Погаси 50 из ста свечей (家 → Сто свечей)"},
+ {id:"cd_hon",n:"Книги ста историй",c:CD_CAT,w:200,h:150,a:"b",p:0,at:["cd",502,0],src:CD_SRC,hint:"Погаси 75 из ста свечей (家 → Сто свечей)"},
+ {id:"cd_aoandon",n:"Синий андон",c:CD_CAT,w:140,h:260,a:"b",p:0,at:["cd",706,0],src:CD_SRC,hint:"Погаси все сто свечей — и дождись духа"}
+],{cd:[846,280]});
+const CD_MS=[[25,"cd_rosoku"],[50,"cd_shokudai"],[75,"cd_hon"],[100,"cd_aoandon"]];
+MON.m_cd_aoandon=[420,660];MON_BEAST.m_cd_aoandon="aoandon";
+BESTIARY.push(["aoandon","m_cd_aoandon","Ао-андон","Дух синего фонаря. Приходит, когда в хякумоногатари гаснет сотая свеча: женщина в синем кимоно, с рожками и чернёными зубами. Нарисована Ториямой Сэкиэном в 1781 году."]);
+STAMPS.push(["cd_half","燭","Полночь историй","Погаси 50 из ста свечей"],["cd_all","百","Сто историй","Погаси сотую свечу и встреть Ао-андон"]);
+document.head.insertAdjacentHTML("beforeend",`<style>
+.cd-cv{display:block;width:100%;aspect-ratio:4/3;border-radius:14px;background:#050607;margin:4px 0 10px;box-shadow:0 0 0 1px var(--line)}
+.cd-count{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap;margin:0 0 10px}.cd-count b{font-family:var(--display);font-size:26px;color:var(--paper)}.cd-count span{font-size:13px;color:var(--muted);line-height:1.4}
+.cd-go{width:100%;margin:0 0 12px}.cd-bar{height:4px;border-radius:2px;background:rgba(216,210,195,.1);overflow:hidden;margin:6px 0 4px}.cd-bar i{display:block;height:100%;background:linear-gradient(90deg,#e0a868,#8fb4ff)}
+.cd-log{margin:0 0 16px;padding:0;list-style:none;display:grid;gap:5px}.cd-log li{font-size:13.5px;line-height:1.4;color:var(--paper);display:flex;gap:8px}.cd-log em{font-style:normal;color:#e0a868;min-width:2.1em;text-align:right;font-variant-numeric:tabular-nums}
+.cd-src{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}.cd-src span{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:4px 9px;color:var(--paper);background:#0a0d0c}.cd-src em{font-style:normal;color:var(--muted);margin-left:4px}
+</style>`);
+
+// ── counting ──
+const CD_KIND={find:"Находка Муси",rareguest:"Редкий гость",visitor:"Гость пришёл на вещи",rumor:"Слух подтвердился",chapter2:"Глава второй истории",dream:"Сон Муси",haunt:"Одержимая комната",postcard:"Открытка из путешествия",souvenir:"Сувенир из путешествия",room:"Открыта комната",figure:"Фигурка из гатяпона",bloom:"Цветение",trust:"Доверие Муси"};
+function cdAll(){const o=[];
+  for(let k=0;k<Math.min(QS.ch,STORY.length);k++)o.push("q:"+k);
+  for(const i of ST.stories)if(KAIDAN[i])o.push("k:"+i);
+  for(const b of ST.seen)if(BESTIARY.some(x=>x[0]===b))o.push("b:"+b);
+  for(const g of GUESTS)if((S.friends[g.id]||{}).n>0)o.push("g:"+g.id);
+  for(const c of CROPS)if(S.crops[c.id])o.push("c:"+c.id);
+  for(const f of FISHES)if(!f.junk&&S.catch[f.id])o.push("f:"+f.id);
+  for(const r of RECIPES)if(S.cooked[r.id])o.push("r:"+r.id);
+  const fd=new Set();for(const k in S.fest)if(S.fest[k]&&S.fest[k].done){const id=k.replace(/-\d+$/,"");if(FEST.some(F=>F.id===id))fd.add(id);}for(const id of fd)o.push("fe:"+id);
+  const D=S.ext.disc||{},L=[];for(const kind in D)for(const id in D[kind])L.push([D[kind][id],"d:"+kind+":"+id]);L.sort((a,b)=>a[0]-b[0]);for(const x of L)o.push(x[1]);
+  return o;}
+function cdName(kind,id){if(kind==="trust"&&X.ts)return X.ts.name(id);const h=X[kind];if(h&&typeof h.name==="function"){try{const n=h.name(id);if(n)return n;}catch(e){}}
+  return(IT[id]&&IT[id].n)||(FOOD[id]&&FOOD[id].n)||(BESTIARY.find(b=>b[0]===id)||[])[2]||(ROOMS.find(r=>r.id===id)||{}).ru||(GUESTS.find(g=>g.id===id)||{}).n||"";}
+function cdLabel(key){const [s,a,b]=key.split(":");
+  switch(s){case"q":return`Глава истории: «${(STORY[+a]||{}).title||"…"}»`;case"k":return`Прочитан кайдан «${(KAIDAN[+a]||{}).t||"…"}»`;
+    case"b":return`Встречен ёкай: ${(BESTIARY.find(x=>x[0]===a)||[])[2]||a}`;case"g":return`Подружились с гостем: ${(GUESTS.find(x=>x.id===a)||{}).n||a}`;
+    case"c":return`Первый урожай: ${(CROPS.find(x=>x.id===a)||{}).n||a}`;case"f":return`Поймана рыба: ${(FOOD[a]||{}).n||a}`;
+    case"r":return`Приготовлено: ${(RECIPES.find(x=>x.id===a)||{}).n||a}`;case"fe":{const F=FEST.find(x=>x.id===a);return`Праздник: ${F?F.n:a}`;}
+    case"d":{const n=cdName(a,b),k=CD_KIND[a]||"Новая находка";return n?`${k}: ${n}`:k;}}return key;}
+const cdOut=()=>CD.fin?100:Math.min(99,CD.log.length),cdBlue=()=>CD.log.length>=100&&!CD.fin;
+function cdPl(n,a,b,c){const d=n%10,h=n%100;return d===1&&h!==11?a:d>=2&&d<=4&&(h<12||h>14)?b:c;}
+let cdPend=0,cdPendT=0,cdLastT=-9,cdGift=0,cdBooted=false;
+function cdCheck(quiet){if(!cdBooted)return;const have=new Set(CD.log.map(e=>e[0]));let add=0;
+  for(const k of cdAll()){if(CD.log.length>=100)break;if(have.has(k))continue;have.add(k);CD.log.push([k,quiet?0:Date.now()]);add++;}
+  if(!add)return;if(!quiet){cdPend+=add;if(!cdPendT)cdPendT=now();}
+  for(const [m,id] of CD_MS)if(m<100&&cdOut()>=m&&CD.ms<m){CD.ms=m;S.owned.add(id);if(m===50)award("cd_half");if(!quiet)cdGift=m;}
+  save();if(panelIs("cd"))cdOpen(true);}
+function cdToast(){const t=now();if(!cdPend||t-cdPendT<2.2||t-cdLastT<4||scene.on)return;cdLastT=t;
+  const n=cdOut(),k=cdPend;cdPend=0;cdPendT=0;
+  if(cdBlue()&&!CD.blueSaid){CD.blueSaid=1;toast("🕯 Сотая свеча вспыхнула синим…");chime([392,466,587]);return;}
+  if(cdGift){toast(`🕯 ${n}/100 · подарок за ${cdGift} свечей → 🧺 Вещи`);cdGift=0;sfx("chime");return;}
+  toast(k>1?`🕯 ${cdPl(k,"Погасла","Погасли","Погасли")} ещё ${k} ${cdPl(k,"свеча","свечи","свечей")}: ${n}/100`:`🕯 Погасла свеча: ${n}/100`);tone(880,.5,"sine",.03);}
+
+// ── the stand in the bedroom corner: painted, the flames are live ──
+const cdMk=(w,h,fn)=>{const c=document.createElement("canvas");c.width=w;c.height=h;fn(c.getContext("2d"));return c;};
+function cdFlame(g,c){for(const [k,col] of [[1,c[0]],[.7,c[1]],[.4,c[2]]]){g.fillStyle=col;g.beginPath();g.moveTo(10,40-38*k);g.bezierCurveTo(10+9*k,40-20*k,10+7*k,38,10,39);g.bezierCurveTo(10-7*k,38,10-9*k,40-20*k,10,40-38*k);g.fill();}}
+function cdGlow(g,r,gg,b){const q=g.createRadialGradient(32,32,0,32,32,32);q.addColorStop(0,`rgba(${r},${gg},${b},.85)`);q.addColorStop(.3,`rgba(${r},${gg},${b},.3)`);q.addColorStop(1,`rgba(${r},${gg},${b},0)`);g.fillStyle=q;g.fillRect(0,0,64,64);}
+function cdBody(g,dark){const q=g.createLinearGradient(4,0,28,0),c=dark?["#37332d","#6a6356","#26231f"]:["#9a9080","#f4ecda","#7a7264"];q.addColorStop(0,c[0]);q.addColorStop(.4,c[1]);q.addColorStop(1,c[2]);
+  g.fillStyle=dark?"#171210":"#2c2019";g.beginPath();g.ellipse(16,74,14,4.5,0,0,7);g.fill();
+  g.fillStyle=q;g.beginPath();g.moveTo(4,9);g.lineTo(28,9);g.lineTo(25,73);g.lineTo(7,73);g.closePath();g.fill();
+  g.fillStyle=dark?"#766f5f":"#fbf5e6";g.beginPath();g.ellipse(16,9,12,3.2,0,0,7);g.fill();
+  g.fillStyle=dark?"rgba(118,111,95,.85)":"rgba(255,250,236,.9)";for(const [x,l] of [[9,14],[21,22],[14,8]])g.fillRect(x-1.5,9,3,l);
+  g.strokeStyle="#1d130d";g.lineWidth=2;g.beginPath();g.moveTo(16,9);g.lineTo(16.5,3);g.stroke();}
+const CDS={glow:cdMk(64,64,g=>cdGlow(g,255,170,90)),glowB:cdMk(64,64,g=>cdGlow(g,110,160,255)),flame:cdMk(20,40,g=>cdFlame(g,["#f0963c","#ffd678","#fffbe8"])),
+  flameB:cdMk(20,40,g=>cdFlame(g,["#3f6dff","#9fc4ff","#eef6ff"])),body:cdMk(32,80,g=>cdBody(g,false)),bodyD:cdMk(32,80,g=>cdBody(g,true))};
+atlasImg("cd",im=>{CDS.at=im;const r=CD_ATL.cd_stand;DIMG.cd_stand=cdMk(r[2],r[3],g=>g.drawImage(im,r[0],r[1],r[2],r[3],0,0,r[2],r[3]));DMETA.cd_stand=[r[2],r[3],"b"];});
+ldImg("assets/bg/cd_tatami.webp",im=>{CDS.bg=im;});
+const cdPos=()=>[visX(1548,135),1212];
+function cdStandLit(){if(cdScene())return now()-scene.t0<1.3?[[6,1]]:[];if(CD.fin)return[];if(cdBlue())return[[6,1]];const k=Math.ceil((100-cdOut())/100*7);const o=[];for(let i=7-k;i<7;i++)o.push([i,0]);return o;}
+function cdPt(g,im,x,y,w,h,a){g.globalAlpha=a;g.drawImage(im,x-w/2,y-h/2,w,h);g.globalAlpha=1;}
+function cdDrawStand(t,front){
+  if(S.room!=="bedroom"||!DIMG.cd_stand)return;const [x,y]=cdPos();if((y>catLineY()+6)!==front)return;
+  const al=cdScene()?clamp(1-(now()-scene.t0-2.2)/1.2,0,1):1;if(al<=0)return;curD=CAT_D;curRow=y;drawSprite(ctx,"cd_stand",x,y,0,null,al);const k=BGM.k,dark=S.lampOff?1.5:1,lit=cdStandLit(),x0=x-115,y0=y-200;
+  if(lit.length){const [cx,cy]=imgToStage(x,y-110),R=380*k,blue=lit[0][1],a=(blue?.16:.05+.1*lit.length/7)*dark,gr=ctx.createRadialGradient(cx,cy,0,cx,cy,R);
+    gr.addColorStop(0,blue?`rgba(110,160,255,${a})`:`rgba(245,175,95,${a})`);gr.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=gr;ctx.fillRect(cx-R,cy-R,R*2,R*2);}
+  ctx.save();ctx.globalCompositeOperation="lighter";
+  for(const [i,blue] of lit){const [fx,fy]=imgToStage(x0+CD_FL[i][0],y0+CD_FL[i][1]),fl=1+.12*Math.sin(t*11+i*1.7)+.06*Math.sin(t*23+i),h=17*k*fl*(blue?1.2:1);
+    cdPt(ctx,blue?CDS.glowB:CDS.glow,fx,fy-h*.4,90*k,90*k,.55*dark);ctx.drawImage(blue?CDS.flameB:CDS.flame,fx-h*.26+Math.sin(t*7+i)*.6,fy-h,h*.52,h*1.02);}
+  ctx.restore();
+  if(!lit.length&&(CD.fin||cdScene())){ctx.save();ctx.strokeStyle="rgba(190,196,210,.22)";ctx.lineWidth=1.2;for(let i=0;i<7;i+=3){const [fx,fy]=imgToStage(x0+CD_FL[i][0],y0+CD_FL[i][1]),u=(t*.2+i*.31)%1;ctx.globalAlpha=Math.sin(Math.PI*u);ctx.beginPath();ctx.moveTo(fx,fy);ctx.bezierCurveTo(fx+6*k*10*u,fy-20*k,fx-6*k*10*u,fy-40*k,fx+Math.sin(t+i)*8*k,fy-(30+50*u)*k);ctx.stroke();}ctx.restore();}
+  curRow=null;}
+function cdStandHit(x,y){if(S.room!=="bedroom"||!DIMG.cd_stand||hitCat(x,y))return false;const [ix,iy]=cdPos();curD=CAT_D;curRow=iy;const [ax,ay]=imgToStage(ix-120,iy-215),[bx,by]=imgToStage(ix+120,iy+10);curRow=null;return x>=ax&&x<=bx&&y>=ay&&y<=by;}
+// the blue andon, once placed, lights its corner blue
+function cdAndonGlow(t,front){const q=S.placed&&S.placed.cd_aoandon;if(!q||q.r!==S.room||!DMETA.cd_aoandon)return;const it=ipos({id:"cd_aoandon",x:q.x,y:q.y});if(isFront(it)!==front)return;
+  curD=CAT_D;curRow=it.y;const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0+w/2,y0+h*.5),R=300*BGM.k,fl=.92+.06*Math.sin(t*3.1)+.03*Math.sin(t*9.7),gr=ctx.createRadialGradient(sx,sy,0,sx,sy,R);curRow=null;
+  gr.addColorStop(0,`rgba(120,170,255,${.34*fl})`);gr.addColorStop(1,"rgba(120,170,255,0)");ctx.fillStyle=gr;ctx.fillRect(sx-R,sy-R,R*2,R*2);}
+
+// ── the panel: a hundred candles in a spiral on a dark tatami around the blue andon ──
+// projection shared with art/candles_art.py tatami(): x = 360 + X*560/Z, y = -300 + 560/Z (720×540 design units)
+const CD_SP=(()=>{const L=[];let acc=0,p=null;for(let j=0;j<=3000;j++){const u=j/3000,r=1-.72*u,a=Math.PI/2+u*Math.PI*2*3.3,x=Math.cos(a)*r,y=Math.sin(a)*r;if(p)acc+=Math.hypot(x-p[0],y-p[1]);p=[x,y];L.push([acc,x,y]);}
+  const out=[];let j=0;for(let i=0;i<100;i++){const want=acc*i/99;while(j<L.length-1&&L[j][0]<want)j++;const X=L[j][1]*.6,Z=.98+L[j][2]*.3;out.push({x:360+X*560/Z,y:-300+560/Z,s:.98/Z,Z});}return out;})();
+const CD_ORDER=[...CD_SP.keys(),-1].sort((a,b)=>(b<0?.975:CD_SP[b].Z)-(a<0?.975:CD_SP[a].Z));
+let cdRaf=0,cdAnim=null;
+function cdFrame(){cdRaf=0;const cv=$("cdCv");if(!cv||!panelIs("cd"))return;cdRaf=requestAnimationFrame(cdFrame);
+  const g=cv.getContext("2d"),t=now(),out=cdOut(),blue=cdBlue(),frac=out/100,sc=cv.width/720;g.setTransform(sc,0,0,sc,0,0);
+  if(CDS.bg)g.drawImage(CDS.bg,0,0,720,540);else{g.fillStyle="#0b0a08";g.fillRect(0,0,720,540);}
+  g.fillStyle=`rgba(3,4,10,${.06+.6*frac})`;g.fillRect(0,0,720,540);
+  let lit=100-out;if(cdAnim)for(let i=cdAnim.from;i<cdAnim.to;i++)if(t<cdAnim.t0+(i-cdAnim.from)*.45)lit++;
+  g.globalCompositeOperation="lighter";
+  const pool=(x,y,r,col,a)=>{const q=g.createRadialGradient(x,y,0,x,y,r);q.addColorStop(0,`rgba(${col},${a})`);q.addColorStop(1,`rgba(${col},0)`);g.fillStyle=q;g.fillRect(x-r,y-r,r*2,r*2);};
+  pool(360,310,420,"255,160,80",.3*lit/100*(1+.04*Math.sin(t*5)));pool(360,230,200+160*frac,"90,140,255",.05+.22*frac+(CD.fin?.1:0)+(blue?.08*Math.sin(t*2.2):0));
+  g.globalCompositeOperation="source-over";
+  for(const i of CD_ORDER){
+    if(i<0){if(CDS.at){const r=CD_ATL.cd_aoandon,h=112,w=h*r[2]/r[3];g.drawImage(CDS.at,r[0],r[1],r[2],r[3],360-w/2,271-h,w,h);g.globalCompositeOperation="lighter";cdPt(g,CDS.glowB,360,215,170,170,.18+.5*frac);g.globalCompositeOperation="source-over";}continue;}
+    const p=CD_SP[i],u=p.s,on=i>=out||(cdAnim&&i>=cdAnim.from&&i<cdAnim.to&&t<cdAnim.t0+(i-cdAnim.from)*.45),isB=i===99&&blue;
+    g.drawImage(on?CDS.body:CDS.bodyD,p.x-7*u,p.y-35*u,14*u,35*u);const wx=p.x,wy=p.y-33.5*u;
+    if(on){const fl=1+.13*Math.sin(t*(isB?6:11)+i*2.3)+.06*Math.sin(t*23+i),h=(isB?19:13)*u*fl;g.globalCompositeOperation="lighter";cdPt(g,isB?CDS.glowB:CDS.glow,wx,wy-h*.45,(isB?90:52)*u,(isB?90:52)*u,isB?.8:.55);g.globalCompositeOperation="source-over";
+      g.drawImage(isB?CDS.flameB:CDS.flame,wx-h*.26+Math.sin(t*7+i)*.5*u,wy-h,h*.52,h*1.02);}
+    else{const since=cdAnim&&i>=cdAnim.from&&i<cdAnim.to?t-(cdAnim.t0+(i-cdAnim.from)*.45):9,fresh=since<3,uu=fresh?since/3:(t*.16+i*.137)%1,al=fresh?.55*(1-uu):.13*Math.sin(Math.PI*uu);
+      if(al>.01){g.strokeStyle=`rgba(200,204,214,${al})`;g.lineWidth=(fresh?1.6:1.1)*u;g.beginPath();g.moveTo(wx,wy);const hh=(fresh?40:28)*u*(.4+uu);g.bezierCurveTo(wx+6*u*Math.sin(t*1.3+i),wy-hh*.35,wx-6*u*Math.sin(t*1.1+i*2),wy-hh*.7,wx+3*u*Math.sin(t*.8+i),wy-hh);g.stroke();}}}
+}
+function cdHtml(){const out=cdOut(),blue=cdBlue(),fin=!!CD.fin,next=CD_MS.find(m=>m[0]>out);
+  const st=fin?"Ао-андон приходила в эту спальню. Синий андон остался у тебя.":blue?"Сотая свеча горит синим. Погаси её — если не боишься.":next&&next[0]<100?`Осталось ${100-out}. До подарка — ${next[0]-out}.`:`Осталось ${100-out}.`;
+  const log=CD.log.map((e,i)=>[e,i]).slice(0,fin?100:99).slice(-10).reverse();
+  const n=(a,b)=>`<em>${a}${b!=null?"/"+b:""}</em>`,disc=Object.values(S.ext.disc||{}).reduce((a,k)=>a+Object.keys(k).length,0);
+  const src=[["📜 Кайданы",ST.stories.length,KAIDAN.length],["👁 Ёкаи",ST.seen.filter(b=>BESTIARY.some(x=>x[0]===b)).length,BESTIARY.length],["🎣 Рыбы",FISHES.filter(f=>!f.junk&&S.catch[f.id]).length,FISHES.filter(f=>!f.junk).length],
+    ["🍳 Рецепты",RECIPES.filter(r=>S.cooked[r.id]).length,RECIPES.length],["🌱 Урожай",CROPS.filter(c=>S.crops[c.id]).length,CROPS.length],["🦊 Гости",GUESTS.filter(g=>(S.friends[g.id]||{}).n>0).length,GUESTS.length],
+    ["🎑 Праздники",cdAll().filter(k=>k.startsWith("fe:")).length,FEST.length],["📖 Главы истории",Math.min(QS.ch,STORY.length),STORY.length],["✨ Находки",disc,null]];
+  return`<p class="lead">В эпоху Эдо рассказывали сто страшных историй и гасили по свече… Когда погаснет последняя, придёт настоящий дух.</p>
+   <canvas class="cd-cv" id="cdCv"${blue?' data-x="cd:fin"':""}></canvas>
+   <div class="cd-count"><b>Погашено ${out} из 100</b><span>${st}</span></div>
+   ${blue?`<button class="btn primary cd-go" data-x="cd:fin">🕯 Погасить сотую свечу</button>`:""}
+   <div class="coll">${CD_MS.map(([m,id])=>{const on=S.owned.has(id);return`<div class="ci ${on?"on":""}">${itemThumb(IT[id],64,52)}<small>${on?IT[id].n:"???"}<br>${m} свечей</small></div>`;}).join("")}</div>
+   <h3 class="bh">Последние свечи</h3>${log.length?`<ol class="cd-log">${log.map(([e,i])=>`<li><em>${i+1}</em><span>${cdLabel(e[0])}</span></li>`).join("")}</ol>`:`<p class="lead">Пока ни одна свеча не погасла.</p>`}
+   <h3 class="bh">Что гасит свечи</h3><p class="lead">Каждая новая находка — одна свеча.</p><div class="cd-src">${src.map(([a,b,c])=>`<span>${a}${n(b,c)}</span>`).join("")}</div>`;}
+function cdOpen(keep){const was=CD.seen||0,out=cdOut();openPanel("Сто свечей",cdHtml(),"cd");
+  if(!keep&&out>was&&out-was<=12)cdAnim={from:was,to:out,t0:now()+.8};else if(!keep)cdAnim=null;CD.seen=out;save();
+  const cv=$("cdCv");if(cv){const w=cv.clientWidth||400,d=Math.min(2,devicePixelRatio||1);cv.width=Math.round(w*d);cv.height=Math.round(w*.75*d);}if(!cdRaf)cdRaf=requestAnimationFrame(cdFrame);}
+
+// ── the finale: the hundredth candle, the blue lantern spirit ──
+const CD_BOOK=[{title:"Сотая свеча",room:"bedroom",outro:{fx(){S.lampOff=true;pet.x=view.W*.27;pet.home=pet.x;paint();ui();setTimeout(()=>{if(scene.on&&scene.book===CD_BOOK&&snd.on&&snd.ctx){tone(98,3.5,"sine",.07);tone(147,3,"sine",.04);}},2600);setTimeout(()=>{if(scene.on&&scene.book===CD_BOOK)react("🙀",2.6);},3600);},
+  chars:[{id:"m_cd_aoandon",x:()=>visX(1330,175),y:1228,h:450,d:.8,from:3}],p:[
+  "Сотая свеча вспыхнула синим — и погасла. В спальне стало так темно, как бывает только в самой глубине ночи.",
+  "В углу сам собой разгорелся бумажный андон. Свет у него был синий, как вода подо льдом.",
+  "Рядом стояла женщина в синем кимоно. Длинные чёрные волосы, два маленьких рога — а когда она улыбнулась, зубы оказались чёрными, как у придворных дам старых времён.",
+  "«Сто историй, — тихо сказала она. — Давно никто не досказывал до конца. Обычно убегают на девяносто девятой».",
+  "Муся не убежала. Ао-андон наклонилась, коснулась её уха холодными пальцами — и растаяла вместе со светом. А синий андон остался. Он горит сам и совсем не греет."]}}];
+const cdScene=()=>scene.on&&scene.book===CD_BOOK;
+function cdFinale(){if(!cdBlue()||scene.on)return;closePanel();playScene(0,"outro",cdAfter,false,CD_BOOK);}
+function cdAfter(){CD.fin=Date.now();CD.ms=100;S.owned.add("cd_aoandon");if(!ST.seen.includes("aoandon"))ST.seen.push("aoandon");
+  if(!S.placed.cd_aoandon){S.placed.cd_aoandon={r:"bedroom",x:Math.round(visX(1330,175)-150),y:1236};loadItem("cd_aoandon");}
+  award("cd_all");save();hubDot();setTimeout(()=>{toast("Синий андон остался в спальне · 🧺 Вещи");chime([587,698,880]);},2400);}
+function cdOverlay(t){if(!cdScene())return;const e=t-scene.t0,a=clamp((e-3)/1.4,0,1),c=CD_BOOK[0].outro.chars[0],x=c.x(),[sx,sy]=imgToStage(x-94,c.y-90,.8),R=520*BGM.k,fl=.9+.07*Math.sin(t*3.3)+.03*Math.sin(t*11);
+  ctx.fillStyle=`rgba(4,8,26,${.16-.06*a})`;ctx.fillRect(0,0,view.W,view.H);if(a<=0)return;ctx.save();ctx.globalCompositeOperation="lighter";const gr=ctx.createRadialGradient(sx,sy,0,sx,sy,R);
+  gr.addColorStop(0,`rgba(110,160,255,${.5*a*fl})`);gr.addColorStop(.45,`rgba(70,110,220,${.2*a*fl})`);gr.addColorStop(1,"rgba(40,70,180,0)");ctx.fillStyle=gr;ctx.fillRect(sx-R,sy-R,R*2,R*2);ctx.restore();}
+
+// ── hooks ──
+hook("boot",()=>{cdBooted=true;setTimeout(()=>{cdCheck(true);if(CD.seen==null)CD.seen=cdOut();},0);});   // after every add-on's boot: what already exists goes in quietly
+hook("sec",()=>{cdCheck(false);cdToast();});
+hook("disc",()=>{setTimeout(()=>cdCheck(false),0);});
+hook("draw",(t,front)=>{cdDrawStand(t,front);cdAndonGlow(t,front);});
+hook("overlay",cdOverlay);
+hook("hit",(x,y)=>{if(scene.on||!cdStandHit(x,y))return false;audioInit();sfx("pop");cdOpen();return true;});
+hook("hubDot",()=>cdBlue());
+hook("click",key=>{if(key==="cd:open"){cdOpen();return true;}if(key==="cd:fin"){cdFinale();return true;}});
+hook("hub",()=>{const out=cdOut(),blue=cdBlue();
+  return`<div class="hubc"><h4>🕯 Сто свечей <i>百物語</i></h4><p>${CD.fin?"Все сто свечей погасли. Ао-андон приходила — и оставила синий андон.":blue?"Девяносто девять свечей погасли. Сотая горит синим…":`Погашено ${out} из 100. Каждая новая находка гасит одну свечу — подставка стоит в углу спальни.`}</p>
+   <div class="cd-bar"><i style="width:${out}%"></i></div><div class="row"><button class="btn${blue?" primary":""}" data-x="cd:open">${blue?"🕯 К сотой свече":"Посмотреть свечи"}</button></div></div>`;});
+X.cd={n:()=>CD.log.length,out:cdOut,open:cdOpen,finale:cdFinale,check:cdCheck,st:CD,label:cdLabel,
+  seed(n){const add=[()=>{for(let i=0;i<KAIDAN.length;i++)if(!ST.stories.includes(i)){ST.stories.push(i);return 1;}},()=>{for(const b of BESTIARY)if(b[0]!=="aoandon"&&!ST.seen.includes(b[0])){ST.seen.push(b[0]);return 1;}},
+    ()=>{for(const f of FISHES)if(!f.junk&&!S.catch[f.id]){S.catch[f.id]=20;return 1;}},()=>{for(const r of RECIPES)if(!S.cooked[r.id]){S.cooked[r.id]=2;return 1;}},()=>{for(const c of CROPS)if(!S.crops[c.id]){S.crops[c.id]=2;return 1;}},
+    ()=>{for(const g of GUESTS)if(!(S.friends[g.id]||{}).n){S.friends[g.id]={n:1};return 1;}},()=>{for(const F of FEST)if(!S.fest[F.id+"-2026"]){S.fest[F.id+"-2026"]={prog:[1,1,1],done:true};return 1;}},
+    ()=>{for(const i of ITEMS)if(disc("find",i.id))return 1;}];let i=0,guard=0;while(cdAll().length<n&&guard++<600)add[i++%add.length]();cdCheck(false);}};
+}
+// ── trust.js
+{
+// ───────────────────────── «Доверие Муси»: care over time unlocks new habits ─────────────────────────
+// Points come from petting, feeding, bathing, play, mini-games, time together and daily visits (daily caps, never decay).
+// Every level adds a habit made of existing poses and wordless bubbles; she never talks.
+const TS_LV=[["Осторожная",0],["Любопытная",30],["Доверчивая",100],["Ласковая",210],["Преданная",370],["Неразлучная",600],["Родная душа",900]];
+const TS_DO=[
+ ["Пока присматривается к тебе издалека.",""],
+ ["Чаще смотрит на тебя и медленно моргает 💗 — по-кошачьи это значит «я тебе верю».","что-то про её взгляд…"],
+ ["Выходит встречать, когда ты открываешь игру.","что-то случится, когда ты придёшь домой…"],
+ ["Иногда приносит тебе свою игрушку.","Муся хочет чем-то с тобой поделиться…"],
+ ["Засыпает, если долго-долго гладить её по голове.","если гладить её очень долго…"],
+ ["Дольше ходит за пальцем и ластится, когда вы входите в комнату.","ей совсем не хочется отходить от тебя…"],
+ ["Мурлычет от одного касания и засыпает с 💗.","самое тёплое — в самом конце."]];
+const TS_CAP={visit:18,pet:16,food:12,bath:10,play:12,game:10,time:8,sleep:3,wear:3},TS_TOYS=["tm_red","tm_blue","ty_mouse","ty_yarn_r","ty_yarn_b","ty_suzu","ty_tsuru"];
+const T=S.ext.trust||(S.ext.trust={p:0,lv:1,day:"",days:0,cd:"",c:{}});
+document.head.insertAdjacentHTML("beforeend",`<style>
+.ts-lv{font-size:15px!important}.ts-lv b{color:var(--sakura);font-family:var(--display);font-size:22px;font-weight:700;margin-right:6px}
+.ts-bar{height:4px;border-radius:2px;background:rgba(216,210,195,.1);overflow:hidden;margin:6px 0 8px}.ts-bar i{display:block;height:100%;background:linear-gradient(90deg,#c9738f,#eea3bb)}
+.ts-how{color:var(--muted);font-size:13px!important}.ts-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:7px}
+.ts-list li{font-size:13.5px;line-height:1.45;color:var(--paper);padding-left:22px;position:relative}.ts-list li::before{content:"💗";position:absolute;left:0;top:0;font-size:12px}
+.ts-list li b{color:var(--sakura);font-weight:600;margin-right:5px}.ts-list li.next{color:var(--muted)}.ts-list li.next::before{content:"🔒";opacity:.7}.ts-list li.next b{color:var(--muted)}
+</style>`);
+const tsName=L=>TS_LV[clamp(L,1,7)-1][0];
+function tsToday(){return T.cd===dayKey()?Object.values(T.c).reduce((a,b)=>a+b,0):0;}
+function tsGain(k,v){const d=dayKey();if(T.cd!==d){T.cd=d;T.c={};}const used=T.c[k]||0,g=Math.min(v,(TS_CAP[k]||10)-used);if(g<=0)return;T.c[k]=used+g;T.p+=g;tsLevel(false);}
+function tsLevel(quiet){let up=0;while(T.lv<7&&T.p>=TS_LV[T.lv][1]){T.lv++;up=T.lv;disc("trust","lv"+T.lv);}
+  if(!up)return;save();if(quiet)return;setTimeout(()=>{toast("💗 Муся доверяет тебе больше: "+tsName(up));chime([784,988,1318]);if(!petAway())burst(10);},700);}
+function tsVisit(first){const d=dayKey();if(T.day!==d){T.day=d;T.days++;tsGain("visit",12);}else if(first)tsGain("visit",3);}
+
+// ── habits ──
+const ts={blinkN:now()+6,toyN:now()+rand(100,200),purrT:0,heartAt:0,sleepSeen:-1,poke:0,greet:0,toy:null,roomT:-99,curS:-1,hidAt:0,dozeOK:0};
+const tsFree=()=>!petAway()&&!scene.on&&!overlaysOpen()&&!drag.active;
+function tsGreet(){if(T.lv<3||!tsFree()||pet.action!=="idle")return false;const s=view.s,side=Math.random()<.5?-1:1;
+  pet.x=side<0?-80*s:view.W+80*s;pet.home=pet.x;pet.walkTarget=clamp(view.W/2+rand(-30,30)*s,96*s,view.W-96*s);pet.walkAfter="idle";start("walkto",true);pet.heading=-side;ts.greet=now();return true;}
+function tsToy(){const id=pick(TS_TOYS);loadItem(id);start("gift",true);ts.toy={id,t0:now()};}
+function tsTick(t){
+  if(petAway()||scene.on)return;const a=pet.action,L=T.lv;
+  if(ts.poke){if(a==="poke"){ts.poke=0;start("purr",true);react("💗",1.8);return;}if(t-ts.poke>.6)ts.poke=0;}
+  if(ts.greet){if(a==="idle"&&t-ts.greet>.5){ts.greet=0;const g=L>=6?"knead":L>=5?"purr":"meow";start(g,true);if(g!=="meow")react("💗",2.2);const [x,y]=cellToStage(97,190);floatFx.push({g:"💗",x,y,t});}
+    else if(a!=="walkto"&&a!=="idle"||t-ts.greet>12)ts.greet=0;return;}
+  if(a==="sleep"&&pet.start!==ts.sleepSeen){ts.sleepSeen=pet.start;if(L>=7&&Math.random()<.6)ts.heartAt=t+3.4;}
+  if(ts.heartAt&&t>ts.heartAt){ts.heartAt=0;if(pet.action==="sleep")react("💗",3.4);}
+  // 5: a long stroke — when the hand lifts after ~15 s of purring, she dozes off
+  if(L>=5&&a==="purr"&&!pet.auto){if(t-strokeT<1)ts.purrT=ts.purrT||t;if(ts.purrT&&t-ts.purrT>15&&t-strokeT>.7&&!drag.active){ts.purrT=0;start("sleep",true);pet.napUntil=t+rand(30,45);ts.heartAt=t+3.2;return;}}
+  else ts.purrT=0;
+  // 2: slow blinks at you
+  if(L>=2&&a==="idle"&&pet.idle.kind==="none"&&t>ts.blinkN&&t-pet.start>2){ts.blinkN=t+rand(L>=6?6:8,L>=6?12:16);if(Math.random()<.8){pet.idle.kind="slow";pet.idle.start=t;pet.idle.next=t+idleLen.slow+2.4;}}
+  // 4: brings a toy now and then, when nobody is fussing over her
+  if(L>=4&&a==="idle"&&t>ts.toyN&&t-pet.start>5&&t-pet.lastInput>8&&tsFree()){ts.toyN=t+rand(240,420);tsToy();return;}
+  // 6: follows the finger longer
+  if(L>=6&&a==="cursor"&&!pet.auto&&ts.curS!==pet.start){pet.start+=8;ts.curS=pet.start;}
+}
+function tsDrawToy(t,front){const q=ts.toy;if(!front||!q||petAway())return;const e=t-q.t0;if(pet.action!=="gift"||e>9.6){ts.toy=null;return;}if(e<2.5)return;
+  const al=clamp(Math.min((e-2.5)/.35,(9.6-e)/.6),0,1),im=DIMG[q.id],i=IT[q.id],s=view.s,[x,y]=cellToStage(pet.heading>=0?150:44,8),hh=42*s,ww=i?hh*i.w/i.h:hh;
+  ctx.save();ctx.globalAlpha=al;ctx.fillStyle="rgba(0,0,0,.28)";ctx.beginPath();ctx.ellipse(x,y,ww*.42,5*s,0,0,7);ctx.fill();
+  if(im)ctx.drawImage(im,x-ww/2,y-hh+2*s,ww,hh);else drawEmoji(ctx,"🧶",x,y-hh/2,hh);ctx.restore();}
+
+// ── hooks ──
+hook("boot",()=>{if(!T.init){T.init=1;T.p=Math.max(T.p,Math.min(100,ST.got.length*6+(QS.done?30:0)));tsLevel(true);}   // she already knows a player who has been here
+  tsVisit(!saved.t||Date.now()-saved.t>36e5);setTimeout(tsGreet,1500);});
+hook("sec",()=>{if(T.day!==dayKey())tsVisit(false);
+  if(document.hidden){if(!ts.hidAt)ts.hidAt=Date.now();return;}if(ts.hidAt){const gone=Date.now()-ts.hidAt;ts.hidAt=0;if(gone>20*60e3)setTimeout(tsGreet,900);}
+  if(!petAway()&&(T.sec=(T.sec||0)+1)>=180){T.sec=0;tsGain("time",1);}});
+hook("ev",(ev,d)=>{
+  if(ev==="act"){if(d==="purr")tsGain("pet",2);else if(PLAYS.includes(d)||d==="meow"||d==="knead")tsGain("play",1);if(d==="poke"&&T.lv>=7&&!petAway())ts.poke=now();}
+  else if(ev==="food")tsGain("food",3);else if(ev==="bath")tsGain("bath",5);else if(ev==="towel")tsGain("bath",1);else if(ev==="game")tsGain("game",2);
+  else if(ev==="lamp"&&d)tsGain("sleep",3);else if(ev==="wear")tsGain("wear",1);});
+hook("tick",tsTick);
+hook("draw",tsDrawToy);
+hook("room",()=>{const t=now();if(T.lv<6||t-ts.roomT<90||Math.random()>.5)return;ts.roomT=t;setTimeout(()=>{if(tsFree()&&pet.action==="idle"){start("knead",true);react("💗",1.8);}},1100);});
+hook("hub",()=>{const L=T.lv,lo=TS_LV[L-1][1],hi=L<7?TS_LV[L][1]:lo,pct=L<7?Math.round((T.p-lo)/(hi-lo)*100):100,td=tsToday();
+  const list=TS_DO.map(([d,h],i)=>i<L?`<li><b>${TS_LV[i][0]}.</b>${d}</li>`:i===L?`<li class="next"><b>???</b>Подсказка: ${h}</li>`:"").join("");
+  return`<div class="hubc"><h4>💗 Доверие Муси <i>信頼</i></h4><p class="ts-lv"><b>${tsName(L)}</b>${L<7?`уровень ${L} из 7`:"Муся доверяет тебе целиком"}</p>
+   <div class="ts-bar"><i style="width:${clamp(pct,2,100)}%"></i></div>
+   <p class="ts-how">Доверие растёт от заботы: гладь, корми, купай, играй — и заходи каждый день.${td?` Сегодня: +${td}.`:""}</p><ul class="ts-list">${list}</ul></div>`;});
+X.ts={name:id=>tsName(+String(id).replace(/\D/g,"")||1),lv:()=>T.lv,st:T,greet:tsGreet,toy:tsToy,gain:tsGain,
+  set(p){T.p=p;T.init=1;tsLevel(true);}};
+}
+// ── travel.js
+{
+// ───────────────────────── «Путешествия Муси» (add-on tv, idea #9, like Tabikaeru) ─────────────────────────
+// Pack a bento (+ omamori, lantern) → she walks out through the torii and is away 1–3 h (the first trip 30 min);
+// 2–3 painted postcards arrive at random moments (also while the game is closed); she comes back to the gate with a souvenir.
+// The only add-on that sets S.ext.away. State: S.ext.trip. Art: art/travel_art.py → assets/items/atlas_tvp1|tvp2|tvs.webp
+const TVJ={cards:{fushimi:["tvp1",0,0],fuji:["tvp1",560,0],nara:["tvp1",0,380],arashiyama:["tvp1",560,380],itsukushima:["tvp1",0,760],nachi:["tvp1",560,760],jigokudani:["tvp1",0,1140],himeji:["tvp1",560,1140],kamakura:["tvp2",0,0],shirakawa:["tvp2",560,0],kinkakuji:["tvp2",0,380],shinkyo:["tvp2",560,380],sunset:["tvp2",0,760],foxnight:["tvp2",560,760],aoshima:["tvp2",0,1140]},
+ atl:{tvp1:[1120,1520],tvp2:[1120,1520]},tvs:[1400,292],
+ sp:{tv_s_torii:[514,0,130,130,"b"],tv_s_fuji:[758,0,200,120,"b"],tv_s_senbei:[1090,0,130,100,"b"],tv_s_bamboo:[960,0,80,120,"b"],tv_s_momiji:[1222,0,150,100,"b"],tv_s_crow:[646,0,110,130,"b"],tv_s_tenugui:[0,0,110,190,"t"],tv_s_castle:[198,0,130,150,"b"],tv_s_hato:[0,192,140,100,"b"],tv_s_sarubobo:[422,0,90,140,"b"],tv_s_yatsuhashi:[142,192,150,100,"b"],tv_s_monkeys:[294,192,170,100,"b"],tv_s_shell:[466,192,110,90,"b"],tv_s_foxbell:[330,0,90,150,"t"],tv_s_catstone:[578,192,110,80,"b"],tv_bundle:[690,192,90,70,"b"],tv_bell:[1042,0,46,110,"t"],tv_post:[112,0,84,170,"b"],tv_card:[782,192,44,30,"b"]}};
+// places: id, name, region, «from …» for one-line messages, the narrator's caption (Musya never talks), souvenir, rare: om (needs an omamori) | lan (a night place, needs a lantern)
+const TVP=[
+ {id:"fushimi",n:"Фусими Инари",r:"Киото",f:"из Фусими Инари",s:"tv_s_torii",sn:"Маленькие тории из Фусими",c:"Тысяча тории — и Муся прошла под каждыми. Говорят, в самом конце тропы живут лисы-посланницы."},
+ {id:"fuji",n:"Гора Фудзи",r:"озеро Кавагути",f:"с Фудзи",s:"tv_s_fuji",sn:"Веер с Фудзи",c:"Утро у озера Кавагути. Фудзи в снежной шапке смотрится в воду, а Муся смотрит на Фудзи и не шевелит даже ухом."},
+ {id:"nara",n:"Олени Нары",r:"Нара",f:"из Нары",s:"tv_s_senbei",sn:"Печенье сика-сэмбэй",c:"В Наре олени кланяются тем, у кого есть печенье. Печенья у Муси не было, но ей всё равно поклонились."},
+ {id:"arashiyama",n:"Бамбуковая роща",r:"Арасияма, Киото",f:"из Арасиямы",s:"tv_s_bamboo",sn:"Бамбуковый стаканчик",c:"Бамбук шумит над головой, как далёкое море. Муся долго сидела на тропинке и слушала."},
+ {id:"itsukushima",n:"Плавучие тории",r:"остров Ицукусима",f:"с Ицукусимы",s:"tv_s_momiji",sn:"Момидзи-мандзю",c:"В прилив большие тории стоят прямо в море. Муся ждёт отлива, чтобы подойти к ним по мокрому песку."},
+ {id:"nachi",n:"Водопад Нати",r:"Вакаяма",f:"с водопада Нати",s:"tv_s_crow",sn:"Ятагарасу из Нати",c:"Водопад Нати падает со ста тридцати трёх метров. Рядом алая пагода, а в тумане — маленькая Муся."},
+ {id:"jigokudani",n:"Снежные обезьяны",r:"Дзигокудани, Нагано",f:"из Дзигокудани",s:"tv_s_tenugui",sn:"Тэнугуи с обезьянками",c:"Снежные обезьяны греются в горячем источнике. Мусю звали окунуться, но она кошка — смотрит с берега."},
+ {id:"himeji",n:"Замок Химэдзи",r:"Хёго",f:"из Химэдзи",s:"tv_s_castle",sn:"Белый замок Химэдзи",c:"Замок Химэдзи зовут Белой цаплей: кажется, ещё немного — и расправит крылья. Муся на всякий случай сидит тихо."},
+ {id:"kamakura",n:"Большой Будда",r:"Камакура",f:"из Камакуры",s:"tv_s_hato",sn:"Печенье хато-сабурэ",c:"Большой Будда сидит здесь почти восемьсот лет. Муся посидела рядом совсем чуть-чуть — и тоже очень спокойно."},
+ {id:"shirakawa",n:"Сиракава-го",r:"Гифу",f:"из Сиракава-го",s:"tv_s_sarubobo",sn:"Кукла сарубобо",c:"Деревня под снегом. Крыши сложены, как ладони в молитве, в окнах тёплый свет. Муся греет лапы хотя бы взглядом."},
+ {id:"kinkakuji",n:"Кинкаку-дзи",r:"Киото",f:"из Кинкаку-дзи",s:"tv_s_yatsuhashi",sn:"Сладости яцухаси",c:"Золотой павильон смотрится в пруд, как в зеркало. Муся тоже заглянула — и увидела там кошку."},
+ {id:"shinkyo",n:"Мост Синкё",r:"Никко",f:"из Никко",s:"tv_s_monkeys",sn:"Три обезьяны из Никко",c:"Алый мост Синкё над рекой Дайя. Осень, клёны горят, а вода внизу шумит так, что Муся прижала уши."},
+ {id:"sunset",n:"Тории у моря",r:"морской берег",f:"с морского берега",s:"tv_s_shell",sn:"Ракушка с морского берега",rare:"om",c:"Тории стоят на камне среди волн. Солнце садится прямо в ворота — Муся загадала желание и никому его не скажет."},
+ {id:"foxnight",n:"Лисья тропа ночью",r:"Фусими Инари, Киото",f:"с ночной лисьей тропы",s:"tv_s_foxbell",sn:"Лисий бубенчик",rare:"lan",c:"Ночью на тропе Инари светятся только фонари и лисьи огоньки. Каменные лисы кивнули Мусе: своя."},
+ {id:"aoshima",n:"Остров кошек",r:"Аосима, Эхимэ",f:"с острова Аосима",s:"tv_s_catstone",sn:"Кошачий камешек с Аосимы",rare:"om",c:"На острове Аосима кошек больше, чем людей. Муся нашла своих — и чуть не осталась."}];
+const TVI={};for(const p of TVP)TVI[p.id]=p;
+addItems(TVP.map(p=>{const r=TVJ.sp[p.s];return{id:p.s,n:p.sn,c:"Сувениры",w:r[2],h:r[3],a:r[4],p:0,at:["tvs",r[0],r[1]],src:"🎒 сувенир из путешествия",hint:`🎒 Привезёт из места «${p.n}»`};}),{tvs:TVJ.tvs});
+STAMPS.push(["tv_trip","旅","Путешественница","Проводи Мусю в путешествие и встреть её"],["tv_rare","珍","Редкое место","Получи открытку из редкого места"],["tv_all","便","Все открытки","Собери все 15 открыток"]);
+
+// state: n trips done · cur {t0,t1,food,om,lan,legs:[{p,at,got}],call,needs,st:"go"|"gate",gateAt} · pc {place:ms} · nw unseen postcards · last trip
+const T=S.ext.trip||(S.ext.trip={n:0,cur:null,pc:{},nw:[],last:null});
+if(T.cur){S.ext.away=true;if(T.cur.needs)Object.assign(S.needs,T.cur.needs);}   // her needs stood still while she was away
+else if(S.ext.away)S.ext.away=false;
+let TVIM=null;atlasImg("tvs",im=>{TVIM=im;});
+const tvCv=document.createElement("canvas");tvCv.width=384;tvCv.height=416;const tvG=tvCv.getContext("2d");
+const pk={food:null,om:null,lan:null};
+let tvA=null,tvHit={},tvRoomAt=0,tvClosed=[],tvBackClosed=false,tvBoot=false;
+document.head.insertAdjacentHTML("beforeend",`<style>
+.tv-row{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px;scroll-snap-type:x mandatory}
+.tv-chip{flex:none;width:92px;min-height:92px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 5px;border-radius:12px;background:var(--ink-2);border:1px solid var(--line);font-size:11.5px;line-height:1.2;color:var(--paper);text-align:center;scroll-snap-align:start}
+.tv-chip.on{border-color:var(--sakura);box-shadow:inset 0 0 0 1px var(--sakura)}
+.tv-chip small{color:var(--muted);font-size:11px}.tv-chip.on small{color:var(--sakura)}
+.tv-chip .tv-none{font-size:24px;line-height:1;color:var(--muted)}
+.story-body h3.tv-h{font-size:22px;margin:18px 0 2px}.tv-h small{font-family:var(--ui);font-size:12px;color:var(--muted);font-weight:400;margin-left:6px}
+.tv-hero{display:flex;gap:14px;align-items:center;margin:4px 0 6px}.tv-hero p{margin:0!important}
+.tv-go{width:100%;margin-top:18px;font-size:16px;padding:13px}
+.tv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px 12px;margin:10px 0 16px}
+.tv-pc{display:flex;flex-direction:column;gap:3px;text-align:left;padding:0;color:var(--paper)}
+.tv-img{display:block;width:100%;aspect-ratio:560/380;box-sizing:border-box;border-radius:5px;background-color:#0a0d0c;border:4px solid #e6dcc6;box-shadow:0 5px 16px rgba(0,0,0,.55);background-repeat:no-repeat}
+.tv-pc.off .tv-img{border:2px dashed rgba(216,210,195,.18);box-shadow:none;display:grid;place-items:center;font-size:30px;color:var(--muted);font-family:var(--display)}
+.tv-pc b{font-size:13px;font-weight:600;line-height:1.25}.tv-pc small{font-size:11px;color:var(--muted);line-height:1.3}
+.tv-pc.new b{color:var(--sakura)}.tv-pc.new b::after{content:" · новая"}
+.tv-big{margin:6px 0 14px}.tv-big .tv-img{border-width:8px;border-radius:6px;transform:rotate(-1.2deg);box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.story-body p.tv-cap{font-family:var(--display);font-size:21px;line-height:1.45;color:#ece5d4}
+.story-body p.tv-sign{text-align:right;color:var(--sakura);font-size:15px;margin-top:-6px}
+.tv-mini{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin:8px 0 10px}.tv-mini .tv-img{border-width:2px;box-shadow:none}.tv-mini .off{border:1px dashed rgba(216,210,195,.18);background:none}
+</style>`);
+
+// ───── helpers ─────
+const tvDate=ms=>new Date(ms).toLocaleDateString("ru-RU",{day:"numeric",month:"long"});
+function tvLeft(){const c=T.cur;if(!c)return"";const ms=(c.call||c.t1)-Date.now();if(ms<=60e3)return"вот-вот";const m=Math.round(ms/60e3),h=Math.floor(m/60),mm=m%60;return"примерно через "+(h?h+" ч"+(mm?" "+mm+" мин":""):mm+" мин");}
+function tvBg(id){const [a,x,y]=TVJ.cards[id],[W,H]=TVJ.atl[a];return`background-image:url(assets/items/atlas_${a}.webp);background-size:${W/560*100}% ${H/380*100}%;background-position:${x/(W-560)*100}% ${y/(H-380)*100}%`;}
+function tvSp(id,mw,mh){const r=TVJ.sp[id],k=Math.min(mw/r[2],mh/r[3]),f=v=>(v*k).toFixed(1);return`<span style="display:inline-block;flex:none;width:${f(r[2])}px;height:${f(r[3])}px;background:url(assets/items/atlas_tvs.webp) -${f(r[0])}px -${f(r[1])}px/${f(TVJ.tvs[0])}px ${f(TVJ.tvs[1])}px no-repeat"></span>`;}
+const tvGot=()=>Object.keys(T.pc).length;
+function tvOwned(cats){return ITEMS.filter(i=>cats.includes(i.c)&&S.owned.has(i.id));}
+
+// ───── time: postcards arrive, the trip ends (works for time spent with the game closed too) ─────
+function tvPost(p,silent,at){if(!T.pc[p])T.pc[p]=at||Date.now();if(!T.nw.includes(p))T.nw.push(p);disc("postcard",p);
+  if(TVI[p].rare)award("tv_rare");if(tvGot()>=TVP.length)award("tv_all");
+  if(silent)tvClosed.push(p);else{toast("🎴 Пришла открытка от Муси");chime([988,1319,1568]);ui();}save();}
+function tvSync(silent){const c=T.cur;if(!c||c.st!=="go")return;const nw=Date.now(),end=c.call||c.t1;
+  for(const L of c.legs)if(!L.got&&L.at<=Math.min(nw,end)){L.got=L.at;tvPost(L.p,silent,L.at);}
+  if(nw>=end){c.legs=c.legs.filter(L=>L.got);c.st="gate";c.gateAt=nw;save();
+    if(silent)tvBackClosed=true;else{knock();toast("🎒 Муся вернулась! Встречай у ворот ⛩");ui();}}}
+// which places this trip visits: unseen ones first; an omamori opens the rare places, a lantern the night trail
+function tvPlan(n,om,lan){const out=[],seen=p=>!!T.pc[p],free=a=>a.filter(p=>!out.includes(p)),pref=a=>{const u=a.filter(p=>!seen(p));return pick(u.length&&Math.random()<.85?u:a);};
+  const rare=TVP.filter(p=>p.rare==="om").map(p=>p.id),com=TVP.filter(p=>!p.rare).map(p=>p.id),late=[];
+  if(lan&&Math.random()<(seen("foxnight")?.25:.6))late.push("foxnight");
+  if(om&&late.length<n-1&&Math.random()<(om==="om_road"?.15:0)+(rare.some(p=>!seen(p))?.55:.3))late.push(pref(rare));
+  while(out.length+late.length<n)out.push(pref(free(com)));
+  return out.concat(late);}
+function tvLeave(){
+  const f=pk.food;if(!f||!have(f)){toast("Сначала положи в узелок бэнто");return;}
+  if(T.cur)return;take(f);const first=!T.n,t0=Date.now(),dur=first?30*60e3:Math.round(rand(60,180))*60e3,pl=tvPlan(first?2:(Math.random()<.5?2:3),pk.om,pk.lan);
+  T.cur={t0,t1:t0+dur,food:f,om:pk.om,lan:pk.lan,needs:{...S.needs},st:"go",legs:pl.map((p,i)=>({p,at:Math.round(t0+dur*(.12+.8*(i+rand(.15,.85))/pl.length)),got:0}))};
+  save();closePanel();if(S.room!=="entrance")goRoom("entrance");
+  react("😸",1.6);const [hx,hy]=cellToStage(97,120);floatFx.push({g:"🎒",x:hx,y:hy,t:now()+.2});
+  setTimeout(()=>{S.ext.away=true;tvA={k:"go",t0:now(),x0:pet.x};sfx("chime");save();ui();},1100);
+}
+// she is home: needs from before the trip + what the trip gave, a souvenir from a place she sent a postcard from
+function tvHome(){const c=T.cur;if(!c)return null;const got=c.legs.filter(L=>L.got).map(L=>L.p),cand=got.map(p=>TVI[p].s).filter(s=>!S.owned.has(s)),sv=cand.length?cand[cand.length-1]:null;
+  if(sv){S.owned.add(sv);disc("souvenir",sv);}
+  const n=S.needs;if(c.needs)Object.assign(n,c.needs);const F=FOOD[c.food]||{};
+  n.food=clamp(n.food+(F.food||20)*.6,0,100);n.joy=clamp(n.joy+(c.om?30:20),0,100);n.energy=clamp(n.energy-12,0,100);if(!c.om)n.clean=clamp(n.clean-15,0,100);
+  T.last={pl:got,sv,t:Date.now(),om:c.om,called:!!c.call};T.n++;T.cur=null;S.ext.away=false;award("tv_trip");save();ui();return T.last;}
+function tvWelcome(L){if(!L)return;const names=L.pl.map(p=>TVI[p].n).join(", "),sp=L.sv&&TVP.find(p=>p.s===L.sv);
+  dlg({head:"Муся вернулась!",text:(names?`Она побывала: ${names}. `:"Далеко уйти она не успела. ")+(sp?`Привезла ${sp.f} сувенир — «${IT[L.sv].n}». Он уже в «🧺 Вещи» → «Сувениры».`:L.pl.length?"Сувениры оттуда у тебя уже есть — зато сколько впечатлений!":"")+(L.om?"":" С дороги она пыльная — загляни в онсэн."),
+    img:L.sv?itemThumb(IT[L.sv],60,60):"",ok:"Ура!",no:L.pl.length?"Открытки":"",onNo:()=>tvCard(T.nw[0]||L.pl[0])});}
+function tvArrive(){if(tvA)return;tvA={k:"back",t0:now()};sfx("chime");}
+function tvArrived(){const L=tvHome();tvA=null;pet.x=view.W/2;pet.home=pet.x;start("idle",true);react("😻",2.6);burst(16);chime([784,988,1175,1568]);setTimeout(()=>tvWelcome(L),1300);}
+function tvCall(){const c=T.cur;if(!c||c.st!=="go")return;if(c.call){toast("Муся уже идёт домой — "+tvLeft());return;}
+  dlg({head:"Позвать Мусю домой?",text:"Позвонишь в колокольчик — и минуты через две она будет у ворот. Сувенир привезёт только оттуда, откуда уже прислала открытку.",ok:"Позвонить",no:"Пусть гуляет",
+    onOk:()=>{c.call=Math.min(c.t1,Date.now()+120e3);chime([1568,1319,1568,1319]);toast("🔔 Муся услышала — уже идёт домой");save();ui();}});}
+
+// ───── panels ─────
+function tvPack(){
+  if(T.cur){if(T.cur.st==="gate"){closePanel();goRoom("entrance");}else openHub();return;}
+  const eats=pantryEats();if(!pk.food||!eats.includes(pk.food))pk.food=eats[0]||null;
+  const oms=tvOwned(["Омамори"]),lans=tvOwned(["Фонари","Светильники"]);if(pk.om&&!S.owned.has(pk.om))pk.om=null;if(pk.lan&&!S.owned.has(pk.lan))pk.lan=null;
+  const chip=(key,on,pic,name,sub)=>`<button class="tv-chip ${on?"on":""}" data-x="${key}">${pic}<span>${name}</span>${sub?`<small>${sub}</small>`:""}</button>`;
+  const none=(k,on)=>chip(k,on,`<span class="tv-none">—</span>`,"Без него","");
+  const food=eats.length?`<div class="tv-row">${eats.map(id=>chip("tv:food:"+id,pk.food===id,fThumb(id,64,40),FOOD[id].n,"×"+S.pantry[id])).join("")}</div>`
+   :`<p class="lead">В кладовой нет готовой еды. Приготовь что-нибудь на кухне («Кухня» → 🍳 Готовить) или поймай рыбу в пруду во дворике.</p><div class="row" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-x="tv:go:kitchen">🍳 На кухню</button><button class="btn" data-x="tv:go:pond">🎣 К пруду</button></div>`;
+  const om=oms.length?`<div class="tv-row">${none("tv:om:",!pk.om)}${oms.map(i=>chip("tv:om:"+i.id,pk.om===i.id,itemThumb(i,40,50),i.n,"")).join("")}</div>`:`<p class="lead">Омамори продаются в «🧺 Вещи» → «Омамори». <button class="btn" data-x="tv:shop:Омамори" style="padding:5px 12px;margin-left:4px">Выбрать</button></p>`;
+  const lan=lans.length?`<div class="tv-row">${none("tv:lan:",!pk.lan)}${lans.map(i=>chip("tv:lan:"+i.id,pk.lan===i.id,itemThumb(i,40,50),i.n,"")).join("")}</div>`:`<p class="lead">Фонари — в «🧺 Вещи» → «Фонари». <button class="btn" data-x="tv:shop:Фонари" style="padding:5px 12px;margin-left:4px">Выбрать</button></p>`;
+  openPanel("Собрать узелок",`<div class="tv-hero">${tvSp("tv_bundle",86,66)}<p class="lead">Муся собирается посмотреть Японию. Собери ей узелок — и жди открыток. Вернётся она с сувениром.</p></div>
+   <h3 class="tv-h">🍱 Бэнто<small>обязательно</small></h3><p class="lead">Одно блюдо или рыбка из кладовой — перекусить в дороге.</p>${food}
+   <h3 class="tv-h">⛩ Омамори<small>по желанию</small></h3><p class="lead">С оберегом в пути спокойнее, и Муся чаще находит редкие места.</p>${om}
+   <h3 class="tv-h">🏮 Фонарь<small>по желанию</small></h3><p class="lead">С фонарём Муся не боится ночных троп.</p>${lan}
+   <button class="btn primary tv-go" data-x="tv:leave" ${pk.food?"":"disabled"}>Проводить</button>
+   <p class="lead" style="margin-top:10px">${T.n?"Путешествие длится от часа до трёх.":"Первое путешествие — примерно полчаса."} Пока Муси нет, её сытость и радость не убывают.</p>`,"tv_pack");}
+function tvAlbum(){
+  const cards=TVP.map(p=>{const on=T.pc[p.id],nw=T.nw.includes(p.id);
+    return on?`<button class="tv-pc ${nw?"new":""}" data-x="tv:card:${p.id}"><span class="tv-img" style="${tvBg(p.id)}"></span><b>${p.n}</b><small>${p.r} · ${tvDate(on)}</small></button>`
+      :`<div class="tv-pc off"><span class="tv-img">?</span><b>???</b><small>${p.rare==="om"?"редкое место — нужен омамори":p.rare==="lan"?"ночная тропа — нужен фонарь":"ещё не была"}</small></div>`;}).join("");
+  const sv=TVP.filter(p=>S.owned.has(p.s)).length;
+  openPanel("Открытки Муси",`<p class="lead">Муся присылает их из путешествий. Открытки: ${tvGot()} из ${TVP.length} · сувениры: ${sv} из ${TVP.length}.</p>${T.cur&&T.cur.st==="go"?`<p class="lead">Сейчас Муся в пути и вернётся ${tvLeft()}.</p>`:""}<div class="tv-grid">${cards}</div>
+   ${T.cur?"":`<button class="btn primary" data-x="tv:pack" style="width:100%">🎒 Собрать узелок</button>`}`,"tv_album");}
+function tvCard(id){const p=TVI[id];if(!p||!T.pc[id]){tvAlbum();return;}
+  T.nw=T.nw.filter(q=>q!==id);save();ui();hubDot();tabDots();
+  const got=TVP.filter(q=>T.pc[q.id]),nx=T.nw[0]||(got[(got.findIndex(q=>q.id===id)+1)%got.length]||{}).id;
+  openPanel(p.n,`<div class="tv-big"><span class="tv-img" style="${tvBg(id)}"></span></div><p class="src">${p.r} · открытка пришла ${tvDate(T.pc[id])}</p>
+   <p class="tv-cap">${p.c}</p><p class="tv-sign">🐾</p>
+   <div class="row" style="display:flex;gap:8px;margin-top:10px"><button class="btn" data-x="tv:album">← Все открытки</button>${nx&&nx!==id?`<button class="btn primary" data-x="tv:card:${nx}">${T.nw.length?"Новая →":"Следующая →"}</button>`:""}</div>`,"tv_card");}
+function tvOpen(){if(T.nw.length)tvCard(T.nw[0]);else tvAlbum();}
+
+// ───── hooks ─────
+hook("boot",()=>{tvSync(true);tvBoot=true;
+  if(tvBackClosed)setTimeout(()=>toast("🎒 Муся вернулась — встречай у ворот ⛩"),3500);
+  else if(tvClosed.length)setTimeout(()=>toast("🎴 Пока тебя не было, пришла открытка"),3500);});
+hook("away",()=>{tvSync(true);if(!tvClosed.length)return;const p=TVI[tvClosed[tvClosed.length-1]];return{i:"🎴",t:tvClosed.length>1?`Пришли открытки от Муси (${tvClosed.length})`:`Пришла открытка ${p.f}`};});
+hook("away",()=>{tvSync(true);if(tvBackClosed)return{i:"🎒",t:"Муся вернулась из путешествия и ждёт у ворот"};});
+hook("sec",()=>{if(!tvBoot)return;tvSync(false);const c=T.cur;if(!c||c.st!=="gate"||tvA)return;
+  if(S.room==="entrance"&&now()-tvRoomAt>1.2&&!overlaysOpen()&&!scene.on){tvArrive();return;}
+  if(Date.now()-c.gateAt>90e3&&!scene.on){const L=tvHome();start("idle",true);react("😻",2.6);burst(12);chime([784,988,1175]);toast(L&&L.sv?"🎒 Муся вернулась и принесла сувенир!":"🎒 Муся вернулась домой!");}});
+hook("room",id=>{tvRoomAt=now();if(tvA&&tvA.k==="back")tvArrived();else if(tvA)tvA=null;});
+hook("hubDot",()=>T.nw.length>0||!!(T.cur&&T.cur.st==="gate"));
+hook("tabDot",r=>r==="entrance"&&(T.nw.length>0||!!(T.cur&&T.cur.st==="gate")));
+hook("tray",(tray,room)=>{if((S.trayMode[room]||"play")!=="play"||room!=="entrance"&&room!=="engawa")return;const row=tray.querySelector(".items");if(!row)return;
+  const c=T.cur,b=[];
+  if(!c)b.push(["tv:pack","🎒","В путешествие"]);else if(c.st==="gate"){if(room!=="entrance")b.push(["tv:meet","⛩","Встретить у ворот"]);}
+  else if(room==="entrance")b.push(["tv:call","🔔",c.call?"Муся идёт домой":"Позвать домой"]);else b.push(["tv:left","🎒","Муся в пути"]);
+  if(tvGot()||c)b.push(["tv:open","🎴","Открытки"+(T.nw.length?" · "+T.nw.length:"")]);
+  row.insertAdjacentHTML("afterbegin",b.map(([k,i,n])=>`<button class="item wide" data-x="${k}"><span class="ico">${i}</span><span class="nm">${n}</span></button>`).join(""));});
+hook("click",(k)=>{if(!k.startsWith("tv:"))return;const [,a,b]=k.split(":");
+  if(a==="pack")tvPack();else if(a==="food"){pk.food=b;tvPack();}else if(a==="om"){pk.om=b||null;tvPack();}else if(a==="lan"){pk.lan=b||null;tvPack();}
+  else if(a==="leave")tvLeave();else if(a==="call")tvCall();else if(a==="meet"){closePanel();goRoom("entrance");}
+  else if(a==="open")tvOpen();else if(a==="album")tvAlbum();else if(a==="card")tvCard(b);else if(a==="left")toast("Муся вернётся "+tvLeft());
+  else if(a==="go"){closePanel();const r=b==="kitchen"?"kitchen":"courtyard";goRoom(r);if(r==="kitchen"){S.trayMode.kitchen="cook";ui();}}
+  else if(a==="shop"){closePanel();S.trayMode[S.room]="items";S.icatBy[S.room]=b;ui();}
+  return true;});
+hook("hub",()=>{const c=T.cur,st=!c?`Муся дома. Собери ей узелок — и она отправится смотреть Японию.`:c.st==="gate"?`Муся вернулась и ждёт у ворот ⛩`:`Муся в пути: вернётся ${tvLeft()}.`;
+  return`<div class="hubc"><h4>🎒 Путешествия <i>旅</i></h4><p>${st}</p><p>Открытки: ${tvGot()} из ${TVP.length}${T.nw.length?` · <b style="color:var(--sakura)">новых: ${T.nw.length}</b>`:""}</p>
+   <div class="row">${!c?`<button class="btn primary" data-x="tv:pack">🎒 Собрать узелок</button>`:c.st==="gate"?`<button class="btn primary" data-x="tv:meet">⛩ Встретить</button>`:""}<button class="btn" data-x="tv:open">🎴 Открытки</button></div></div>`;});
+hook("album",el=>{el.insertAdjacentHTML("beforeend",`<h3 class="bh">Открытки из путешествий</h3><p class="lead">Муся присылает их с дороги: ${tvGot()} из ${TVP.length}.</p>
+  <div class="tv-mini">${TVP.map(p=>T.pc[p.id]?`<span class="tv-img" data-x="tv:card:${p.id}" style="${tvBg(p.id)};cursor:pointer"></span>`:`<span class="tv-img off"></span>`).join("")}</div>
+  <button class="btn" data-x="tv:album" style="margin-bottom:10px">🎴 Альбом открыток</button>`);});
+// the album is not the shared panel: route our buttons ourselves
+hook("hit",(x,y)=>{
+  if(S.room==="entrance"){const inR=r=>r&&x>r[0]&&x<r[0]+r[2]&&y>r[1]&&y<r[1]+r[3];
+    if(inR(tvHit.bell)){tone(1568,.5,"sine",.05);tvCall();return true;}
+    if(inR(tvHit.post)){sfx("pop");if(tvGot()||T.nw.length)tvOpen();else toast("Почтовый ящик пуст — Муся ещё не уезжала");return true;}}
+  if(petAway()&&!tvA&&Math.abs(x-pet.x)<90*view.s&&y>view.floor-210*view.s&&y<view.floor+12*view.s){toast(T.cur&&T.cur.st==="gate"?"Муся ждёт у ворот ⛩":"Муся в путешествии");return true;}});
+// the post box by the gate, the call bell on the torii, Musya walking out through the torii / back home
+// a sprite from our atlas standing on (ix,iy) — or hanging from it when the sprite is anchored at the top
+function tvSprite(id,ix,iy,hImg,d,al=1,rot=0){if(!TVIM)return null;const r=TVJ.sp[id],top=r[4]==="t",[x1,ya]=imgToStage(ix,top?iy:iy-hImg,d),[,yb]=imgToStage(ix,top?iy+hImg:iy,d),h=Math.max(4,yb-ya),w=h*r[2]/r[3];
+  const g=tvG;g.globalCompositeOperation="source-over";g.globalAlpha=1;g.clearRect(0,0,r[2],r[3]);g.drawImage(TVIM,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);   // dim it to the room's night light
+  g.globalCompositeOperation="source-atop";g.fillStyle=TINT[S.room]||"rgba(8,12,14,.4)";g.fillRect(0,0,r[2],r[3]);g.globalCompositeOperation="source-over";
+  ctx.save();ctx.globalAlpha=al;ctx.translate(x1,top?ya:yb);ctx.rotate(rot);ctx.drawImage(tvCv,0,0,r[2],r[3],-w/2,top?0:-h,w,h);ctx.restore();return[x1-w/2,ya,w,h];}
+function tvCat(t,x,y,sc,al,right){const st=right?"moveRight":"moveLeft",im=IMG[st];if(!im||al<=0)return;const f=Math.floor(t*9)%8,g=tvG;
+  g.globalCompositeOperation="source-over";g.globalAlpha=1;g.clearRect(0,0,384,416);g.drawImage(im,f*384,0,384,416,0,0,384,416);
+  if(TVIM){const r=TVJ.sp.tv_bundle,bx=right?212:172;g.drawImage(TVIM,r[0],r[1],r[2],r[3],bx-48,118+Math.sin(t*18)*2,96,75);}
+  g.globalCompositeOperation="source-atop";g.fillStyle=TINT.entrance;g.fillRect(0,0,384,416);g.globalCompositeOperation="source-over";
+  ctx.save();ctx.globalAlpha=al*.35;ctx.fillStyle="#000";ctx.beginPath();ctx.ellipse(x,y+3*sc,55*sc,8*sc,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=al;ctx.drawImage(tvCv,x-96*sc,y-195*sc,192*sc,208*sc);ctx.restore();}
+hook("draw",(t,front)=>{if(S.room!=="entrance"||front)return;
+  const nw=T.nw.length>0;tvHit.post=tvSprite("tv_post",visX(585,60),1050,175,CAT_D);
+  if(nw&&TVIM){const [px_,py_]=imgToStage(visX(585,60),1050-112,CAT_D),k=BGM.k,pul=.6+.4*Math.sin(t*3);
+    ctx.save();const gr=ctx.createRadialGradient(px_,py_,0,px_,py_,90*k);gr.addColorStop(0,`rgba(255,200,120,${.35*pul})`);gr.addColorStop(1,"rgba(255,200,120,0)");ctx.fillStyle=gr;ctx.fillRect(px_-90*k,py_-90*k,180*k,180*k);ctx.restore();
+    tvSprite("tv_card",visX(585,60)+6,950,40,CAT_D,1,-.18);}
+  tvHit.bell=T.cur&&T.cur.st==="go"?tvSprite("tv_bell",1090,548,105,.38,1,Math.sin(t*1.7)*.06+(T.cur.call?Math.sin(t*14)*.12:0)):null;
+  if(!tvA)return;const e=now()-tvA.t0,s=view.s,[gx,gy]=imgToStage(900,1002,.38),fy=view.floor+camOff(CAT_D)[1];
+  if(tvA.k==="go"){const u=clamp(e/3.6,0,1),v=1-Math.pow(1-u,1.5),x0=tvA.x0,x=mix(x0,gx,v)+Math.sin(v*Math.PI)*46*s,y=mix(fy,gy,v),sc=s*mix(1,.24,v),al=u<.72?1:1-(u-.72)/.28;
+    tvCat(t,x,y,sc,al,(gx-x0)+Math.cos(v*Math.PI)*Math.PI*46*s>0);
+    if(u>.6){const k=Math.sin(clamp((u-.6)/.4,0,1)*Math.PI),r=120*BGM.k;ctx.save();const gr=ctx.createRadialGradient(gx,gy-40*BGM.k,0,gx,gy-40*BGM.k,r);gr.addColorStop(0,`rgba(255,214,150,${.45*k})`);gr.addColorStop(1,"rgba(255,214,150,0)");ctx.fillStyle=gr;ctx.fillRect(gx-r,gy-40*BGM.k-r,2*r,2*r);ctx.restore();}
+    if(u>=1){tvA=null;toast("🎒 Муся ушла путешествовать");}}
+  else{const u=clamp(e/3.0,0,1),v=Math.pow(u,1.3),x1=view.W/2,x=mix(gx,x1,v)-Math.sin(v*Math.PI)*46*s,y=mix(gy,fy,v),sc=s*mix(.24,1,v),al=clamp(u/.25,0,1);
+    if(u<.35){const k=Math.sin(clamp(u/.35,0,1)*Math.PI),r=120*BGM.k;ctx.save();const gr=ctx.createRadialGradient(gx,gy-40*BGM.k,0,gx,gy-40*BGM.k,r);gr.addColorStop(0,`rgba(255,214,150,${.45*k})`);gr.addColorStop(1,"rgba(255,214,150,0)");ctx.fillStyle=gr;ctx.fillRect(gx-r,gy-40*BGM.k-r,2*r,2*r);ctx.restore();}
+    tvCat(t,x,y,sc,al,(x1-gx)-Math.cos(v*Math.PI)*Math.PI*46*s>0);if(u>=1)tvArrived();}});
+X.tv={T:()=>T,pk,pack:tvPack,leave:tvLeave,album:tvAlbum,card:tvCard,call:tvCall,sync:tvSync,
+  skip(min){const c=T.cur,d=min*60e3;if(!c)return;for(const k of["t0","t1","call","gateAt"])if(c[k])c[k]-=d;for(const L of c.legs){L.at-=d;if(L.got)L.got-=d;}tvSync(false);}};
+}
+// ── sakura.js
+{
+// ───────────────────────── «Дерево, которое растёт месяц»: a sakura stone in the courtyard grows by watered days ─────────────────────────
+// S.ext.tree = {pl: dayKey planted, days: watered days, last: dayKey of the last watering, bd: dayKey the tree first bloomed}
+const SK_TH=[0,2,5,10,16,23,30],SK_N=["Косточка в земле","Росток","Саженец","Молодое деревце","Деревце","Молодое дерево","Цветущая сакура"];
+const SK_R={s0:["sk",394,742,170,130],s1:["sk",232,742,160,180],s2:["sk",0,742,230,330],s3:["sk",1044,0,330,450],s4:["sk",592,0,450,590],s5:["sk",0,0,590,740],
+  s6:["sk1",0,0,800,900],summer:["sk1",802,0,800,900],autumn:["sk2",0,0,800,900],winter:["sk2",802,0,800,900]};
+const SK_A={sk:[1400,1072],sk1:[1604,900],sk2:[1604,900]},SK_IM={},SK_SC={s0:1.7,s1:1.6,s2:1.3,s3:1.1};   // young stages are drawn a bit larger so they read on a phone
+const SK_LOOK={s6:"цветёт",summer:"летняя листва",autumn:"осенний наряд",winter:"зимний сон"};
+const SK_X=1430,SK_Y=1222;   // image coords of the tree's foot; visX pulls it in on narrow phones
+STAMPS.push(["sk_bloom","樹","Своя сакура","Вырасти сакуру из косточки: 30 дней полива"]);
+const skS=()=>S.ext.tree||null;
+function skStage(d){let i=0;SK_TH.forEach((v,k)=>{if(d>=v)i=k;});return i;}
+function skDays(a,b){return Math.round((Date.parse(b)-Date.parse(a))/864e5);}
+function skWord(n,f){const a=n%10,b=n%100;return n+" "+(a===1&&b!==11?f[0]:a>=2&&a<=4&&(b<12||b>14)?f[1]:f[2]);}
+function skSpring(){const T=today(),m=T.getMonth()+1,d=T.getDate();return m===3&&d>=25||m===4&&d<=15;}
+// the grown tree blooms for a week after it first bloomed and every real spring; otherwise it wears the season
+function skLook(){const tr=skS();if(!tr)return null;const st=skStage(tr.days);if(st<6)return"s"+st;
+  if(tr.bd&&skDays(tr.bd,dayKey())<7||skSpring())return"s6";const T=today(),m=T.getMonth()+1,d=T.getDate();
+  if(m===12||m<=3)return"winter";if(m===10||m===11||m===9&&d>=20)return"autumn";return"summer";}
+function skLoad(){for(const k of Object.keys(SK_A))if(!SK_IM[k])atlasImg(k,im=>{SK_IM[k]=im;});}
+function skPos(){return{x:visX(SK_X,230),y:SK_Y};}
+function skDue(){const tr=skS();return !!tr&&tr.days<30&&tr.last!==dayKey();}
+// screen frame of the tree picture: foot point and scale (image px → stage px) at the depth of the foot
+function skFrame(){const P=skPos(),oc=curRow;curRow=P.y;const [bx,by]=imgToStage(P.x,P.y,CAT_D),[,ty]=imgToStage(P.x,P.y-100,CAT_D);curRow=oc;return{bx,by,k:(by-ty)/100,P};}
+let skAnim=null,skWet=null,skAcc=0;const skLeaves=[];
+function skPic(key,alpha,sc,t){
+  const r=SK_R[key];if(!r)return;const im=SK_IM[r[0]];if(!im||alpha<=0)return;const [,sx,sy,w,h]=r,F=skFrame(),k=F.k*sc*(SK_SC[key]||1),W=w*k,H=h*k,N=key==="s0"||key==="s1"?1:14;
+  const wind=(weather.on?2.8:1)*(1+.5*Math.max(0,Math.sin(t*.21))),amp=Math.min(14,h*.012)*wind*F.k;
+  ctx.save();ctx.globalAlpha=alpha;
+  for(let i=0;i<N;i++){const u=i/N,hu=1-(i+.5)/N,off=(Math.sin(t*1.05)+.35*Math.sin(t*2.7+i*.4))*amp*Math.pow(hu,1.7);
+    ctx.drawImage(im,sx,sy+h*u,w,h/N+.5,F.bx-W/2+off,F.by-H+H*u,W,H/N+1);}
+  if(key==="s6"){const gx=F.bx,gy=F.by-H*.66,R=W*.5,gr=ctx.createRadialGradient(gx,gy,0,gx,gy,R);gr.addColorStop(0,`rgba(240,168,196,${dayTint()[1]?.13:.07})`);gr.addColorStop(1,"rgba(240,168,196,0)");ctx.globalCompositeOperation="lighter";ctx.fillStyle=gr;ctx.fillRect(gx-R,gy-R,R*2,R*2);}
+  ctx.restore();
+}
+hook("draw",(t,front)=>{
+  const tr=skS();if(S.room!=="courtyard"||!tr)return;if((SK_Y>catLineY()+6)!==front)return;skLoad();
+  const key=skLook(),e=skAnim?(t-skAnim.t0)/1.6:1;
+  if(skAnim&&e<1&&skAnim.from!==key){const a=smooth(clamp(e,0,1));skPic(skAnim.from,1-a,1,t);skPic(key,a,.86+.14*a,t);}else{if(e>=1)skAnim=null;skPic(key,1,1,t);}
+  const F=skFrame();
+  // the damp patch after watering, and the can pouring
+  if(skWet){const e2=(Date.now()-skWet)/1000,a=clamp(1-e2/40,0,1);if(a>0){ctx.fillStyle=`rgba(8,10,14,${.35*a})`;ctx.beginPath();ctx.ellipse(F.bx,F.by-6*F.k,70*F.k,13*F.k,0,0,Math.PI*2);ctx.fill();}}
+  if(skAnim&&skAnim.can){const c=t-skAnim.t0+2.2;if(c<2.6){const u=smooth(clamp(c/.5,0,1))*(1-smooth(clamp((c-2.1)/.5,0,1))),x=F.bx-60*F.k,y=F.by-150*F.k;
+    ctx.save();ctx.globalAlpha=u;ctx.translate(x,y);ctx.rotate(.55*u);fDraw(ctx,"g_can",0,0,120*F.k);ctx.restore();
+    if(c>.4&&c<2.2)for(let i=0;i<10;i++){const d=((c*2.4+i/10)%1),dx=x+40*F.k+Math.sin(i*2.3)*18*F.k,dy=y+18*F.k+d*120*F.k;ctx.fillStyle=`rgba(170,205,225,${.85*(1-d)})`;ctx.beginPath();ctx.ellipse(dx,dy,2.2*F.k*1.4,5*F.k*1.4,0,0,Math.PI*2);ctx.fill();}}}
+  // autumn: a leaf now and then
+  for(const L of skLeaves){ctx.save();ctx.translate(L.x,L.y);ctx.rotate(L.r);ctx.globalAlpha=Math.min(1,L.life);ctx.fillStyle=L.c;ctx.beginPath();ctx.ellipse(0,0,L.s,L.s*.55,0,0,Math.PI*2);ctx.fill();ctx.restore();}
+});
+function skCrownPt(){const F=skFrame(),r=SK_R.s6;return[F.bx+rand(-.38,.38)*r[3]*F.k,F.by-rand(.5,.9)*r[4]*F.k];}
+function skPetals(n){for(let i=0;i<n;i++){const [x,y]=skCrownPt();sakura.list.push({x,y,vx:rand(5,45),vy:rand(10,40),rot:rand(0,6),vr:rand(-2.5,2.5),size:rand(4,7.5)*Math.max(.8,view.s),ph:rand(0,6),life:rand(4,8),sk:1});}}
+hook("tick",(t,dt)=>{
+  if(S.room!=="courtyard"||!skS()||overlaysOpen())return;const key=skLook();
+  if(key==="s6"){skAcc+=dt*(weather.on?5:2.4);while(skAcc>1){skAcc--;skPetals(1);}}
+  else if(key==="autumn"&&Math.random()<dt*.7){const [x,y]=skCrownPt();skLeaves.push({x,y,vx:rand(8,30),vy:rand(22,40),r:rand(0,6),vr:rand(-2,2),s:rand(3,5)*Math.max(.8,view.s),c:pick(["#b8542a","#d0782e","#9a3a1e","#d89a3a"]),life:7});}
+  for(const L of skLeaves){L.x+=(L.vx+Math.sin(L.life*2)*14)*dt;L.y+=L.vy*dt;L.r+=L.vr*dt;L.life-=dt;}
+  for(let i=skLeaves.length-1;i>=0;i--)if(skLeaves[i].life<=0||skLeaves[i].y>view.H)skLeaves.splice(i,1);
+});
+hook("room",()=>{sakura.list=sakura.list.filter(q=>!q.sk);skLeaves.length=0;});
+// Musya walks to the tree and watches
+function skVisit(face,after="idle"){if(petAway())return;const P=skPos();walkTo({x:P.x-190},after);setTimeout(()=>{if(S.room!=="courtyard")return;const F=skFrame();pointer.x=F.bx;pointer.y=F.by-200*F.k;pointer.known=true;pet.gazeUntil=now()+6;if(face)react(face,2);},1500);}
+function skPlant(){if(skS())return;S.ext.tree={pl:dayKey(),days:0,last:null};skLoad();skAnim={from:"-",t0:now()+.9};save();ui();tabDots();
+  if(!petAway()){skVisit("😺","knead");}setTimeout(()=>{sfx("pop");tone(420,.12,"triangle",.05);tone(630,.14,"sine",.03);toast("🌸 Косточка посажена — поливай каждый день");},900);}
+function skWater(){const tr=skS();if(!tr){skPlant();return;}if(tr.days>=30){skHanami();return;}
+  if(tr.last===dayKey()){toast("Сегодня уже полито — приходи завтра");return;}
+  const was=skLook(),st0=skStage(tr.days);tr.days++;tr.last=dayKey();const st=skStage(tr.days),t=now();
+  skAnim={from:was,t0:t+2.2,can:1};skWet=Date.now()+2000;save();ui();tabDots();skVisit(null);
+  setTimeout(()=>sfx("splash"),700);setTimeout(()=>sfx("splash"),1500);
+  setTimeout(()=>{if(!petAway())react(st>st0?"😻":"😺",2);S.needs.joy=clamp(S.needs.joy+4,0,100);
+    if(st===6){tr.bd=dayKey();save();skPetals(90);chime([784,988,1175,1568]);award("sk_bloom");disc("bloom","tree");toast("🌸 Твоя сакура зацвела!");}
+    else if(st>st0){chime([988,1318]);const F=skFrame();for(let i=0;i<5;i++)floatFx.push({g:pick(["✨","🌱"]),x:F.bx+rand(-40,40)*view.s,y:F.by-rand(40,120)*view.s,t:now()+i*.12});toast(`🌱 Сакура подросла: ${SK_N[st].toLowerCase()}`);}
+    else{tone(660,.1,"sine",.04);toast(`💧 Полито: ${tr.days} из 30 дней`);}},2300);}
+function skHanami(){if(!petAway())skVisit("😌","music");S.needs.joy=clamp(S.needs.joy+6,0,100);const k=skLook();
+  if(k==="s6")setTimeout(()=>skPetals(40),1400);toast(k==="s6"?"Ханами: Муся любуется сакурой":k==="winter"?"Сакура спит под снегом до весны":k==="autumn"?"Сакура в осеннем наряде":"Сакура шелестит листвой");}
+hook("tray",(tray,room)=>{if(room!=="courtyard"||(S.trayMode[room]||"play")!=="play")return;const tr=skS(),el=tray.querySelector(".items");if(!el)return;
+  const b=!tr?["sk:plant","🌸","Посадить косточку сакуры"]:tr.days<30?["sk:water","💧",tr.last===dayKey()?`Сакура полита · ${tr.days}/30`:"Полить сакуру"]:["sk:hanami","🌸","Ханами под сакурой"];
+  el.insertAdjacentHTML("afterbegin",`<button class="item wide" data-x="${b[0]}"><span class="ico">${b[1]}</span><span class="nm">${b[2]}</span></button>`);});
+hook("click",(k)=>{if(!k.startsWith("sk:"))return;
+  if(k==="sk:plant")skPlant();else if(k==="sk:water")skWater();else if(k==="sk:hanami")skHanami();
+  else if(k==="sk:go"||k==="sk:hubwater"){closePanel();goRoom("courtyard");if(k==="sk:hubwater")setTimeout(skWater,500);}
+  return true;});
+// tap on the young tree (or the trunk of the grown one): water it if it is thirsty, otherwise a small greeting
+hook("hit",(x,y)=>{if(S.room!=="courtyard"||!skS()||scene.on)return;const key=skLook(),r=SK_R[key],F=skFrame(),big=key.length>2||key==="s6";
+  const z=SK_SC[key]||1,hw=(big?70:r[3]*.4*z)*F.k,top=(big?420:r[4]*.95*z)*F.k;if(Math.abs(x-F.bx)>hw||y>F.by+10*F.k||y<F.by-top)return;
+  if(skDue()){skWater();return true;}audioInit();chime([1318,1760]);if(key==="s6")skPetals(12);toast(`🌸 ${SK_N[skStage(skS().days)]} · ${Math.min(30,skS().days)}/30`);return true;});
+hook("tabDot",r=>r==="courtyard"&&skDue());
+hook("away",ms=>{const tr=skS();if(tr&&skDue()&&tr.last&&ms>3*3600e3)return{i:"💧",t:"Сакура во дворике ждёт полива"};if(tr&&tr.days>=30&&skSpring())return{i:"🌸",t:"Во дворике цветёт твоя сакура"};});
+function skThumb(key,mw,mh){const r=SK_R[key],A=SK_A[r[0]],k=Math.min(mw/r[3],mh/r[4]),f=v=>(v*k).toFixed(1);
+  return`<span style="display:inline-block;flex:none;width:${f(r[3])}px;height:${f(r[4])}px;background:url(assets/items/atlas_${r[0]}.webp) -${f(r[1])}px -${f(r[2])}px/${f(A[0])}px ${f(A[1])}px no-repeat"></span>`;}
+document.head.insertAdjacentHTML("beforeend","<style>.sk-row{display:flex;gap:12px;align-items:flex-end}.sk-row>div{flex:1;min-width:0}.sk-bar{height:6px;border-radius:3px;background:#0a0d0c;overflow:hidden;margin:6px 0 2px}.sk-bar i{display:block;height:100%;background:var(--sakura,#eea3bb)}</style>");
+hook("hub",()=>{const tr=skS();
+  if(!tr)return`<div class="hubc"><h4>🌸 Сакура <i>桜</i></h4><p>Во дворике есть местечко для дерева. Посади косточку сакуры и поливай её каждый день — за месяц вырастет настоящее дерево и зацветёт.</p><div class="row"><button class="btn primary" data-x="sk:go">Во дворик</button></div></div>`;
+  const st=skStage(tr.days),key=skLook(),done=tr.last===dayKey();
+  const info=st<6?`<p><b>${SK_N[st]}</b></p><div class="sk-bar"><i style="width:${(tr.days/30*100).toFixed(1)}%"></i></div><p>Полито дней: ${tr.days} из 30</p><p>Следующая стадия через ${skWord(SK_TH[st+1]-tr.days,["полив","полива","поливов"])}</p><p>${done?"Сегодня уже полито ✓":"Сегодня сакура ещё не полита"}</p>`
+    :`<p><b>Сакура выросла</b> — сейчас ${SK_LOOK[key]}.</p><p>Цветёт каждую весну, с 25 марта по 15 апреля.</p>`;
+  return`<div class="hubc"><h4>🌸 Сакура <i>桜</i></h4><div class="sk-row">${skThumb(key,96,110)}<div>${info}</div></div><div class="row">${st<6&&!done?`<button class="btn primary" data-x="sk:hubwater">💧 Полить</button>`:""}<button class="btn" data-x="sk:go">Во дворик</button></div></div>`;});
+hook("boot",()=>{if(skS())skLoad();});
+X.sk={plant:skPlant,water:skWater,look:skLook,pos:skPos,frame:skFrame,st:skS,
+  set(n){if(!skS())S.ext.tree={pl:dayKey(),days:0,last:null};const tr=S.ext.tree;tr.days=n;tr.last=null;if(n<30)delete tr.bd;skLoad();ui();tabDots();}};
+}
+// ── gacha.js
+{
+// ───────────────────────── «Гатяпон на ярмарке»: one free capsule a day, 18 figurines in three series ─────────────────────────
+// S.ext.gacha = {day: dayKey of the last free capsule, extra: capsules from swapped duplicates, got: {figurineId: copies}}
+const GC_R={fg_kappa:[342,0,120,146],fg_kitsune:[464,0,120,146],fg_tanuki:[586,0,120,146],fg_nekomata:[708,0,120,146],fg_akaname:[830,0,120,146],fg_chochin:[952,0,120,146],
+  fg_karakasa:[1074,0,120,146],fg_oni:[1196,0,130,146],fg_rokuro:[0,562,120,146],fg_bettari:[122,562,120,146],fg_okubi:[244,562,120,146],fg_warashi:[366,562,120,146],
+  fg_maneki:[488,562,120,146],fg_samurai:[610,562,120,146],fg_kimono:[732,562,120,146],fg_basket:[854,562,120,146],fg_kuro:[976,562,120,146],fg_gold:[1098,562,120,146],
+  machine:[0,0,340,560],crank:[1220,562,120,120]};
+// [id, name, series, secret, a line about it]
+const GC_F=[
+ ["fg_kappa","Каппа",1,0,"Речной дух с блюдцем воды на макушке. Огурец — его любимое лакомство."],
+ ["fg_kitsune","Лиса-невеста",1,0,"Когда солнце светит сквозь дождь, у лис свадьба. Невеста — во всём белом."],
+ ["fg_tanuki","Тануки",1,0,"Весельчак-оборотень в соломенной шляпе, с бутылочкой сакэ на удачу."],
+ ["fg_nekomata","Нэкомата",1,0,"Старая кошка, у которой раздвоился хвост. По ночам пляшет с полотенцем на голове."],
+ ["fg_akaname","Аканамэ",1,0,"Вылизывает грязные купальни. Лучше мыться почаще."],
+ ["fg_chochin","Тётин-обакэ",1,0,"Старый фонарь прорезал глаз и высунул язык."],
+ ["fg_karakasa","Каракаса",2,0,"Зонтик, которому исполнилось сто лет, ожил и скачет на одной ноге."],
+ ["fg_oni","Óни с барабаном",2,0,"Гром — это óни бьёт в барабан. В грозу прячь пупок!"],
+ ["fg_rokuro","Рокурокуби",2,0,"Днём обычная женщина, а ночью её шея тянется до самого потолка."],
+ ["fg_bettari","Бэттари",2,0,"Нарядная дама без глаз и носа — только улыбка с чернёными зубами."],
+ ["fg_okubi","Оокуби",2,0,"Огромная голова, что всплывает в тумане над крышами."],
+ ["fg_warashi","Дзасики-вараси",2,1,"Девочка — дух старого дома. Пока она здесь, дому везёт."],
+ ["fg_maneki","Манэки-нэко",3,0,"Манит лапкой удачу и гостей. В лапах — золотая монета."],
+ ["fg_samurai","Кот-самурай",3,0,"Бесстрашный воин в шлеме с золотыми рогами."],
+ ["fg_kimono","Кошка в кимоно",3,0,"Нарядилась на праздник и обмахивается веером."],
+ ["fg_basket","Котёнок в корзинке",3,0,"Уснул в корзинке для овощей, да так там и остался."],
+ ["fg_kuro","Чёрный кот на заборе",3,0,"В Японии чёрный кот — к счастью. Особенно если сидит на заборе."],
+ ["fg_gold","Золотой кот",3,1,"Редчайшая фигурка. Говорят, приносит удачу на сто лет вперёд."]];
+const GC_SER=[null,{n:"Ёкаи дома",jp:"家の妖怪",st:"gc_s1",col:"#4aa06a"},{n:"Ночной парад",jp:"百鬼夜行",st:"gc_s2",col:"#7a5ad0"},{n:"Кошки Японии",jp:"日本の猫",st:"gc_s3",col:"#e08a3a"}];
+addItems(GC_F.map(([id,n])=>({id,n,c:"Фигурки гатяпона",w:GC_R[id][2],h:GC_R[id][3],a:"b",p:40,at:["fg",GC_R[id][0],GC_R[id][1]],src:"🎰 гатяпон",hint:"Выпадает из гатяпона на ярмарке"})),{fg:[1400,708]});
+STAMPS.push(["gc_s1","怪","Ёкаи дома в сборе","Собери в гатяпоне всю серию «Ёкаи дома»"],["gc_s2","行","Ночной парад в сборе","Собери в гатяпоне всю серию «Ночной парад»"],["gc_s3","猫","Кошки Японии в сборе","Собери в гатяпоне всю серию «Кошки Японии»"]);
+const gcS=()=>S.ext.gacha||(S.ext.gacha={day:null,extra:0,got:{}});
+const gcFree=()=>gcS().day!==dayKey(),gcLeft=()=>(gcFree()?1:0)+gcS().extra,gcGot=id=>gcS().got[id]||0;
+function gcDupes(){let n=0;for(const k in gcS().got)n+=Math.max(0,gcS().got[k]-1);return n;}
+function gcTake(){const st=gcS();if(gcFree())st.day=dayKey();else st.extra=Math.max(0,st.extra-1);save();tabDots();hubDot();}
+function gcRoll(){if(X.gc.force)return X.gc.force;const sec=GC_F.filter(f=>f[3]),nor=GC_F.filter(f=>!f[3]);return pick(Math.random()<.04?sec:nor)[0];}
+function gcGive(id){const st=gcS();st.got[id]=(st.got[id]||0)+1;S.owned.add(id);disc("figure",id);
+  for(let s=1;s<=3;s++)if(GC_F.filter(f=>f[2]===s).every(f=>gcGot(f[0])))award(GC_SER[s].st);save();}
+function gcSwap(){const st=gcS();if(gcDupes()<3)return;for(let i=0;i<3;i++){const id=Object.keys(st.got).sort((a,b)=>st.got[b]-st.got[a])[0];st.got[id]--;}
+  st.extra++;save();sfx("coin");chime([988,1318]);toast("♻ Три дубликата → новая капсула!");tabDots();hubDot();}
+let GC_IM=null;function gcLoad(){if(!GC_IM)atlasImg("fg",im=>{GC_IM=im;});}
+function gcBlit(g,key,x,y,w,rot=0,alpha=1){const r=GC_R[key];if(!GC_IM||!r)return;const k=w/r[2];g.save();g.globalAlpha=alpha;g.translate(x,y);if(rot)g.rotate(rot);g.drawImage(GC_IM,r[0],r[1],r[2],r[3],-w/2,-r[3]*k/2,w,r[3]*k);g.restore();}
+function gcOpen(){if(gcLeft()<1){toast(gcDupes()>=3?"Обменяй 3 дубликата на капсулу в «家»":"Сегодня капсула уже была — приходи завтра");return;}gcLoad();openPlace("gc_gacha");}
+
+// ── the machine at the fair: in front of the toy stall, with a warm glow and a twinkle while a capsule waits
+const GC_X=1275,GC_Y=1140,GC_H=400;
+function gcFrame(){const x=visX(GC_X,150),oc=curRow;curRow=GC_Y;const [bx,by]=imgToStage(x,GC_Y,CAT_D),[,ty]=imgToStage(x,GC_Y-100,CAT_D);curRow=oc;const k=(by-ty)/100*GC_H/548;return{bx,by,k,w:340*k,h:560*k};}
+hook("draw",(t,front)=>{if(S.room!=="matsuri"||(GC_Y>catLineY()+6)!==front)return;gcLoad();if(!GC_IM)return;const F=gcFrame(),x0=F.bx-F.w/2,y0=F.by-548*F.k;
+  const fl=.85+.08*Math.sin(t*5.3)+.05*Math.sin(t*11.7),gx=F.bx,gy=y0+130*F.k,R=330*F.k;
+  ctx.save();ctx.globalCompositeOperation="lighter";let gr=ctx.createRadialGradient(gx,gy,0,gx,gy,R);gr.addColorStop(0,`rgba(255,196,120,${.26*fl})`);gr.addColorStop(1,"rgba(255,196,120,0)");ctx.fillStyle=gr;ctx.fillRect(gx-R,gy-R,R*2,R*2);ctx.restore();
+  ctx.fillStyle="rgba(0,0,0,.35)";ctx.beginPath();ctx.ellipse(F.bx,F.by,F.w*.46,10*F.k*3,0,0,Math.PI*2);ctx.fill();
+  const r=GC_R.machine;ctx.drawImage(GC_IM,r[0],r[1],r[2],r[3],x0,y0,F.w,F.h);
+  gcBlit(ctx,"crank",x0+214*F.k,y0+440*F.k,120*F.k,Math.sin(t*.4)*.08);
+  ctx.save();ctx.globalCompositeOperation="lighter";gr=ctx.createRadialGradient(gx,gy,0,gx,gy,140*F.k);gr.addColorStop(0,`rgba(255,230,190,${.12*fl})`);gr.addColorStop(1,"rgba(255,230,190,0)");ctx.fillStyle=gr;ctx.fillRect(gx-R,gy-R,R*2,R*2);ctx.restore();
+  if(gcLeft()>0){const a=.55+.45*Math.sin(t*3);drawEmoji(ctx,"✨",F.bx+120*F.k,y0+10*F.k+Math.sin(t*1.7)*6*F.k,Math.max(12,40*F.k),a);}});
+hook("hit",(x,y)=>{if(S.room!=="matsuri"||!GC_IM||scene.on)return;const F=gcFrame(),y0=F.by-548*F.k;if(Math.abs(x-F.bx)>F.w*.46||y<y0||y>F.by+6)return;audioInit();tone(880,.06,"triangle",.04);gcOpen();return true;});
+hook("tray",(tray,room)=>{if(room!=="matsuri"||(S.trayMode[room]||"play")!=="play")return;const el=tray.querySelector(".items"),n=gcLeft();
+  if(el)el.insertAdjacentHTML("afterbegin",`<button class="item wide" data-x="gc:open"><span class="ico">🎰</span><span class="nm">Гатяпон${n?" · "+n:""}</span></button>`);});
+hook("click",k=>{if(!k.startsWith("gc:"))return;
+  if(k==="gc:open")gcOpen();else if(k==="gc:swap"){gcSwap();if(panelIs("hub"))openHub();}
+  else if(k==="gc:go"){closePanel();goRoom("matsuri");if(gcLeft()>0)setTimeout(gcOpen,500);}
+  return true;});
+hook("hubDot",()=>gcFree());
+hook("tabDot",r=>r==="matsuri"&&gcFree());
+hook("away",ms=>gcFree()&&ms>6*3600e3?{i:"🎰",t:"На ярмарке ждёт капсула гатяпона"}:null);
+document.head.insertAdjacentHTML("beforeend",`<style>.gc-h{font-family:var(--display);font-size:16px;margin:12px 0 2px;display:flex;align-items:baseline;gap:8px;color:var(--paper)}.gc-h i{font-style:normal;font-family:var(--jp);font-size:12px;color:var(--sakura,#eea3bb)}.gc-h em{margin-left:auto;font-style:normal;font-size:13px;color:var(--muted)}
+.gc-bar{height:5px;border-radius:3px;background:#0a0d0c;overflow:hidden;margin:2px 0 8px}.gc-bar i{display:block;height:100%}.gc-fig{display:flex;justify-content:center;margin:6px 0}.gc-rar{font-weight:700;color:var(--muted)}.gc-rar.sec{color:#e8c060}</style>`);
+function gcColl(){return GC_SER.slice(1).map((s,i)=>{const L=GC_F.filter(f=>f[2]===i+1),n=L.filter(f=>gcGot(f[0])).length;
+  return`<h4 class="gc-h">${s.n} <i>${s.jp}</i><em>${n} из 6${n===6?" ✓":""}</em></h4><div class="gc-bar"><i style="width:${(n/6*100).toFixed(1)}%;background:${s.col}"></i></div><div class="coll">${L.map(f=>{const c=gcGot(f[0]);
+    return`<div class="ci ${c?"on":""}">${itemThumb(IT[f[0]],62,74)}<small>${c?f[1]+(c>1?` ×${c}`:""):f[3]?"??? ★":"???"}</small></div>`;}).join("")}</div>`;}).join("");}
+hook("hub",()=>{const n=gcLeft(),d=gcDupes(),tot=GC_F.filter(f=>gcGot(f[0])).length;
+  return`<div class="hubc"><h4>🎰 Гатяпон <i>ガチャ</i></h4><p>${gcFree()?"На ярмарке ждёт бесплатная капсула на сегодня!":"Сегодняшняя капсула уже открыта — завтра будет новая."}${gcS().extra?` Ещё капсул за обмен: ${gcS().extra}.`:""}</p>
+  <p>Собрано фигурок: ${tot} из 18. Дубликаты: ${d}${d>=3?" — можно обменять три на капсулу.":" (три дубликата = одна капсула)."}</p>${gcColl()}
+  <div class="row">${n?`<button class="btn primary" data-x="gc:go">🎰 К автомату</button>`:""}${d>=3?`<button class="btn" data-x="gc:swap">♻ Обмен дубликатов</button>`:""}</div></div>`;});
+hook("album",el=>el.insertAdjacentHTML("beforeend",`<h3 class="bh">Гатяпон</h3><p class="lead">Капсульные фигурки с ярмарки: ${GC_F.filter(f=>gcGot(f[0])).length} из 18. В каждой серии есть секретная ★.</p>${gcColl()}`));
+hook("boot",()=>{gcLoad();});
+
+// ── the capsule moment: turn the crank (drag round or tap three times), a capsule drops, tap it — it pops open
+function gcCapsule(g,x,y,r,col,rot,sep=0,al=1){g.save();g.globalAlpha=al;g.translate(x,y);g.rotate(rot);
+  g.save();g.translate(0,sep);const gr=g.createRadialGradient(-r*.35,r*.1,r*.1,0,0,r*1.05);gr.addColorStop(0,"#fff3e0");gr.addColorStop(.25,col);gr.addColorStop(1,"#1a1010");g.fillStyle=gr;g.beginPath();g.arc(0,0,r,0,Math.PI);g.closePath();g.fill();g.restore();
+  g.save();g.translate(0,-sep);g.fillStyle="rgba(215,228,236,.32)";g.strokeStyle="rgba(255,255,255,.55)";g.lineWidth=1.5;g.beginPath();g.arc(0,0,r,Math.PI,Math.PI*2);g.closePath();g.fill();g.stroke();
+  g.fillStyle="rgba(255,255,255,.75)";g.beginPath();g.ellipse(-r*.38,-r*.55,r*.24,r*.09,-.55,0,Math.PI*2);g.fill();g.restore();
+  g.fillStyle="rgba(0,0,0,.25)";g.fillRect(-r,-1+sep*0,r*2,2);g.restore();}
+function gcLay(G){const W=G.W,H=G.H,mh=Math.min(H*.6,W*.95/340*560),k=mh/560,mx=W/2-170*k,my=H*.04;return{k,mx,my,hx:mx+214*k,hy:my+440*k,ox:mx+170*k,oy:my+506*k,fy:H*.83};}
+const gcCol=id=>{const f=GC_F.find(q=>q[0]===id);return f[3]?"#e0b040":GC_SER[f[2]].col;};
+GAMES.push({id:"gc_gacha",hidden:true,n:"Гатяпон",tag:"ガチャガチャ · Капсулы",icon:"🎰",bg:"fair",lives:null,time:null,lore:"",how:"",
+ init(G,t){const q=G.st;Object.assign(q,{ph:gcLeft()>0?"crank":"empty",ang:0,goal:0,tick:0,drag:false,a0:0,fx:[],pick:null,t1:0});G.score=0;gcLoad();},
+ step(G,t,dt){const q=G.st,L=gcLay(G);
+   if(q.ph==="crank"){q.ang+=(q.goal-q.ang)*Math.min(1,dt*9);const n=Math.floor(q.ang/(Math.PI/4));if(n>q.tick){q.tick=n;tone(260+n*20,.05,"square",.035);}
+     if(q.ang>=Math.PI*2-.06){q.ph="drop";q.t1=t;gcTake();q.pick=gcRoll();[0,.08,.16,.3].forEach((d,i)=>setTimeout(()=>tone(700-i*90,.06,"triangle",.04),d*1000));}}
+   else if(q.ph==="drop"&&t-q.t1>1.05){q.ph="ready";q.t1=t;sfx("pop");}
+   for(const f of q.fx){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=f.gr*dt;f.life-=dt;}q.fx=q.fx.filter(f=>f.life>0);
+   if(q.ph==="open"&&t-q.t1>1.9&&!q.ended){q.ended=1;gEnd();}},
+ draw(G,g,t){const q=G.st,L=gcLay(G),W=G.W,H=G.H,s=G.s,k=L.k;if(!GC_IM){textC(g,"…",W/2,H/2,20*s);return;}
+   const r=GC_R.machine;g.save();g.fillStyle="rgba(0,0,0,.4)";g.beginPath();g.ellipse(W/2,L.my+552*k,160*k,18*k,0,0,Math.PI*2);g.fill();
+   const gx=W/2,gy=L.my+130*k,gr=g.createRadialGradient(gx,gy,0,gx,gy,300*k);gr.addColorStop(0,"rgba(255,196,120,.22)");gr.addColorStop(1,"rgba(255,196,120,0)");g.fillStyle=gr;g.fillRect(0,0,W,H);
+   g.drawImage(GC_IM,r[0],r[1],r[2],r[3],L.mx,L.my,340*k,560*k);gcBlit(g,"crank",L.hx,L.hy,120*k,q.ang);g.restore();
+   if(q.ph==="empty"){textC(g,"Сегодняшняя капсула уже открыта",W/2,L.fy-14*s,15*s,"#f3ead8",700);textC(g,"Новая — завтра. Три дубликата = капсула",W/2,L.fy+12*s,13*s,"rgba(216,210,195,.8)",500);return;}
+   if(q.ph==="crank"){const a=.6+.4*Math.sin(t*4);g.save();g.strokeStyle=`rgba(238,163,187,${a})`;g.lineWidth=3*s;g.beginPath();g.arc(L.hx,L.hy,78*k,-Math.PI/2+q.ang,-Math.PI/2+q.ang+Math.PI*1.5);g.stroke();g.restore();
+     textC(g,"Поверни ручку ↻",W/2,L.fy,17*s,"#f3ead8",700);textC(g,"веди пальцем по кругу или нажми три раза",W/2,L.fy+22*s,12*s,"rgba(216,210,195,.75)",500);return;}
+   const col=gcCol(q.pick),cr=Math.min(W,H)*.075;
+   if(q.ph==="drop"||q.ph==="ready"){let x,y,rot;if(q.ph==="drop"){const u=clamp((t-q.t1)/1.05,0,1),b=u<.55?Math.pow(u/.55,2):1-Math.abs(Math.sin((u-.55)/.45*Math.PI*1.5))*.28*(1-u);x=mix(L.ox,W/2,u);y=mix(L.oy,L.fy,b);rot=u*5;}
+     else{x=W/2;y=L.fy;rot=5+Math.sin((t-q.t1)*5)*.12*Math.exp(-(t-q.t1)*.3)+Math.sin(t*2)*.05;const a=.55+.45*Math.sin(t*4);textC(g,"Нажми на капсулу!",W/2,L.fy+cr+26*s,15*s,`rgba(243,234,216,${a})`,700);}
+     g.fillStyle="rgba(0,0,0,.35)";g.beginPath();g.ellipse(x,L.fy+cr*.95,cr*.9,cr*.2,0,0,Math.PI*2);g.fill();gcCapsule(g,x,y,cr,col,rot);q.cx=x;q.cy=y;return;}
+   // open: halves fly apart, rays, the figurine rises
+   const e=t-q.t1,f=GC_F.find(z=>z[0]===q.pick),sec=!!f[3];
+   g.save();g.fillStyle=`rgba(6,5,8,${.55*clamp(e/.4,0,1)})`;g.fillRect(0,0,W,H);
+   const cx=W/2,cy=L.fy-cr*.2,rays=clamp(e/.5,0,1);g.globalCompositeOperation="lighter";g.translate(cx,cy-H*.12);g.rotate(t*.25);
+   for(let i=0;i<14;i++){g.rotate(Math.PI*2/14);g.fillStyle=sec?`rgba(255,215,120,${.14*rays})`:`rgba(255,200,215,${.11*rays})`;g.beginPath();g.moveTo(0,0);g.lineTo(-H*.05,-H*.6);g.lineTo(H*.05,-H*.6);g.fill();}g.restore();
+   const sep=cr*2.4*smooth(clamp(e/.45,0,1)),ha=clamp(1-(e-.3)/.6,0,1);if(ha>0){gcCapsule(g,cx-sep*.3,cy,cr,col,-sep/cr*.3,0,ha);}
+   const u=clamp(e/.75,0,1),sz=Math.min(H*.36,W*.55)*easeOutBack(u),fr=GC_R[q.pick];
+   if(sz>1){const w=sz*fr[2]/fr[3];gcBlit(g,q.pick,cx,cy-H*.12-sz*.05-(1-u)*H*.05,w);}
+   if(e>.8){const a=clamp((e-.8)/.4,0,1);textC(g,f[1],cx,L.my+40*s,24*s,`rgba(243,234,216,${a})`,800);textC(g,(sec?"★ Секретная · ":"")+GC_SER[f[2]].n,cx,L.my+68*s,14*s,sec?`rgba(232,192,96,${a})`:`rgba(216,210,195,${a*.85})`,600);}
+   for(const p of q.fx){g.fillStyle=`rgba(255,${p.c},200,${clamp(p.life,0,1)})`;g.beginPath();g.arc(p.x,p.y,p.r,0,Math.PI*2);g.fill();}},
+ down(G,x,y,t){const q=G.st,L=gcLay(G);
+   if(q.ph==="crank"){const d=Math.hypot(x-L.hx,y-L.hy);q.drag=d<110*L.k;q.a0=Math.atan2(y-L.hy,x-L.hx);q.dn=[x,y,t];q.mv=0;return;}
+   if(q.ph==="ready"&&Math.hypot(x-q.cx,y-q.cy)<Math.min(G.W,G.H)*.16){q.ph="open";q.t1=t;sfx("pop");chime(GC_F.find(f=>f[0]===q.pick)[3]?[784,988,1318,1568,2093]:[988,1318,1568]);
+     const cx=G.W/2,cy=gcLay(G).fy;for(let i=0;i<46;i++){const a=rand(0,Math.PI*2),v=rand(80,340)*G.s;q.fx.push({x:cx,y:cy,vx:Math.cos(a)*v,vy:Math.sin(a)*v-160*G.s,gr:260*G.s,r:rand(1.5,3.5)*G.s,c:180+(Math.random()*60|0),life:rand(.8,1.6)});}
+     q.isNew=gcGot(q.pick)===0;gcGive(q.pick);}},
+ move(G,x,y,held){const q=G.st;if(q.ph!=="crank"||!held||!q.drag)return;const L=gcLay(G),a=Math.atan2(y-L.hy,x-L.hx);let d=a-q.a0;d=((d+Math.PI*3)%(Math.PI*2))-Math.PI;q.a0=a;if(d>0){q.mv+=d;q.goal=Math.min(Math.PI*2,q.goal+Math.min(d,.6));}},
+ up(G){const q=G.st;if(q.ph!=="crank"){q.drag=false;return;}const t=now();if(q.dn&&t-q.dn[2]<.4&&!(q.mv>.25))q.goal=Math.min(Math.PI*2,(Math.floor(q.goal/(Math.PI*2/3)+.01)+1)*Math.PI*2/3);q.drag=false;},
+ stat:G=>`🎰 капсул: ${gcLeft()} · фигурок ${GC_F.filter(f=>gcGot(f[0])).length}/18`,
+ card(G){const q=G.st,f=GC_F.find(z=>z[0]===q.pick)||GC_F[0],n=gcGot(f[0]),left=gcLeft(),ser=GC_SER[f[2]],have=GC_F.filter(z=>z[2]===f[2]&&gcGot(z[0])).length;
+   return`<div class="card"><p class="tag">${ser.n} · ${ser.jp}</p><h3>${f[1]}</h3><div class="gc-fig">${itemThumb(IT[f[0]],130,150)}</div>
+   <p class="gc-rar ${f[3]?"sec":""}">${f[3]?"★ Секретная фигурка":"Фигурка серии"} · ${q.isNew?"новая!":"повтор, у тебя их "+n}</p><p class="lore">${f[4]}</p>
+   <p>Серия: ${have} из 6.${gcDupes()>=3?" Три дубликата можно обменять на капсулу в «家».":""} Фигурка ждёт во вкладке «🧺 Вещи».</p>
+   <div class="row"><button class="btn" id="gHome">Готово</button><button class="btn primary" id="gAgain" style="${left?"":"display:none"}">Ещё капсула · ${left}</button></div></div>`;},
+ after(){ui();}
+});
+X.gc={open:gcOpen,give:gcGive,swap:gcSwap,st:gcS,left:gcLeft,frame:gcFrame,force:null,
+  turn(){if(G.id==="gc_gacha")G.st.goal=Math.PI*2;},crankTap(){if(G.id!=="gc_gacha")return;const L=gcLay(G);G.def.down(G,L.hx,L.hy,now());G.def.up(G);},tap(){if(G.id==="gc_gacha"&&G.st.ph==="ready")G.def.down(G,G.st.cx,G.st.cy,now());}};
 }
 // ═════ end of add-ons ═════
 
