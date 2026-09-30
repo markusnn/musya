@@ -2,6 +2,7 @@
 """Paste the add-on blocks (feat/*.js) into index.html between the add-on markers, right before «Boot».
 The blocks in feat/ are the source: edit them there and run this again (it replaces what was pasted before).
 Then checks: the script parses (node), no duplicate top-level function names in the core.
+Only the add-ons named in feat/READY are built in.
 Usage: python3 tools/build.py [--check-only]"""
 import os, re, subprocess, sys, tempfile
 
@@ -17,9 +18,12 @@ s = open(HTML, encoding='utf-8').read()
 if BEGIN not in s:
     assert s.count(BOOT) == 1
     s = s.replace(BOOT, BEGIN + '\n' + END + '\n\n' + BOOT)
-files = [os.path.join(ROOT, 'feat', n + '.js') for n in ORDER]
-extra = sorted(f for f in (os.path.join(ROOT, 'feat', x) for x in os.listdir(os.path.join(ROOT, 'feat')) if x.endswith('.js')) if f not in files)
-if extra: print('not in ORDER, appended:', [os.path.basename(f) for f in extra])
+# only add-ons listed in feat/READY (one name per line) are built in — the others may still be in progress
+ready = [l.strip() for l in open(os.path.join(ROOT, 'feat', 'READY'), encoding='utf-8') if l.strip() and not l.startswith('#')]
+unknown = [n for n in ready if n not in ORDER]
+assert not unknown, 'add to ORDER: %s' % unknown
+files = [os.path.join(ROOT, 'feat', n + '.js') for n in ORDER if n in ready]
+extra = []
 body = ''
 for f in files + extra:
     if not os.path.exists(f): print('missing:', os.path.basename(f)); continue

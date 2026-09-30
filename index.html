@@ -3009,6 +3009,772 @@ function addRoom(d){ROOMX[d.id]=d;if(!ROOMS.some(r=>r.id===d.id))ROOMS.push({id:
 function buildTabs(){$("tabs").innerHTML=`<button class="stab" data-tab="story" aria-label="Сюжет"><b>物語</b><span>Сюжет</span></button>`+ROOMS.map(r=>{const lk=hk("tabLock",r.id);return`<button role="tab" data-room="${r.id}" class="${lk?"lock":""}" aria-selected="${r.id===S.room}"><b>${r.jp}</b><span>${lk?"🔒 ":""}${r.ru}</span></button>`;}).join("");}
 function plugBoot(){buildTabs();ui();tabDots();hkAll("boot");hubDot();setInterval(()=>{hkAll("sec");hubDot();tabDots();},1000);}
 
+// ═════ add-ons (built from feat/*.js by tools/build.py — edit them there) ═════
+// ── story2.js
+{
+// ───────────────────────── Second story «Кошачья гора» (Nekodake): one chapter per calendar day ─────────────────────────
+// A book in the 物語 tab (BOOKS): opens after the first story; the next chapter's beginning unlocks on a later dayKey()
+// than the day the previous one was finished. After the end the old cat king sometimes sits on the veranda at night.
+MON.m_s2_king=[520,600];MON.m_s2_akari=[320,470];
+Object.assign(MON_BEAST,{m_s2_king:"s2_king",m_s2_akari:"s2_bakeneko"});if(!MON_BEAST.m_nekomata)MON_BEAST.m_nekomata="nekomata";
+BESTIARY.push(["s2_king","m_s2_king","Король Нэкодакэ","Легенда Асо на Кюсю: на гору Нэкодакэ уходят кошки, прожившие долгую жизнь, и там им правит кошачий король. Кто побывал у него на поклоне, возвращается с надорванным ухом."],
+ ["s2_bakeneko","m_s2_akari","Бакэнэко","Кошка-оборотень. Говорили, что кошка, которая по ночам встаёт на задние лапы и лижет масло из андона, уже становится бакэнэко: скоро заговорит и научится носить огонь."]);
+STAMPS.push(["s2_end","猫","Кошачья гора","Пройди вторую историю"]);
+const S2C="Реликвии Кошачьей горы",S2L="📜 вторая история",S2H="Эту вещь даст вторая история — вкладка «Сюжет» 📜";
+addItems([["s2_fuda","Бирка путника с Нэкодакэ",0,110,190,"t"],["s2_ogi","Веер лунного танца",114,220,140],["s2_hyotan","Горлянка с водой горного источника",338,110,180],
+  ["s2_abura","Плошка с рыбьим маслом",452,150,120,"b",[96,50]],["s2_hotaru","Клетка светлячков Акари",606,140,170,"b",[70,104]],["s2_bowl","Миска с иероглифом 雲",750,160,90],
+  ["s2_toro","Фонарь старого короля",914,150,250,"b",[75,116]]].map(([id,n,x,w,h,a,glow])=>Object.assign({id,n,c:S2C,w,h,a:a||"b",p:0,story:1,src:S2L,hint:S2H,at:["s2",x,0]},glow?{glow}:{})),{s2:[1064,250]});
+Object.assign(RELIC_LINE,{s2_fuda:"С этой биркой пускают на кошачью тропу",s2_ogi:"Под этим веером танцуют, пока никто не видит",s2_hyotan:"Не открывать: кого обольёт — станет кошкой",
+  s2_abura:"Этим маслом бакэнэко разжигают фонари",s2_hotaru:"Светлячки из фонаря Акари",s2_bowl:"Кумо. Облако. Его миска",s2_toro:"Фонарь Кумо — первый на тропе Нэкодакэ"});
+
+const st=S.ext.story2=Object.assign({ch:0,prog:[],started:false,done:false,seen:-1,ready:false},S.ext.story2||{});st.ready=!!st.ready;
+const K="m_s2_king",A="m_s2_akari",N="m_nekomata";
+// x at a share of what is visible (phone or wide), kept inside the picture
+const vf=(f,m=120)=>()=>{const l=-BGM.dx/BGM.k,r=(view.W-BGM.dx)/BGM.k;return clamp(l+(r-l)*f,Math.max(m,l+m),Math.min(1800-m,r-m));};
+const isFish=f=>/^u_/.test(f)||["fish","sushi","ds_yakizakana","ds_unadon"].includes(f);
+const CH=[
+ {title:"Пролог. Гостья с двумя хвостами",room:"entrance",reward:"s2_fuda",
+  intro:{chars:[{id:N,x:vf(.78,150),y:1212,h:340,d:.8,from:.8,bob:1}],p:[
+   "В первую ночь после осеннего полнолуния у ворот кто-то запел. Песня была без слов, одно мурлыканье, и в ней позвякивал бубенчик — будто певица пританцовывала в темноте.",
+   "У тории на задних лапах стояла Нэкомата — трёхцветная кошка с двумя хвостами и тэнугуи на голове. Обычно она заходила за угощением. В этот раз она ничего не просила. «Муся, сестрёнка. На Кошачьей горе беда. Тебя там ждут».",
+   "Далеко на юге, на острове Кюсю, среди вулканов Асо стоит гора Нэкодакэ. Туда уходят кошки, прожившие долгую жизнь, чтобы стать бакэнэко, и возвращаются другими. Людям на эту гору нельзя. Кошке можно — если она соберётся в дорогу как положено."]},
+  tasks:[{t:"Повесь Мусе на шею омамори дороги (Гардероб → Шея)",ev:"tick",test:()=>S.wear.neck==="om_road"},{t:"Накорми Мусю рыбой — в дорогу не уходят голодными",ev:"food",test:isFish},{t:"Вытяни омикудзи: что скажет дорога?",ev:"place",test:a=>a==="omikuji"}],
+  outro:{chars:[{id:N,x:vf(.78,150),y:1212,h:340,d:.8,from:.4,bob:1},{id:A,x:vf(.3,80),y:1000,h:150,d:.38,from:7,to:11,flicker:1}],p:[
+   "Нэкомата обнюхала омамори, одобрительно дёрнула обоими хвостами и повесила на ворота деревянную бирку с отпечатком лапы. «Это пропуск. С ним тебя пустят на тропу».",
+   "Потом она заговорила тише: «Старый король Нэкодакэ стал забывать. Сначала имена придворных, потом дорогу к собственному трону. А три ночи назад на горной тропе начали гаснуть фонари. Если погаснет последний, кошки, что сейчас на горе, уже не спустятся. Ни кошками, ни бакэнэко».",
+   "«И ещё, — Нэкомата оглянулась на тёмную дорогу за тории. — Пропала Акари, наша маленькая фонарщица. В последний раз её видели здесь. У твоих ворот»."]}},
+ {title:"Глава 1. Танец с полотенцем",room:"engawa",reward:"s2_ogi",
+  intro:{chars:[{id:N,x:vf(.8,150),y:1300,h:340,d:.8,from:.6,bob:1}],p:[
+   "В старых домах хозяйки не раз замечали: вечером с верёвки пропадает полотенце, а к утру висит на месте — влажное от росы и пахнущее кошкой. Значит, ночью кошки танцевали.",
+   "Нэкомата объяснила: на Нэкодакэ ведут не дороги, а танцы. Кто станцует под луной на своей веранде, тот сделает первый шаг по горной тропе, а дальше лапы сами найдут путь.",
+   "Танцуют на задних лапах, с тэнугуи на голове, под звон фурина. И так, чтобы ни один человек не увидел."]},
+  tasks:[{t:"Повяжи Мусе тэнугуи (Гардероб → Голова)",ev:"tick",test:()=>S.wear.head==="w_tenugui"},{t:"Потанцуйте: 4 игры с Мусей на веранде",ev:"act",n:4,test:a=>PLAYS.includes(a)&&S.room==="engawa"},{t:"Позвони в фурин — позови луну",ev:"act",test:a=>a==="music"}],
+  outro:{sx:"path",chars:[{id:N,x:vf(.8,150),y:1300,h:340,d:.8,from:.4,bob:1}],p:[
+   "Муся кружилась, пока у неё не зарябило в глазах, а Нэкомата хлопала лапкой о лапку и подпевала фурину. И тогда над крышей одна за другой зажглись точки света — цепочка фонарей, уходящая к луне.",
+   "Это была тропа на Кошачью гору. Муся видела её так ясно, будто могла дотронуться до первой ступени. Но фонари горели неровно: целые пролёты пропадали, и тропа висела над пустотой обрывками.",
+   "Вдруг один фонарик — маленький, круглый — сорвался с тропы и, кувыркаясь, полетел вниз, за дом, туда, где клубился пар онсэна. Раздалось шипение. А потом из темноты донёсся тоненький плач."]}},
+ {title:"Глава 2. Пар над купелью",room:"onsen",reward:"s2_hyotan",
+  intro:{p:[
+   "О горе Нэкодакэ рассказывают старую историю. Путник заблудился в горах и вышел к богатому постоялому двору. Встретили его красавицы-служанки, растопили баню и позвали мыться.",
+   "Одна из них шепнула: «Беги. Это кошачий дом. Кого обольют здешней водой, тот сам станет кошкой». Путник бросился прочь, но брызги всё-таки попали ему на спину, и там навсегда выросла кошачья шерсть.",
+   "Теперь такой же пар стоял над Мусиным онсэном. Он пах серой, горами и чужими кошками. На дне купели едва тлел упавший фонарик, а в пару кто-то ходил с полотенцем на плече — и ждал платы."]},
+  tasks:[{t:"Искупай Мусю: намыль и смой пену",ev:"bath"},{t:"Поймай 2 рыбы (Дворик → Рыбалка): банщицы с горы берут плату рыбой",ev:"fish",n:2,test:d=>!!d&&!/geta|bottle/.test(d.id)},{t:"Поставь в онсэне вещь из «🧺 Вещи» — подарок источнику",ev:"put",test:d=>d.room==="onsen"}],
+  outro:{sx:"steam",fx:()=>seeBeast("s2_king"),p:[
+   "Кто-то невидимый принял рыбу, звякнул ведёрком и растаял. А пар над водой вдруг сгустился и поднялся — выше сёдзи, выше крыши.",
+   "Из пара смотрел старый серый кот, огромный, как гора. Одно ухо у него было порвано, усы белые, глаза мутные, как лёд на пруду. «Ты кто, маленькая? — спросил он, и от его голоса по воде пошла рябь. — Не видела мою фонарщицу? Без неё я… забываю».",
+   "Он помолчал, глядя сквозь Мусю. «Скажи… как меня зовут? Раньше меня звали по имени. Я точно помню, что звали». Пар осел. На краю купели осталась горлянка, запечатанная бумажным талисманом. Внутри плескалась горячая вода. С горы."]}},
+ {title:"Глава 3. Кто лижет масло",room:"kitchen",reward:"s2_abura",
+  intro:{p:[
+   "В старину лампы-андоны заправляли рыбьим маслом. Старики говорили: если ночью кошка встаёт на задние лапы и лижет масло из лампы, это уже не просто кошка. Она собирается на гору.",
+   "Этой ночью на кухне кто-то лизал масло. Утром плошка у очага была пуста, а на полу остались следы — маленькие, кошачьи и почему-то в саже.",
+   "Фонарщица, упавшая с неба, прячется в доме. Она голодна, напугана, и её фонарь почти погас. Выманить её можно только запахом: жареной рыбы и горячего масла."]},
+  tasks:[{t:"Приготовь рыбу на гриле (Кухня → 🍳 Готовить)",ev:"cook",test:d=>d.id==="yakizakana"},{t:"Приготовь тэмпуру — на свежем масле",ev:"cook",test:d=>d.id==="tempura"},{t:"Прочитай кайдан «Кошка из Набэсимы» (Спальня → Кайдан)",ev:"kaidan",test:i=>/Набэсим/.test((KAIDAN[i]||{}).t||"")}],
+  outro:{chars:[{id:A,x:vf(.8,110),y:1250,h:300,d:.8,from:.8}],p:[
+   "На запах тэмпуры из-за бочки с рисом высунулся нос. Потом уши. Потом целиком — маленькая чёрная кошечка в красной курточке, с бамбуковым шестом, на котором висел погасший фонарь.",
+   "Это была Акари. Она виновато облизнулась: в масле по самые брови. «Я не воровала. Фонарю нужен огонь, а огню — масло… Я упала с тропы, потому что спустилась нарочно. Я ищу одно имя».",
+   "Чьё имя, Акари не сказала. Она оглядела старые балки, потёртый порог, почерневший очаг, и шёрстка у неё на загривке встала дыбом. «Кажется, — прошептала она, — я пришла куда надо»."]}},
+ {title:"Глава 4. Светлячки для фонаря",room:"courtyard",reward:"s2_hotaru",
+  intro:{chars:[{id:A,x:vf(.78,110),y:1150,h:290,d:.55,from:.6}],p:[
+   "Фонари на тропе Нэкодакэ горят не маслом. Масло — только чтобы разжечь. А горят они памятью: в каждом живёт имя кошки, которая когда-то поднялась на гору. Пока имя помнят, фонарь светит.",
+   "Фонарь Акари почти погас, пока она падала. Снова разжечь его можно только живым огнём — светлячками над прудом — и тишиной, в которой слышно, как дышит вода.",
+   "Акари села у самой воды, поставила фонарь рядом и уставилась на Мусю круглыми зелёными глазами. Она ждала."]},
+  tasks:[{t:"Налови 8 светлячков (Игры → «Светлячки»)",ev:"game",test:d=>d.id==="fire"&&d.score>=8},{t:"Посиди у пруда: «Медитация»",ev:"place",test:a=>a==="meditate"},{t:"Поделись с Акари: накорми Мусю блюдом из кладовой (Кухня)",ev:"eat",test:id=>!!FOOD[id]&&FOOD[id].k==="dish"}],
+  outro:{sx:"fire",chars:[{id:A,x:vf(.78,110),y:1150,h:290,d:.55,from:.3}],p:[
+   "Светлячки один за другим забрались под бумагу, и фонарь Акари загорелся ровным зелёным светом. Она впервые улыбнулась и начала рассказывать — быстро, будто боялась снова забыть.",
+   "Сто лет назад на гору пришёл серый котёнок с порванным ухом: подрался с собакой, защищая свой дом. Он стал бакэнэко, потом старшим, потом королём. А его фонарь, самый первый на тропе, горел ярче всех: в нём было имя, которое ему дали дома.",
+   "Теперь этот фонарь гаснет. Имени не помнит никто, даже сам король. Акари знала одно: котёнок пришёл из дома у старого святилища, где у ворот стоит каменный фонарь. Муся медленно обернулась. Каменный фонарь стоял у её ворот."]}},
+ {title:"Глава 5. Кладовая за сундуками",room:"wardrobe",reward:"s2_bowl",
+  intro:{chars:[{id:A,x:vf(.78,110),y:1160,h:330,d:.5,from:.6}],p:[
+   "В гардеробе, за сундуками с кимоно, есть низкая дверца, которую давно никто не открывал. Ключ от неё Муся нашла под подушкой — подарок девочки в красном.",
+   "За дверцей пахнет пылью и старым деревом. Там живут вещи, которым больше ста лет: они умеют моргать, ворчать и прятаться. Их зовут цукумогами. Они помнят всех, кто жил в доме, но просто так ничего не рассказывают.",
+   "Акари поднимает фонарь повыше. К старикам в гости ходят нарядными — и играют с ними в их любимую игру: найди пару."]},
+  tasks:[{t:"Надень Мусе кимоно (Гардероб → Кимоно)",ev:"tick",test:()=>!!S.wear.body},{t:"Найди 4 пары в игре «Цукумогами» (Игры)",ev:"game",test:d=>d.id==="tsukumo"&&d.score>=40},{t:"Поставь в Гардеробе вещь — взамен той, что заберёшь",ev:"put",test:d=>d.room==="wardrobe"}],
+  outro:{chars:[{id:A,x:vf(.78,110),y:1160,h:330,d:.5,from:.3},{id:N,x:vf(.2,130),y:1180,h:340,d:.55,from:9}],p:[
+   "Старый зонт-цукумогами проворчал, что так и быть, раз уж гостья вежливая. И выкатил из-за сундука миску — простую, синюю по белому, со щербинкой на краю. На дне кистью было выведено одно слово: 雲. Кумо. Облако.",
+   "Акари прижала миску к груди и заплакала. «Серый, как облако… Его звали Кумо. Он ел из этой миски, спал на этой веранде и ждал здесь хозяйку. А когда она не вернулась, ушёл на гору».",
+   "В кладовую, запыхавшись, влетела Нэкомата: «Фонарь короля едва тлеет! Завтра, когда взойдёт луна, тропа откроется в последний раз. Опоздаем — и отдавать имя будет некому»."]}},
+ {title:"Эпилог. Имя для короля",room:"matsuri",reward:"s2_toro",
+  intro:{chars:[{id:K,x:vf(.76,170),y:1215,h:470,d:.72,from:2.5},{id:N,x:vf(.16,110),y:1230,h:320,d:.8,from:.6,bob:1},{id:A,x:vf(.33,90),y:1245,h:250,d:.8,from:1}],p:[
+   "Тропа из фонарей легла от веранды прямо в небо, и Муся шла по ней, пока внизу не показались вулканы Асо в кольце облаков. На вершине Нэкодакэ шумела ночная ярмарка: здесь торговали сушёной рыбой и снами, били в барабаны и танцевали с полотенцами на головах.",
+   "В конце ярмарки на старом пне сидел король. Он не узнал ни Нэкомату, ни Акари. На Мусю посмотрел вежливо и пусто — так смотрят на прохожих.",
+   "Имя нельзя просто сказать. Его возвращают, как потерянную вещь: так, чтобы король увидел, услышал и вспомнил сам."]},
+  tasks:[{t:"Поставь на Ярмарке миску с иероглифом 雲 (🧺 Вещи → Реликвии Кошачьей горы)",ev:"tick",test:()=>!!S.placed.s2_bowl&&S.placed.s2_bowl.r==="matsuri"},{t:"Сыграй королю на барабанах: 15 очков в «Тайко» (Ярмарка)",ev:"game",test:d=>d.id==="taiko"&&d.score>=15},{t:"Все потребности Муси выше 60 — дорога была долгой",ev:"tick",test:()=>Object.values(S.needs).every(v=>v>60)}],
+  outro:{sx:"lit",chars:[{id:K,x:vf(.76,170),y:1215,h:470,d:.72,from:.3},{id:N,x:vf(.16,110),y:1230,h:320,d:.8,from:.3,bob:1},{id:A,x:vf(.33,90),y:1245,h:250,d:.8,from:.3}],p:[
+   "Король долго смотрел на миску. Потом наклонился, понюхал щербинку на краю и сказал хрипло, словно отвык от собственного голоса: «Кумо». И громче: «Меня звали Кумо. Так звала бабушка из дома у святилища — вечером, с веранды, когда был готов рис».",
+   "Первый фонарь на тропе вспыхнул так ярко, что Нэкодакэ стало видно со всего Кюсю. За ним загорелись остальные, пролёт за пролётом, до самой Мусиной веранды. Кошки, застрявшие на горе, пошли по домам — кто с одним хвостом, кто уже с двумя.",
+   "Кумо предложил Мусе остаться и через сто лет стать королевой. Муся подумала и пошла домой: там её миска, её веранда и её люди. Король не обиделся. Он отдал ей свой фонарь и сказал, что иногда будет спускаться — посидеть на старом месте.",
+   "Говорят, кошки возвращаются с Нэкодакэ другими. Муся вернулась прежней. Только её тень на сёдзи иногда, всего на миг, взмахивает двумя хвостами."]}}
+];
+function seeBeast(k){if(!ST.seen.includes(k))ST.seen.push(k);}
+const plural=(n,a,b,c)=>{const x=n%10,y=n%100;return x===1&&y!==11?a:x>=2&&x<=4&&(y<12||y>14)?b:c;};
+function gate(s){
+  if(!QS.done)return"Откроется, когда закончится первая история";
+  if(s.ch>0&&s.day&&dayKey()<=s.day){const d=today(),m=new Date(d);m.setHours(24,0,0,0);const h=Math.ceil((m-d)/36e5);
+    return"Следующая глава откроется завтра"+(h>1?` — через ${h} ${plural(h,"час","часа","часов")}`:" — меньше чем через час");}
+  return null;}
+const B={id:"s2",title:"Кошачья гора",ch:CH,st,gate,
+  lead:"Вторая история: легенда острова Кюсю о горе, куда уходят старые кошки. По главе в сутки — пройденная глава открывает следующую завтра.",
+  fin:"История пройдена. Старый Кумо иногда спускается с горы: ищи его ночью на веранде.",
+  after(k){disc("chapter2",k);st.day=dayKey();save();},
+  end(){award("s2_end");st.endT=Date.now();vis.next=now()+30;}};
+BOOKS.push(B);
+
+// scene extras: the lantern path in the sky, the king in the steam, fireflies round Akari's lantern
+function glowAt(x,y,r,rgb,a){const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${rgb},${a})`);g.addColorStop(.35,`rgba(${rgb},${a*.45})`);g.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);}
+function lanternPath(t,e,lit,y0){const n=16;
+  for(let i=0;i<n;i++){const u=i/(n-1),ix=260+u*1300,iy=y0-Math.sin(u*2.4)*170-u*150+Math.sin(t*.8+i)*6;
+    let a=clamp((e-i*.18)/1.2,0,1);if(!lit&&(i%5===3||i%7===5))a*=.12;if(lit)a*=clamp((e-(n-i)*.12)/.8,0,1);if(a<=0)continue;
+    const [x,y]=imgToStage(ix,iy,.3),r=(10+u*4)*BGM.k*4;glowAt(x,y,r*2.4,"255,180,90",.35*a);ctx.globalAlpha=a;ctx.fillStyle="#ffd89a";ctx.beginPath();ctx.ellipse(x,y,r*.28,r*.36,0,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}}
+function drawScene(t,front){
+  if(!scene.on||scene.book!==CH)return;const sc=CH[scene.ch][scene.kind],e=t-scene.t0;if(!sc||!sc.sx)return;
+  if(sc.sx==="path"&&front===2){lanternPath(t,e,false,780);
+    if(scene.i>=2){const u=clamp((t-(scene.fall||(scene.fall=t)))/2.4,0,1),[x,y]=imgToStage(1000+u*600,560+u*u*700,.3+u*.3),r=26*BGM.k*(1+u);if(u<1){glowAt(x,y,r*3,"255,170,80",.5);ctx.fillStyle="#ffcf88";ctx.beginPath();ctx.arc(x,y,r*.5,0,Math.PI*2);ctx.fill();}}else scene.fall=0;}
+  if(sc.sx==="lit"&&front===2)lanternPath(t,scene.i>=1?e:0,true,760);
+  if(sc.sx==="steam"&&!front){const a=scene.i>=1?clamp((t-(scene.st2||(scene.st2=t)))/2,0,1):0;if(scene.i<1)scene.st2=0;
+    for(let k=0;k<6;k++){const ph=(t*.05+k/6)%1,[x,y]=imgToStage(500+k*170+Math.sin(t*.4+k)*40,1150-ph*520,.55),r=(180+160*ph)*BGM.k;glowAt(x,y,r,"226,230,228",.16*Math.sin(Math.PI*ph)*(.4+a));}
+    if(a>0)drawMon(K,vf(.5,200)(),1180,780,.55,.5*a+.08*Math.sin(t*1.3));}
+  if(sc.sx==="fire"&&!front){const [cx,cy]=imgToStage(vf(.78,110)()-65,930,.55);
+    for(let k=0;k<14;k++){const a=t*(.6+k%4*.15)+k*1.7,rr=(40+k*9)*BGM.k*1.6,x=cx+Math.cos(a)*rr,y=cy+Math.sin(a*1.3)*rr*.5-Math.min(e,6)*4*BGM.k;
+      const on=.5+.5*Math.sin(t*3+k*2.1);glowAt(x,y,16*view.s,"190,255,120",.6*on);ctx.fillStyle=`rgba(236,255,190,${.9*on})`;ctx.beginPath();ctx.arc(x,y,2.4*view.s,0,Math.PI*2);ctx.fill();}}
+}
+// after the end: old Kumo sits on the veranda at night now and then, with his lantern
+const vis={on:false,t0:0,next:now()+40,x:0};
+function visTick(t){
+  if(!st.done)return;
+  if(vis.on){if(t-vis.t0>14||S.room!=="engawa"||scene.on){vis.on=false;vis.next=t+rand(150,320);}return;}
+  if(t<vis.next||S.room!=="engawa"||!dayTint()[1]||scene.on||overlaysOpen()||(typeof visit!=="undefined"&&visit.on))return;
+  vis.on=true;vis.t0=t;vis.x=vf(Math.random()<.5?.16:.84,150)();seeBeast("s2_king");
+  if(!petAway())setTimeout(()=>{if(vis.on&&pet.action!=="sleep")react("😽",2);},1200);}
+function visAlpha(t){const e=t-vis.t0;return clamp(Math.min(e/1.8,(14-e)/1.8),0,1);}
+function drawVis(t,front){if(!vis.on||S.room!=="engawa"||(1300>catLineY()+6)!==front)return;const a=visAlpha(t);if(a<=0)return;
+  const [lx,ly]=imgToStage(vis.x-92,967,.8);glowAt(lx,ly,140*BGM.k,"255,180,90",.4*a);drawMon(K,vis.x,1300,400,.8,a*.92);}
+hook("draw",(t,front)=>{drawScene(t,front);drawVis(t,front);});
+hook("overlay",t=>drawScene(t,2));   // the sky path goes over the room's front layers
+hook("tick",t=>visTick(t));
+hook("hit",(x,y)=>{if(!vis.on||visAlpha(now())<.3)return false;const [sx,sy]=imgToStage(vis.x,1300,.8),h=400*BGM.k,w=h*.8;
+  if(x>sx-w/2&&x<sx+w/2&&y>sy-h&&y<sy){vis.t0=now()-12;S.needs.joy=clamp(S.needs.joy+8,0,100);toast("Старый Кумо щурится на луну и мурлычет");chime([784,1046,1318]);return true;}return false;});
+// a quiet note when a new chapter unlocks (at start or at midnight while playing) — no panels open by themselves
+let last=null;
+function note(){const k=bkState(B);if(k==="intro"&&(last==="gate"||last===null)&&st.note!==st.ch+"@"+dayKey()&&!scene.on){st.note=st.ch+"@"+dayKey();
+  setTimeout(()=>{if(!scene.on)toast(st.ch?"📜 Кошачья гора: новая глава в «Сюжете»":"📜 В «Сюжете» — новая история");},last===null?9000:300);}last=k;}
+hook("boot",note);hook("sec",()=>{if(last!==null)note();});
+X.story2={B,st,CH,gate:()=>gate(st),state:()=>bkState(B),vis};
+}
+// ── return.js
+{
+// ───────────────────────── «Пока тебя не было»: a painted diary page on return + Musya's finds ─────────────────────────
+// Away ≥ 45 min → one postcard: how long, what Musya did (narrator, she never talks), news from other systems (hook "away"),
+// and a find she dragged home (guaranteed from 1 h, rare ~12%). Shorter absences: nothing pops up.
+const RET=S.ext.ret||(S.ext.ret={n:0,cnt:{}});RET.cnt=RET.cnt||{};
+const RET_MIN=45*60e3;
+// [id, name, w, h, atlasX, atlasY, rare, where-she-found-it, seasonMonths|null, glow]
+const FD=[
+ ["fd_crow","Вороново перо",80,180,102,0,0,"Под старой сосной, где по утрам спорят вороны.",null],
+ ["fd_pebble","Гладкий речной камешек",120,80,876,232,0,"Из ручья у водопада — ещё мокрый и прохладный.",null],
+ ["fd_button","Старая латунная пуговица",90,70,0,334,0,"Из-под половиц в гардеробе. Кто её там потерял?",null],
+ ["fd_mon","Старинная монетка мон",100,100,0,232,0,"Из щели у ворот храма. Такие ходили при сёгунах.",null],
+ ["fd_tsuru","Бумажный журавлик",140,110,680,0,0,"Кто-то сложил его и оставил на камне у пруда.",null],
+ ["fd_momiji","Кленовый лист",130,130,262,0,0,"Сорвала с ветки в прыжке — и очень этим гордится.",[9,10,11]],
+ ["fd_cone","Сосновая шишка",90,120,482,0,0,"Прикатила лапой через весь дворик.",[9,10,11,12]],
+ ["fd_acorn","Желудь",80,100,102,232,0,"Добыча, отбитая у белки. Почти честно.",[9,10,11]],
+ ["fd_shard","Осколок синей глазури",120,90,424,232,0,"Из земли у кухни — наверное, от бабушкиной чашки.",null],
+ ["fd_bell","Колокольчик без язычка",84,104,920,0,0,"Лежал у каменного фонаря. Язычок потерялся давно.",null],
+ ["fd_thread","Моток красной нити",120,90,546,232,0,"Говорят, красная нить связывает тех, кому суждено встретиться.",null],
+ ["fd_shell","Расписная ракушка",120,96,184,232,0,"Половинка из игры каи-авасэ. Где-то есть её пара.",null],
+ ["fd_hotaru","Светлячок в бутылочке",76,136,184,0,0,"Светит всю ночь, а утром его отпустят в сад.",[6,7,8],[38,88]],
+ ["fd_semi","Шкурка цикады",100,84,774,232,0,"Уцусэми — «пустая скорлупка» из старинных стихов.",[7,8,9]],
+ ["fd_hane","Волан для ханэцуки",86,126,394,0,0,"Кто-то запустил его ракеткой через забор.",[12,1,2]],
+ ["fd_tsubaki","Цветок камелии",116,96,306,232,0,"Камелия опадает целым цветком — Муся поймала его на лету.",[12,1,2,3]],
+ ["fd_tengu","Перо тэнгу",100,230,0,0,1,"Тэнгу живут на вершинах криптомерий. Как она его достала?",null],
+ ["fd_magatama","Магатама из нефрита",96,110,822,0,1,"Древняя бусина-запятая. Таким больше тысячи лет.",null],
+ ["fd_moon","Лунный камешек",104,86,668,232,1,"Светится в темноте, как луна сквозь туман.",null,[52,46]],
+ ["fd_ryu","Чешуйка дракона",104,116,574,0,1,"Переливается, как вода в пруду. Где Муся встретила дракона?",null,[52,56]]
+];
+const FDW={};for(const f of FD)FDW[f[0]]=f;
+addItems(FD.map(([id,n,w,h,x,y,rare,,,glow])=>Object.assign({id,n,c:"Находки Муси",w,h,a:"b",p:0,at:["fd",x,y],src:"🐾 находка Муси",
+  hint:rare?"Редкая находка — Муся приносит её нечасто":"Муся приносит находки, пока тебя нет"},glow?{glow}:{})),{fd:[1024,404]});
+
+document.head.insertAdjacentHTML("beforeend",`<style>
+.ret-card{position:relative;max-width:27em;margin:4px auto 18px;padding:22px 20px 18px;border-radius:5px;color:#2b2119;transform:rotate(-.5deg);
+ background:radial-gradient(60% 40% at 80% 90%,rgba(150,110,60,.18),transparent),radial-gradient(50% 30% at 10% 15%,rgba(255,250,235,.5),transparent),radial-gradient(120% 90% at 35% 25%,#efe5cf,#e0d0ad 62%,#c9b48b);
+ box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 46px rgba(110,80,40,.38)}
+.ret-card::before{content:"";position:absolute;inset:0;border-radius:5px;pointer-events:none;opacity:.5;
+ background:repeating-linear-gradient(8deg,rgba(90,66,36,.06) 0 1px,transparent 1px 4px),repeating-linear-gradient(97deg,rgba(90,66,36,.05) 0 1px,transparent 1px 7px)}
+.ret-card::after{content:"";position:absolute;left:50%;top:-9px;width:88px;height:20px;margin-left:-44px;background:rgba(214,196,160,.75);transform:rotate(2deg);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.ret-date{font-family:var(--display);font-size:14px;letter-spacing:.04em;color:#7a6146}
+.ret-h{font-family:var(--display);font-size:25px;font-weight:700;line-height:1.15;margin:4px 64px 10px 0;color:#2b1d14;text-wrap:balance}
+.ret-seal{position:absolute;right:16px;top:18px;width:46px;height:46px;border-radius:6px;display:grid;place-items:center;writing-mode:vertical-rl;font-family:var(--jp);font-size:17px;line-height:1;color:#f6e9dc;background:radial-gradient(circle at 40% 35%,#c4473b,#962a20);transform:rotate(9deg);opacity:.88;box-shadow:inset 0 0 6px rgba(60,10,5,.6)}
+.story-body .ret-card p{color:#2b2119;margin:0 0 8px}
+.story-body .ret-card .ret-p{font-family:var(--display);font-size:18px;line-height:1.45;font-style:italic}
+.ret-hr{height:2px;margin:14px 6px;background:linear-gradient(90deg,transparent,rgba(70,46,24,.45) 20%,rgba(70,46,24,.3) 80%,transparent);border-radius:2px}
+.ret-li{display:flex;gap:10px;align-items:flex-start;font-size:14.5px;line-height:1.4;margin:6px 0;color:#34281e}.ret-li i{font-style:normal;font-size:17px;width:22px;flex:none;text-align:center}
+.ret-find{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;margin-top:4px}
+.ret-find .ret-k{font-family:var(--display);font-size:15px;color:#8a3a2a;letter-spacing:.03em}
+.ret-find .ret-k.rare{color:#9a6a10}
+.ret-pic{position:relative;display:grid;place-items:center;width:190px;height:170px}
+.ret-pic::before{content:"";position:absolute;inset:6px;border-radius:50%;background:radial-gradient(circle,rgba(255,244,210,.95),rgba(255,236,190,.4) 50%,transparent 70%)}
+.ret-pic.rare::before{background:radial-gradient(circle,rgba(255,236,160,1),rgba(250,200,90,.45) 50%,transparent 72%)}
+.ret-pic>span{position:relative;filter:drop-shadow(0 4px 6px rgba(60,40,20,.45))}
+.ret-find b{font-family:var(--display);font-size:22px;color:#2b1d14}
+.story-body .ret-find small{font-size:13.5px;color:#5e4a36;line-height:1.35;max-width:22em}
+.ret-card .ret-btn{margin-top:8px;padding:10px 26px;border-radius:999px;background:#2b2119;color:#f0e6d0;font-weight:700;border:0;box-shadow:0 3px 10px rgba(0,0,0,.35)}
+.ret-paw{position:absolute;right:16px;bottom:12px;font-size:18px;opacity:.35;transform:rotate(-12deg)}
+</style>`);
+
+// ── Russian words ──
+function rPl(n,a,b,c){n=Math.abs(n)%100;const m=n%10;return n>10&&n<20?c:m===1?a:m>=2&&m<=4?b:c;}
+function rN(n,w){return n+" "+rPl(n,...w);}
+const W_MIN=["минуту","минуты","минут"],W_H=["час","часа","часов"],W_D=["день","дня","дней"],W_WK=["неделю","недели","недель"],W_MO=["месяц","месяца","месяцев"];
+function awayText(ms){
+  const min=ms/6e4,h=min/60,d=h/24;
+  if(min<55)return rN(Math.max(5,Math.round(min/5)*5),W_MIN);
+  if(min<65)return min<60?"почти час":"целый час";
+  if(h<6){let H=Math.floor(h),M=Math.round((min-H*60)/10)*10;if(M===60){H++;M=0;}
+    if(H===1&&M===30)return"полтора часа";if(!M)return H===1?"целый час":rN(H,W_H);if(M>=50)return"почти "+rN(H+1,W_H);return rN(H,W_H)+" "+rN(M,W_MIN);}
+  if(h<20)return h%1>.7?"почти "+rN(Math.ceil(h),W_H):rN(Math.floor(h),W_H);
+  if(h<24)return"почти сутки";if(h<30)return"сутки";if(h<44)return"больше суток";if(h<48)return"почти двое суток";
+  if(d<7)return d%1>.8?"почти "+rN(Math.ceil(d),W_D):rN(Math.floor(d),W_D);
+  if(d<14)return d<8?"целую неделю":"больше недели";if(d<30)return rN(Math.floor(d/7),W_WK);if(d<60)return"больше месяца";return rN(Math.floor(d/30),W_MO);
+}
+const MON_G=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+function partOf(h){return h<5||h>=22?"night":h<10?"morning":h<17?"day":"evening";}
+const PART_RU={night:"ночь",morning:"утро",day:"день",evening:"вечер"};
+function list(a){return a.length<2?a.join(""):a.slice(0,-1).join(", ")+" и "+a[a.length-1];}
+
+// ── what Musya did (the narrator speaks; she only meows) ──
+const DOING={
+ night:["Ночью Муся спала на футоне, свернувшись калачиком, и во сне шевелила усами.","Ночью она сидела у сёдзи и смотрела, как по бумаге ползёт лунная тень.","Ночью Муся дважды обошла дом — всё ли на месте — и уснула у твоей подушки."],
+ morning:["Утром Муся смотрела, как вороны делят что-то на крыше храма.","На рассвете она гоняла солнечный зайчик по татами — и победила.","Утром Муся долго и очень старательно умывалась на веранде."],
+ day:["Днём она дремала на тёплых досках веранды, подставив солнцу живот.","Днём Муся караулила карпов в пруду, но так и не решилась намочить лапу.","Днём она спала в коробке — снаружи торчал только хвост."],
+ evening:["Вечером Муся сидела у двери и ждала: уши поворачивались на каждый шорох.","В сумерках она смотрела, как в саду загорается каменный фонарь.","Вечером Муся слушала фурин и тихонько мурлыкала ему в ответ."],
+ rain:["Шёл дождь. Муся слушала, как капли стучат по черепице, и не решалась выйти на веранду."],
+ short:["Сначала Муся поскучала у порога, потом умылась и сделала вид, что вовсе не ждала.","Муся проверила миску, проверила подушку и на всякий случай ещё раз проверила миску."],
+ long:["Первый день Муся ждала у двери. Потом решила, что ты обязательно вернёшься, и стала спать на твоей подушке.","Она обошла весь дом, заглянула в каждую комнату и в каждую коробку — тебя нигде не было."],
+ vlong:["Муся считала дни по воронам на крыше. Кажется, она немного обиделась — но это ненадолго."],
+ season:{win:"За окном падал снег, и Муся грела лапы у жаровни.",spr:"Ветер приносил из сада лепестки, и Муся ловила их на веранде.",sum:"Было душно, и Муся лежала в тени, растянувшись во всю длину.",aut:"Ветер заносил на веранду кленовые листья, и Муся ловила каждый."}
+};
+function seasonKey(){const m=today().getMonth()+1;return m===12||m<3?"win":m<6?"spr":m<9?"sum":"aut";}
+function doing(ms){
+  const h=ms/36e5,out=[];
+  if(petAway())return["Муся ещё в пути — в доме непривычно тихо. Будем ждать её вместе."];
+  if(h>=72)out.push(pick(DOING.vlong));else if(h>=20)out.push(pick(DOING.long));
+  else{const mid=((hourNow()-h/2)%24+24)%24;out.push(weather.on&&h<3?DOING.rain[0]:pick(DOING[h<2&&Math.random()<.4?"short":partOf(mid)]));}
+  if(h>=3){const s=DOING.season[seasonKey()],p2=pick(DOING[partOf(((hourNow()-.5)%24+24)%24)]);out.push(Math.random()<.5&&!out.includes(s)?s:out.includes(p2)?s:p2);}
+  return out;
+}
+
+// ── news from the house ──
+function news(ms){
+  const L=hkAll("away",ms).filter(x=>x&&x.t);
+  const q=S.guest,gd=typeof guestDef==="function"?guestDef():null;
+  if(gd&&q.state==="here")L.push({i:"⛩",t:`У ворот ждёт ${gd.n}. Загляни во «Вход».`});
+  else if(q&&q.state==="coming"&&q.day===dayKey())L.push({i:"⛩",t:"Кажется, к воротам уже кто-то идёт…"});
+  const ripe=S.garden.filter(b=>b&&bedP(b)>=1).map(b=>(CROPS.find(c=>c.id===b.c)||{n:""}).n.toLowerCase()).filter(Boolean);
+  if(ripe.length)L.push({i:"🌱",t:`На огороде поспело: ${list([...new Set(ripe)])}. Загляни во «Дворик».`});
+  const F=festNow();if(F)L.push({i:F.icon||"🎐",t:`Сегодня праздник — ${F.n}${F.sub?" ("+F.sub.toLowerCase()+")":""}. Всё о нём в календаре 暦.`});
+  if(!petAway()){const n=S.needs,low=[];if(n.food<30)low.push("проголодалась");if(n.clean<30)low.push("запылилась");if(n.joy<30)low.push("заскучала");
+    if(low.length)L.push({i:"🍚",t:`Муся ${list(low)} — самое время о ней позаботиться.`});}
+  return L;
+}
+
+// ── the find ──
+function pickFind(ms){
+  if(petAway())return null;
+  const h=ms/36e5;if(ms<60*60e3&&Math.random()>.4)return null;
+  const m=today().getMonth()+1,wt=f=>f[8]&&f[8].includes(m)?3:1;
+  const wpick=a=>{let s=0;for(const f of a)s+=wt(f);let r=Math.random()*s;for(const f of a){r-=wt(f);if(r<=0)return f[0];}return a[a.length-1][0];};
+  const rares=FD.filter(f=>f[6]&&!S.owned.has(f[0])),commons=FD.filter(f=>!f[6]&&!S.owned.has(f[0]));
+  if(rares.length&&Math.random()<Math.min(.25,.12+Math.max(0,h-24)/24*.03))return wpick(rares);
+  if(commons.length)return wpick(commons);
+  if(rares.length)return wpick(rares);
+  return wpick(FD.filter(f=>!f[6]));   // everything owned: a repeat find
+}
+function bigThumb(i,mw,mh){const a=IATL[i.at[0]],k=Math.min(mw/i.w,mh/i.h,1.5),f=v=>(v*k).toFixed(1);
+  return`<span style="display:inline-block;width:${f(i.w)}px;height:${f(i.h)}px;background:url(assets/items/atlas_${i.at[0]}.webp) -${f(i.at[1])}px -${f(i.at[2])}px/${f(a[0])}px ${f(a[1])}px no-repeat"></span>`;}
+
+const R={pending:false,shown:false,find:null,rep:false};
+function show(ms){
+  R.pending=false;R.shown=true;const t=today(),hn=hourNow();
+  const id=pickFind(ms),f=id&&FDW[id];let findHtml="";
+  if(f){const rep=S.owned.has(id);R.find=id;R.rep=rep;RET.cnt[id]=(RET.cnt[id]||0)+1;
+    if(!rep){S.owned.add(id);disc("find",id);}else S.needs.joy=clamp(S.needs.joy+10,0,100);
+    findHtml=`<div class="ret-hr"></div><div class="ret-find"><span class="ret-k ${f[6]?"rare":""}">${rep?"Муся снова кое-что принесла":f[6]?"✦ Редкая находка ✦":"Муся принесла находку"}</span>
+      <span class="ret-pic ${f[6]?"rare":""}">${bigThumb(IT[id],170,150)}</span><b>${f[1]}</b>
+      <small>${rep?`Такая у тебя уже есть, но Муся так гордится, что радости хватит на двоих.`:f[7]}</small>
+      <button class="ret-btn" data-x="ret:take">${rep?"Погладить Мусю":"Забрать"}</button></div>`;}
+  const lines=news(ms);
+  const html=`<div class="ret-card"><div class="ret-date">${t.getDate()} ${MON_G[t.getMonth()]} · ${PART_RU[partOf(hn)]}</div><div class="ret-seal">留守</div>
+    <div class="ret-h">Тебя не было ${awayText(ms)}</div>${doing(ms).map(p=>`<p class="ret-p">${p}</p>`).join("")}
+    ${lines.length?`<div class="ret-hr"></div>`+lines.map(l=>`<div class="ret-li"><i>${l.i||"·"}</i><span>${l.t}</span></div>`).join(""):""}
+    ${findHtml||`<div class="ret-find" style="margin-top:12px"><button class="ret-btn" data-x="ret:ok">${petAway()?"Ждём Мусю":"Здравствуй, Муся"}</button></div>`}<span class="ret-paw">🐾</span></div>`;
+  RET.n++;RET.last=Date.now();save();
+  openPanel("Пока тебя не было",html,"ret");chime([784,988,1175]);
+}
+function tryShow(ms,t0){
+  R.pending=true;
+  const go=()=>{if(scene.on||overlaysOpen()||(typeof drag!=="undefined"&&drag.active)||now()-t0<2.5){setTimeout(go,700);return;}show(ms);};
+  setTimeout(go,2500);
+}
+function take(){
+  const f=R.find&&FDW[R.find];closePanel();
+  if(f){toast(R.rep?"Муся мурлычет от гордости":"🐾 Находка лежит в 🧺 Вещах");chime([1046,1318,1568]);}
+  if(!petAway()){react(f?"😸":"😺",2.2);S.needs.joy=clamp(S.needs.joy+5,0,100);if(f)burst(6);}
+  R.find=null;save();
+}
+hook("boot",()=>{const ms=saved.t?Date.now()-saved.t:0;if(ms>=RET_MIN)tryShow(ms,now());});
+// the page stayed open in the background (phones): the same card when the player comes back after 45 min
+let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden){hidAt=Date.now();return;}
+  const ms=hidAt?Date.now()-hidAt:0;hidAt=0;if(ms>=RET_MIN&&!R.pending&&!panelIs("ret"))tryShow(ms,now());});
+hook("click",k=>{if(k==="ret:take"){take();return true;}if(k==="ret:ok"){closePanel();if(!petAway())react("😺",2);return true;}});
+hook("panelClose",id=>{if(id==="ret")R.find=null;});
+X.ret={show,awayText,pickFind,news,doing,R,FD};
+}
+// ── lanterns.js
+{
+// ───────────────────────── «Фонарики дней»: seven paper lanterns under the veranda eaves ─────────────────────────
+// Every calendar day the player opens the game one more lantern lights (up to 7); every missed day puts one out.
+// On the day the seventh lights, a rare seasonal guest comes to the veranda with a gift; then a new circle begins.
+const LAN=S.ext.lan||(S.ext.lan={n:0,day:null,cyc:0,met:{},rg:null,done:null});LAN.met=LAN.met||{};
+const LSPR={"0on":[588,0],"0off":[674,0],"1on":[760,0],"1off":[846,0],"2on":[932,0],"2off":[0,182],"3on":[86,182],"3off":[172,182],"4on":[258,182],"4off":[344,182],"5on":[430,182],"5off":[516,182],"6on":[602,182],"6off":[688,182]},LW=84,LH=132,RGA=[1024,436];
+const ORD=["первый","второй","третий","четвёртый","пятый","шестой","седьмой"],ORDG=["первого","второго","третьего","четвёртого","пятого","шестого","седьмого"];
+const NOTE=[523,587,659,784,880,1047,1175];
+function lPl(n,a,b,c){n=Math.abs(n)%100;const m=n%10;return n>10&&n<20?c:m===1?a:m>=2&&m<=4?b:c;}
+
+// ── the four rare guests, one per season ──
+const RG=[
+ {id:"yuki",mon:"m_rg_yuki",n:"Юки-онна",h:500,mo:[12,1,2],when:"Зимой",fx:"snow",gifts:["rg_yuki_usagi","rg_yuki_comb"],
+  hi:"Ш-ш-ш… я пришла вместе с метелью. Семь огоньков на вашей веранде горели так ровно, что я не смогла пройти мимо. Не бойся, маленькая, сегодня я ничего не заморожу.",
+  bye:"Юки-онна улыбается одними губами. «Только никому не рассказывай, откуда это», — и тает в снежной пыли."},
+ {id:"kodama",mon:"m_rg_kodama",n:"Кодама",h:340,mo:[3,4,5],when:"Весной",fx:"leaf",gifts:["rg_kodama_sprout","rg_kodama_rope"],
+  hi:"А-у… а-у… Это я отвечаю вам эхом из леса. Я живу в старом дереве за садом уже триста вёсен, и ваши фонарики видно из самой чащи.",
+  bye:"Кодама кивает, и где-то в горах эхо повторяет: «Берегите старые деревья… деревья…»"},
+ {id:"amabie",mon:"m_rg_amabie",n:"Амабиэ",h:410,mo:[6,7,8],when:"Летом",fx:"sea",gifts:["rg_amabie_print","rg_amabie_float"],
+  hi:"Я вышла из моря Хиго, где светилась по ночам. Людям я сказала: будут шесть урожайных лет, а если придёт мор — покажите всем мой портрет.",
+  bye:"Амабиэ ныряет в темноту сада, будто в море. Пахнет солью, и на досках веранды блестят капли."},
+ {id:"usagi",mon:"m_rg_usagi",n:"Цуки-но усаги",h:390,mo:[9,10,11],when:"Осенью",fx:"moon",gifts:["rg_usagi_usu","rg_usagi_dango"],
+  hi:"Пон-пон! Я спустился с луны по лунной дорожке — ваши фонарики видно даже оттуда. Там, наверху, я толку моти с тех пор, как отдал всё, что имел, голодному путнику.",
+  bye:"Заяц подпрыгивает — и вот его уже нет. Только луна над садом кажется чуть ярче."}
+];
+for(const g of RG)MON[g.mon]={m_rg_yuki:[340,620],m_rg_kodama:[300,420],m_rg_amabie:[360,480],m_rg_usagi:[360,480]}[g.mon];
+BESTIARY.push(
+ ["rg_yuki","m_rg_yuki","Юки-онна","Снежная женщина: бледная, в белом кимоно, приходит в метель, и дыхание её замораживает. В «Кайдане» Лафкадио Хирна (1904) она пощадила юного дровосека, взяв с него слово молчать."],
+ ["rg_kodama","m_rg_kodama","Кодама","Дух старого дерева. Горное эхо — это кодама отвечает путнику. Срубить такое дерево — к беде, поэтому его опоясывают верёвкой симэнава. Нарисован Ториямой Сэкиэном в 1776 году."],
+ ["rg_amabie","m_rg_amabie","Амабиэ","Морской дух с птичьим клювом, длинными волосами и чешуёй на трёх ногах. В 1846 году вышел из моря в провинции Хиго, предсказал шесть урожайных лет и велел показывать людям свой портрет, если придёт мор."],
+ ["rg_usagi","m_rg_usagi","Цуки-но усаги","Лунный заяц. По древней притче, заяц бросился в костёр, чтобы накормить голодного старика, и тот — а это был бог Тайсякутэн — поселил его на луне. В Японии в пятнах луны видят зайца, что толчёт в ступке моти."]);
+STAMPS.push(["lan_seven","灯","Семь фонариков","Зажечь все семь фонариков на веранде"]);
+const GI=[["rg_yuki_usagi","Снежный зайчик, который не тает",150,104,"b",232,316],["rg_yuki_comb","Ледяной гребень Юки-онны",150,84,"b",384,316,[75,30]],
+ ["rg_kodama_sprout","Росток векового дерева",130,160,"b",142,0],["rg_kodama_rope","Верёвка симэнава со священного дерева",230,120,"t",0,316],
+ ["rg_amabie_print","Листок с портретом Амабиэ",140,180,"t",0,0],["rg_amabie_float","Стеклянный поплавок из моря Хиго",124,124,"b",774,182],
+ ["rg_usagi_usu","Лунная ступка с пестиком",170,160,"b",274,0],["rg_usagi_dango","Цукими-данго с луны",140,150,"b",446,0,[70,60]]];
+addItems(GI.map(([id,n,w,h,a,x,y,glow])=>Object.assign({id,n,c:"Дары редких гостей",w,h,a,p:0,at:["rg",x,y],src:"🏮 дар редкого гостя",
+  hint:"Зажги все 7 фонариков на веранде"},glow?{glow}:{})),{rg:RGA});
+
+document.head.insertAdjacentHTML("beforeend",`<style>
+.lan-row{display:flex;gap:4px;align-items:flex-start;margin:4px 0 8px;padding:8px 6px 4px;border-top:2px solid #2a2018;border-radius:2px}
+.lan-row span{width:30px;height:47px;background:url(assets/items/atlas_rg.webp) no-repeat;flex:none}
+.lan-row span.on{filter:drop-shadow(0 0 7px rgba(255,170,80,.75))}
+.lan-row span:nth-child(even){margin-top:7px}
+.lan-g{display:flex;gap:10px;align-items:center}.lan-g img{height:64px;flex:none;filter:drop-shadow(0 0 10px rgba(255,220,160,.25))}
+</style>`);
+
+function dnum(k){const [y,m,d]=k.split("-").map(Number);return Math.round(Date.UTC(y,m-1,d)/864e5);}
+function seasonG(){const m=today().getMonth()+1;return RG.find(g=>g.mo.includes(m));}
+function rgDef(){return LAN.rg&&RG.find(g=>g.id===LAN.rg.id);}
+// a new calendar day: light one, put out one per missed day (never while a guest waits), start a new circle after a visit
+let EV=null;
+function lanDay(){
+  const k=dayKey();if(LAN.day===k)return null;
+  const gap=LAN.day?dnum(k)-dnum(LAN.day):1;if(gap<=0){LAN.day=k;save();return null;}
+  const ev={out:0,cyc:false,first:!LAN.day};
+  if(LAN.done||(LAN.n>=7&&!LAN.rg)){LAN.n=0;LAN.done=null;LAN.cyc++;ev.cyc=true;}
+  else if(!LAN.rg){ev.out=Math.min(LAN.n,gap-1);LAN.n-=ev.out;}
+  LAN.n=Math.min(7,LAN.n+1);ev.n=LAN.n;LAN.day=k;
+  if(LAN.n===7&&!LAN.rg){const g=seasonG();LAN.rg={id:g.id,day:k,st:"coming",at:Date.now()+rand(5,10)*1000};ev.guest=g.id;award("lan_seven");}
+  save();return ev;
+}
+function lanLine(ev){
+  if(ev.guest){const g=RG.find(x=>x.id===ev.guest);return`Зажёгся седьмой фонарик! На его свет уже спешит редкий гость — ${g.n}.`;}
+  if(ev.first)return"На веранде зажёгся первый фонарик. Приходи каждый день — их семь.";
+  if(ev.cyc)return"Начался новый круг: на веранде зажёгся первый фонарик.";
+  if(ev.out)return`Пока тебя не было, ${ev.out===1?"погас один фонарик":`погасли ${ev.out} ${lPl(ev.out,"фонарик","фонарика","фонариков")}`}, но сегодня зажёгся новый — горит ${ev.n} из 7.`;
+  return`На веранде зажёгся ${ORD[ev.n-1]} фонарик — горит ${ev.n} из 7.`;
+}
+function lanToast(ev){toast(ev.guest?"🏮 Горят все семь фонариков!":ev.out?`🏮 Фонарики: горит ${ev.n} из 7`:`🏮 Зажёгся фонарь ${ORDG[ev.n-1]} дня`);chime([NOTE[ev.n-1],NOTE[ev.n-1]*1.5]);}
+hook("away",()=>{if(!EV||EV.told)return null;EV.told=1;return{i:"🏮",t:lanLine(EV)};});
+
+// ── where the lanterns hang: spread over the visible part of the eaves, making room for a hanging wind chime ──
+const SLOT={key:"",xs:[]},TOPS=[196,222,204,230,200,226,210],EAVE=96,LD=.92,LSC=.95;
+function slots(){
+  const sel=S.decor.engawa||{},obs=[];
+  for(const sp of DECOR.engawa||[]){const it=sp.items.find(i=>i.id===sel[sp.k]);if(it&&DMETA[it.id]&&DMETA[it.id][2]==="t"){const x=it.x+(S.dpos[it.id]||[0])[0],w=DMETA[it.id][0]/2+34;obs.push([x-w,x+w]);}}
+  const key=view.W+"x"+view.H+"|"+BGM.k.toFixed(4)+"|"+obs.map(o=>o[0]|0).join(",");if(SLOT.key===key)return SLOT.xs;
+  const a=Math.max(150,visX(-1e5,60)),b=Math.min(1330,visX(1e5,60));let segs=[[a,b]];
+  for(const [o0,o1] of obs)segs=segs.flatMap(([s0,s1])=>o1<=s0||o0>=s1?[[s0,s1]]:[[s0,o0],[o1,s1]].filter(([u,v])=>v-u>4));
+  let L=segs.reduce((s,[u,v])=>s+v-u,0);if(L<6*70){segs=[[a,b]];L=b-a;}
+  const xs=[];for(let i=0;i<7;i++){let s=L*i/6;for(const [u,v] of segs){if(s<=v-u+1e-6){xs.push(u+s);break;}s-=v-u;}}
+  SLOT.key=key;SLOT.xs=xs;return xs;
+}
+const WOB=[0,0,0,0,0,0,0].map(()=>-9);let lanIm=null,glowCv=null;
+function glow(){if(glowCv)return glowCv;const c=document.createElement("canvas");c.width=c.height=128;const g=c.getContext("2d"),gr=g.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0,"rgba(255,196,110,.9)");gr.addColorStop(.35,"rgba(255,150,60,.35)");gr.addColorStop(1,"rgba(255,140,50,0)");g.fillStyle=gr;g.fillRect(0,0,128,128);return glowCv=c;}
+function lanGeo(i,t){const x=slots()[i],top=TOPS[i],k=BGM.k,[px,py]=imgToStage(x,EAVE,LD),[,ly]=imgToStage(x,top,LD),wind=weather.on?2:1,w=t-WOB[i];
+  const a=(.035*Math.sin(t*1.1+i*1.9)+.015*Math.sin(t*2.7+i))*wind+(w<3?.22*Math.exp(-w*1.6)*Math.sin(w*9):0);return{px,py,off:ly-py,w:LW*LSC*k,h:LH*LSC*k,a};}
+function drawLanterns(t){
+  if(!lanIm)return;const night=dayTint()[1],lit=LAN.n;
+  for(let i=0;i<7;i++){const on=i<lit,G=lanGeo(i,t),fl=.86+.09*Math.sin(t*7.3+i*2.1)+.05*Math.sin(t*13.7+i);
+    ctx.save();ctx.translate(G.px,G.py);ctx.rotate(G.a);
+    ctx.strokeStyle="rgba(24,18,14,.85)";ctx.lineWidth=Math.max(1,1.4*BGM.k*2);ctx.beginPath();ctx.moveTo(0,-40);ctx.lineTo(0,G.off+2);ctx.stroke();
+    if(on){const R=(night?300:150)*BGM.k;ctx.globalCompositeOperation="lighter";ctx.globalAlpha=(night?.55:.22)*fl;ctx.drawImage(glow(),-R,G.off+G.h*.52-R,R*2,R*2);ctx.globalCompositeOperation="source-over";ctx.globalAlpha=1;}
+    const s=LSPR[i+(on?"on":"off")];ctx.drawImage(lanIm,s[0],s[1],LW,LH,-G.w/2,G.off,G.w,G.h);
+    if(on){ctx.globalCompositeOperation="lighter";ctx.globalAlpha=.3*fl*(night?1:.6);const r=G.w*.55;ctx.drawImage(glow(),-r,G.off+G.h*.52-r,r*2,r*2);ctx.globalCompositeOperation="source-over";ctx.globalAlpha=1;}
+    ctx.restore();}
+}
+function lanHit(x,y){const t=now();for(let i=0;i<7;i++){const G=lanGeo(i,t),cx=G.px-Math.sin(G.a)*(G.off+G.h/2),cy=G.py+G.off+G.h/2;
+  if(Math.abs(x-cx)<G.w*.62&&Math.abs(y-cy)<G.h*.58)return i;}return -1;}
+function tapLantern(i){
+  WOB[i]=now();const on=i<LAN.n,d=i-LAN.n+1;
+  if(on){chime([NOTE[i],NOTE[i]*1.5]);toast(`🏮 Фонарь ${ORDG[i]} дня`);}
+  else{tone(NOTE[i]/2,.5,"triangle",.035);toast(LAN.rg||LAN.done?`Фонарь ${ORDG[i]} дня ждёт нового круга`:d===1?`Фонарь ${ORDG[i]} дня зажжётся завтра`:`Фонарь ${ORDG[i]} дня — через ${d} ${lPl(d,"день","дня","дней")}`);}
+}
+
+// ── the rare guest on the veranda ──
+const GV={side:0,t0:0,leave:0,gone:null};const GY=1222;
+function guestX(){if(!GV.side){const l=visX(-1e5,0),r=visX(1e5,0),pi=(pet.x-BGM.dx)/BGM.k;GV.side=pi<(l+r)/2?1:-1;}
+  const l=visX(-1e5,0),r=visX(1e5,0);return clamp(GV.side>0?r-170:l+170,300,1340);}
+function guestHere(){return LAN.rg&&LAN.rg.st==="here";}
+function drawRG(t,front){
+  const g=GV.gone||(guestHere()?rgDef():null);if(!g||scene.on||(GY>catLineY()+6)!==front)return;
+  if(!GV.t0)GV.t0=t;let a=clamp((t-GV.t0)/1.6,0,1);if(GV.gone){a=1-clamp((t-GV.leave)/2,0,1);if(a<=0){GV.gone=null;return;}}
+  const x=guestX(),bob=g.fx==="moon"?-Math.abs(Math.sin(t*2.2))*10:Math.sin(t*1.4)*6,k=BGM.k,[sx,sy]=imgToStage(x,GY,CAT_D);
+  ctx.save();ctx.globalCompositeOperation="lighter";ctx.globalAlpha=a*(.35+.08*Math.sin(t*2));const R=g.h*.75*k;
+  const c=g.fx==="snow"?"200,220,255":g.fx==="leaf"?"170,230,140":g.fx==="sea"?"120,230,210":"255,230,160",gr=ctx.createRadialGradient(sx,sy-R*.7,0,sx,sy-R*.7,R);
+  gr.addColorStop(0,`rgba(${c},.45)`);gr.addColorStop(1,`rgba(${c},0)`);ctx.fillStyle=gr;ctx.fillRect(sx-R,sy-R*1.7,R*2,R*2);ctx.restore();
+  ctx.fillStyle=`rgba(0,0,0,${.28*a})`;ctx.beginPath();ctx.ellipse(sx,sy+2,g.h*.28*k,g.h*.05*k,0,0,Math.PI*2);ctx.fill();
+  drawMon(g.mon,x,GY+bob,g.h,CAT_D,a);
+  for(let i=0;i<9;i++){const u=((t*(g.fx==="snow"?.12:.16)+i/9)%1),px=sx+Math.sin(i*2.4+t*.7)*g.h*.4*k,py=g.fx==="snow"?sy-g.h*k*(1.1-u*1.1):sy-g.h*k*u*1.1;
+    ctx.globalAlpha=a*Math.sin(Math.PI*u)*.8;ctx.fillStyle=g.fx==="snow"?"#f4f8ff":g.fx==="leaf"?"#b6e08a":g.fx==="sea"?"#9ff0e0":"#fff0c0";ctx.beginPath();ctx.arc(px,py,(g.fx==="snow"?2.2:1.6)*Math.max(1,k*2),0,Math.PI*2);ctx.fill();}
+  ctx.globalAlpha=1;
+  if(!GV.gone&&a>.6){const [bx,by]=imgToStage(x+g.h*.3,GY-g.h*1.02+bob,CAT_D),r=16*view.s;ctx.save();ctx.globalAlpha=a*.95;ctx.fillStyle="rgba(238,233,220,.93)";
+    ctx.beginPath();ctx.arc(bx,by,r,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(bx-r*.95,by+r*1.05,r*.2,0,Math.PI*2);ctx.fill();drawEmoji(ctx,"🏮",bx,by+1,r*1.15);ctx.restore();}
+}
+function rgHit(x,y){const g=guestHere()&&rgDef();if(!g||S.room!=="engawa"||scene.on)return false;const [sx,sy]=imgToStage(guestX(),GY,CAT_D),h=g.h*BGM.k*1.1,w=h*.62;
+  if(x>sx-w/2&&x<sx+w/2+h*.25&&y>sy-h&&y<sy+10){openRG();return true;}return false;}
+function openRG(){
+  const g=rgDef();if(!g)return;const gift=g.gifts.find(id=>!S.owned.has(id));if(!petAway())react("😺",1.6);
+  if(!ST.seen.includes("rg_"+g.id)){ST.seen.push("rg_"+g.id);setTimeout(()=>toast("Новая запись в бестиарии"),600);}
+  dlg({head:g.n,text:g.hi,img:`<img src="assets/mon/${g.mon}.webp" alt="" style="height:64px">`,ok:gift?"Принять дар":"Поклониться",no:"Позже",onOk:()=>meetRG(g,gift)});
+}
+function meetRG(g,gift){
+  if(gift)S.owned.add(gift);LAN.met[g.id]=(LAN.met[g.id]||0)+1;disc("rareguest",g.id);
+  S.needs.joy=clamp(S.needs.joy+15,0,100);chime([1046,1318,1568,2093]);if(!petAway()){burst(10);react("😻",2.4);}
+  dlg({head:g.n,text:g.bye+(gift?` Остался дар: «${IT[gift].n}» — ищи в 🧺 Вещи → Дары редких гостей.`:" Все дары этого гостя уже у тебя — он приходил просто повидаться."),img:gift?itemThumb(IT[gift],70,56):"",ok:"До встречи"});
+  GV.gone=g;GV.leave=now();LAN.rg=null;LAN.done=dayKey();save();tabDots();hubDot();
+}
+
+// ── hooks ──
+hook("boot",()=>{atlasImg("rg",im=>{lanIm=im;});EV=lanDay();GV.bootT=now();});
+hook("sec",()=>{
+  if(LAN.day!==dayKey()){const ev=lanDay();if(ev){EV=ev;ev.told=1;lanToast(ev);}}
+  if(EV&&!EV.told&&now()-(GV.bootT||0)>(EV.first?9.5:5)&&!(X.ret&&X.ret.R.pending)&&!scene.on&&!overlaysOpen()){EV.told=1;lanToast(EV);}
+  const q=LAN.rg;if(q&&q.st==="coming"&&Date.now()>q.at&&!scene.on&&!overlaysOpen()&&(!EV||EV.told)){q.st="here";GV.t0=0;GV.side=0;save();chime([659,784,1047]);
+    toast(S.room==="engawa"?"🏮 На свет фонариков кто-то пришёл":"🏮 На веранду пришёл редкий гость");tabDots();}
+});
+hook("draw",(t,front)=>{if(S.room!=="engawa")return;if(front)drawLanterns(t);drawRG(t,front);});
+hook("hit",(x,y)=>{if(S.room!=="engawa")return false;if(rgHit(x,y))return true;const i=lanHit(x,y);if(i>=0){tapLantern(i);return true;}return false;});
+hook("room",id=>{if(id==="engawa"){GV.t0=0;GV.side=0;}});
+hook("hubDot",()=>guestHere());
+hook("tabDot",r=>r==="engawa"&&guestHere());
+hook("hub",()=>{
+  const g=rgDef()||seasonG(),n=LAN.n,f=v=>(v*.36).toFixed(1);
+  const row=[0,1,2,3,4,5,6].map(i=>{const s=LSPR[i+(i<n?"on":"off")];return`<span class="${i<n?"on":""}" style="background-position:-${f(s[0])}px -${f(s[1])}px;background-size:${f(RGA[0])}px ${f(RGA[1])}px"></span>`;}).join("");
+  const q=LAN.rg,left=7-n;
+  const st=q?`${g.n} уже в пути к веранде…`:LAN.done===dayKey()?"Гость уже побывал у вас. Завтра начнётся новый круг.":
+    `Ещё ${left} ${lPl(left,"день","дня","дней")} подряд — и ${g.n} придёт.`;
+  return`<div class="hubc"><h4>🏮 Фонарики дней <i>灯</i></h4><div class="lan-row">${row}</div>
+  <p>Каждый день, когда ты заходишь, на веранде зажигается ещё один фонарик, а пропущенный день гасит один. Горит ${n} из 7.</p>
+  <div class="lan-g"><img src="assets/mon/${g.mon}.webp" alt=""><p>${q&&q.st==="here"?`<b>${g.n} ждёт на веранде!</b> Гость пришёл на свет семи фонариков — нажми на него, чтобы получить дар.`:`${g.when} на свет семи фонариков приходит <b>${g.n}</b>. ${st}`}</p></div>
+  <div class="row"><button class="btn" data-x="lan:go">На веранду</button></div></div>`;
+});
+hook("click",k=>{if(k==="lan:go"){closePanel();goRoom("engawa");return true;}});
+// test handles: X.lan.set({n,day}) then X.lan.day() simulates coming back on another day
+X.lan={S:LAN,day:()=>{const ev=lanDay();if(ev){EV=ev;}return ev;},arrive:()=>{if(LAN.rg){LAN.rg.at=0;}},slots,open:openRG,
+  pt:i=>{const G=lanGeo(i,now());return[G.px,G.py+G.off+G.h/2];},gx:()=>{const g=rgDef();const [x,y]=imgToStage(guestX(),GY,CAT_D);return[x,y-(g?g.h:300)*BGM.k*.5];},
+  set:o=>Object.assign(LAN,o),back:n=>{const d=today();d.setDate(d.getDate()-n);LAN.day=dayKey(d);}};
+}
+// ── dreams.js
+{
+// ───────────────────────── «Сны Муси» (prefix dr): a thought bubble over sleeping Musya opens her dream ─────────────────────────
+// Six dream worlds drawn on the mini-game canvas (static layers cached per open), glowing fragments to catch, nightmare shadows
+// that steal them and Baku the dream-eater who eats the shadows when called. Dream-only things «Из снов», the «Сонник» in the album.
+const DR_SPR={moon:[0,0,400,400],shrine:[402,0,460,280],torii:[0,402,300,270],furinA:[302,402,84,200],furinB:[388,402,84,200],furinC:[474,402,84,200],bubble:[560,402,230,170],
+ fishR:[792,402,210,150],fishW:[0,674,210,150],fishG:[212,674,210,150],cloudA:[424,674,330,150],cloudB:[756,674,260,120],cloudC:[0,826,220,110],boat:[222,826,300,110],puff:[524,826,56,44]};
+let drSheet=null;ldImg("assets/bg/dr_sprites.webp",im=>{drSheet=im;});
+MON.m_dr_baku=[460,400];
+const DR_HINT="Такое можно найти только во сне…",DR_SRC="💭 из снов Муси";
+addItems([{id:"dr_fish",n:"Рыба-фонарик",w:170,h:190,a:"t",glow:[72,104],at:["dr",592,0]},{id:"dr_jar",n:"Банка с сонными огоньками",w:120,h:160,a:"b",glow:[60,104],at:["dr",0,232]},
+ {id:"dr_pillow",n:"Облачная подушка",w:210,h:120,a:"b",at:["dr",324,232]},{id:"dr_key",n:"Лунный ключ",w:100,h:220,a:"t",at:["dr",196,0]},
+ {id:"dr_door",n:"Бумажная дверца",w:140,h:210,a:"b",glow:[70,104],at:["dr",298,0]},{id:"dr_hglass",n:"Песочные часы с лунным песком",w:110,h:180,a:"b",at:["dr",764,0]},
+ {id:"dr_furin",n:"Стеклянный фурин из сна",w:96,h:230,a:"t",at:["dr",0,0]},{id:"dr_bell",n:"Колокольчик тишины",w:130,h:180,a:"b",at:["dr",876,0]},
+ {id:"dr_boat",n:"Звёздная лодочка",w:210,h:110,a:"b",at:["dr",536,232]},{id:"dr_feather",n:"Перо сна",w:96,h:230,a:"b",at:["dr",98,0]},
+ {id:"dr_torii",n:"Храм в чаше",w:200,h:150,a:"b",at:["dr",122,232]},{id:"dr_baku",n:"Маска Баку",w:150,h:200,a:"t",at:["dr",440,0]}]
+ .map(i=>Object.assign(i,{c:"Из снов",p:0,src:DR_SRC,hint:DR_HINT})),{dr:[1024,392]});
+const DR_ITEMS=["dr_fish","dr_jar","dr_pillow","dr_key","dr_door","dr_hglass","dr_furin","dr_bell","dr_boat","dr_feather","dr_torii","dr_baku"];
+BESTIARY.push(["dr_baku","m_dr_baku","Баку","Пожиратель снов: хобот слона, лапы тигра, хвост быка. В старину его имя писали на листке и клали под подушку, чтобы он съел дурной сон."]);
+STAMPS.push(["dr_dream","夢","Сновидица","Загляни в сон спящей Муси"],["dr_all","枕","Сонник","Посмотри все шесть снов Муси"],["dr_bakufr","獏","Друг Баку","Баку съел пять кошмаров"]);
+// the six dreams: title, a line for the dream book, the things that can be found there, Musya's tint, the fragments' light
+const DRK=[
+ {id:"fish",n:"Рыбы-фонари",jp:"金魚提灯",line:"Над спящим городом плыли бумажные рыбы, и в каждой горела свеча.",items:["dr_fish","dr_jar"],tint:"rgba(70,60,130,.3)",glow:"255,196,120",pv:"fishR"},
+ {id:"moon",n:"Лестница к луне",jp:"月の階",line:"Облака сложились в ступени, а на луне заяц толок в ступке моти.",items:["dr_pillow","dr_key"],tint:"rgba(80,90,160,.28)",glow:"214,226,255",pv:"moon"},
+ {id:"doors",n:"Тысяча дверей",jp:"千の襖",line:"Коридор без конца. За каждой дверью кто-то был — но только тенью.",items:["dr_door","dr_hglass"],tint:"rgba(90,50,40,.26)",glow:"255,206,140",pv:"door"},
+ {id:"furin",n:"Сад колокольчиков",jp:"風鈴の庭",line:"Ветер перебирал стеклянные фурин, и каждый звенел своим голосом.",items:["dr_furin","dr_bell"],tint:"rgba(40,90,120,.3)",glow:"170,236,240",pv:"furinA"},
+ {id:"river",n:"Звёздная река",jp:"天の川",line:"Муся плыла по Млечному Пути в лодочке из бамбукового листа.",items:["dr_boat","dr_feather"],tint:"rgba(60,60,150,.32)",glow:"236,232,255",pv:"boat"},
+ {id:"temple",n:"Затонувший храм",jp:"水底の社",line:"Над храмом, ушедшим под воду, шёл тихий дождь из лепестков.",items:["dr_torii"],tint:"rgba(80,60,130,.3)",glow:"255,182,206",pv:"torii"}];
+const DRK_BY=Object.fromEntries(DRK.map(k=>[k.id,k]));
+const drS=()=>S.ext.dream||(S.ext.dream={n:0,seen:{},frag:0,eaten:0});
+document.head.insertAdjacentHTML("beforeend",`<style>.dr-book{display:grid;gap:8px;margin-bottom:12px}.dr-d{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#0b0d16}.dr-d b{font-family:var(--display);font-size:17px;color:var(--paper)}.dr-d i{font-style:normal;font-family:var(--jp);color:var(--sakura);font-size:13px;margin-left:6px}.dr-d p{margin:4px 0 6px;font-size:13px;color:var(--muted);line-height:1.45}.dr-d.off{opacity:.55}.dr-its{display:flex;gap:10px;align-items:flex-end}.dr-its .ath{filter:brightness(0) opacity(.35)}.dr-its .on .ath{filter:none}.dr-its>span{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px;color:var(--muted)}.dr-card .dish{min-height:90px;align-items:center}</style>`);
+
+// ───── helpers: canvases, sprites, glows ─────
+function drCv(W,H){const c=document.createElement("canvas"),d=Math.min(2,devicePixelRatio||1);c.width=Math.max(1,W*d|0);c.height=Math.max(1,H*d|0);const g=c.getContext("2d");g.setTransform(d,0,0,d,0,0);return[c,g];}
+function drGlowSp(rgb){const c=document.createElement("canvas");c.width=c.height=64;const g=c.getContext("2d"),gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,`rgba(${rgb},1)`);gr.addColorStop(.3,`rgba(${rgb},.38)`);gr.addColorStop(1,`rgba(${rgb},0)`);g.fillStyle=gr;g.fillRect(0,0,64,64);return c;}
+const DR_GL={},drGl=rgb=>DR_GL[rgb]||(DR_GL[rgb]=drGlowSp(rgb));
+function drSmoke(){if(drSmoke.c)return drSmoke.c;const c=document.createElement("canvas");c.width=c.height=96;const g=c.getContext("2d"),gr=g.createRadialGradient(48,48,0,48,48,48);gr.addColorStop(0,"rgba(4,2,10,.92)");gr.addColorStop(.55,"rgba(10,6,20,.55)");gr.addColorStop(1,"rgba(10,6,20,0)");g.fillStyle=gr;g.fillRect(0,0,96,96);return drSmoke.c=c;}
+// a sprite from the sheet, centred at x,y, width w
+function drSp(g,n,x,y,w,a=1,rot=0,flip=false,ay=.5){const r=DR_SPR[n];if(!drSheet||!r||a<=0)return;const h=w*r[3]/r[2];g.save();g.globalAlpha=a;g.translate(x,y);if(rot)g.rotate(rot);if(flip)g.scale(-1,1);g.drawImage(drSheet,r[0],r[1],r[2],r[3],-w/2,-h*ay,w,h);g.restore();}
+function drGlow(g,rgb,x,y,r,a){if(a<=0)return;g.save();g.globalCompositeOperation="lighter";g.globalAlpha=Math.min(1,a);g.drawImage(drGl(rgb),x-r,y-r,r*2,r*2);g.restore();}
+// soft painterly nebula: a tiny random grid blown up with smoothing
+function drNeb(g,W,H,rgb,n,seed,alpha){const r=rng(seed),c=document.createElement("canvas");c.width=n;c.height=Math.max(2,Math.round(n*H/W));const x=c.getContext("2d"),im=x.createImageData(c.width,c.height);
+  for(let i=0;i<im.data.length;i+=4){im.data[i]=rgb[0];im.data[i+1]=rgb[1];im.data[i+2]=rgb[2];im.data[i+3]=Math.pow(r(),2.4)*255*alpha;}x.putImageData(im,0,0);g.save();g.imageSmoothingEnabled=true;g.imageSmoothingQuality="high";g.drawImage(c,0,0,W,H);g.restore();}
+function drStars(g,W,H,n,seed,y1=1){const r=rng(seed);for(let i=0;i<n;i++){const x=r()*W,y=r()*H*y1,a=.15+r()*.75,big=r()<.07;g.fillStyle=`rgba(236,232,255,${a})`;if(big){drGlow(g,"220,220,255",x,y,6,.5);g.fillRect(x-.9,y-.9,1.8,1.8);}else{const z=.5+r();g.fillRect(x,y,z,z);}}}
+function drVig(g,W,H,a=.6){const v=g.createRadialGradient(W/2,H*.55,Math.min(W,H)*.3,W/2,H*.55,Math.max(W,H)*.78);v.addColorStop(0,"rgba(0,0,0,0)");v.addColorStop(1,`rgba(3,2,12,${a})`);g.fillStyle=v;g.fillRect(0,0,W,H);}
+function drSky(g,W,H,stops){g.fillStyle=vGrad(g,0,H,stops);g.fillRect(0,0,W,H);}
+function drRidge(g,W,y,amp,seed,col,H){const r=rng(seed);g.fillStyle=col;g.beginPath();g.moveTo(0,H);let x=0;g.lineTo(0,y);while(x<W){x+=20+r()*50;g.lineTo(x,y-r()*amp-Math.sin(x*.01+seed)*amp*.5);}g.lineTo(W,H);g.fill();}
+// Musya, tinted to the dream's light (one small offscreen canvas, reused every frame)
+const drCatC=document.createElement("canvas");drCatC.width=384;drCatC.height=416;const drCatG=drCatC.getContext("2d");
+function drCat(g,tint,st,f,x,floor,sc,a=1,axis=0){const im=IMG[st];if(!im||a<=0)return;const c=drCatG;c.globalCompositeOperation="source-over";c.clearRect(0,0,384,416);c.drawImage(im,f*384,0,384,416,0,0,384,416);
+  c.globalCompositeOperation="source-atop";c.fillStyle=tint;c.fillRect(0,0,384,416);c.globalCompositeOperation="source-over";
+  g.save();g.globalAlpha=a;if(axis){g.translate(0,axis*2);g.scale(1,-1);}g.drawImage(drCatC,x-96*sc,floor-195*sc,192*sc,208*sc);g.restore();}
+// shadow puppets for the paper doors: silhouettes of the house's yōkai, blurred as if behind shoji
+function drSil(){if(drSil.l)return drSil.l;drSil.l=[];for(const id of["m_kitsune","m_tanuki","m_nekomata","m_kappa","m_warashi","m_obake"]){const im=MIMG[id];if(!im)continue;const c=document.createElement("canvas");c.width=im.width/2+20;c.height=im.height/2+20;const g=c.getContext("2d");
+  g.filter="blur(3px)";g.drawImage(im,10,10,im.width/2,im.height/2);g.filter="none";g.globalCompositeOperation="source-in";g.fillStyle="rgba(28,14,20,.8)";g.fillRect(0,0,c.width,c.height);drSil.l.push(c);}return drSil.l;}
+
+// ───── the six worlds: static layer (bg), live layers behind/in front of Musya, where fragments are born, where Musya is ─────
+const DRW={
+fish:{bg(g,W,H,s){drSky(g,W,H,[[0,"#070a26"],[.55,"#1a1846"],[.86,"#34295a"],[1,"#120e24"]]);drNeb(g,W,H,[120,90,190],14,3,.55);drNeb(g,W,H,[70,110,200],40,4,.25);drStars(g,W,H,170,5,.8);
+   const hz=H*.88,gl=g.createLinearGradient(0,hz-H*.2,0,hz);gl.addColorStop(0,"rgba(200,150,190,0)");gl.addColorStop(1,"rgba(200,150,190,.22)");g.fillStyle=gl;g.fillRect(0,hz-H*.2,W,H*.2);
+   const r=rng(8);g.fillStyle="#08081a";let x=-10;while(x<W+10){const w=(40+r()*60)*s,h=(26+r()*44)*s,y=hz+r()*10*s;g.fillRect(x,y-h*.55,w,H);g.beginPath();g.moveTo(x-8*s,y-h*.5);g.quadraticCurveTo(x+w*.5,y-h*1.05,x+w+8*s,y-h*.5);g.quadraticCurveTo(x+w*.5,y-h*.72,x-8*s,y-h*.5);g.fill();
+     if(r()<.55){g.fillStyle=`rgba(255,190,110,${.35+r()*.4})`;g.fillRect(x+w*(.2+r()*.5),y-h*.3,5*s,6*s);g.fillStyle="#08081a";}x+=w+r()*6*s;}
+   const px=W*.8,py=hz;for(let i=0;i<5;i++){const w=(70-i*11)*s,y=py-(i+1)*26*s;g.fillRect(px-w*.3,y,w*.6,26*s);g.beginPath();g.moveTo(px-w*.7,y+4*s);g.quadraticCurveTo(px,y-10*s,px+w*.7,y+4*s);g.lineTo(px+w*.4,y+8*s);g.lineTo(px-w*.4,y+8*s);g.fill();}g.fillRect(px-1.5*s,py-170*s,3*s,40*s);
+   g.fillRect(0,hz+18*s,W,H);drVig(g,W,H,.5);},
+ init(q,G){const r=rng(11),W=G.W,H=G.H;q.fish=[];for(let i=0;i<7;i++){const z=.35+r()*.75,dir=r()<.5?-1:1;q.fish.push({sp:["fishR","fishW","fishG"][i%3],x:r()*W,y:H*(.1+r()*.55),z,dir,v:(10+16*z)*G.s,ph:r()*6});}q.fish.sort((a,b)=>a.z-b.z);},
+ step(q,G,t,dt){const W=G.W;for(const f of q.fish){f.x+=f.dir*f.v*dt;if(f.x<-120*G.s&&f.dir<0)f.x=W+110*G.s;if(f.x>W+120*G.s&&f.dir>0)f.x=-110*G.s;}},
+ fishDraw(g,f,t,s){const w=150*f.z*s,y=f.y+Math.sin(t*.8+f.ph)*9*s;drGlow(g,"255,170,100",f.x,y,w*.9,.45+.1*Math.sin(t*3+f.ph));drSp(g,f.sp,f.x,y,w,.95,Math.sin(t*1.3+f.ph)*.06,f.dir>0);f.sy=y;},
+ back(q,G,g,t){for(const f of q.fish)if(f.z<.95)this.fishDraw(g,f,t,G.s);},
+ front(q,G,g,t){for(const f of q.fish)if(f.z>=.95)this.fishDraw(g,f,t,G.s);},
+ spawn(q,G){const f=pick(q.fish.filter(f=>f.x>20&&f.x<G.W-20))||q.fish[0];const w=150*f.z*G.s;return{x:f.x-f.dir*w*.45,y:(f.sy||f.y)+w*.1,vx:f.dir*6*G.s,vy:16*G.s,amp:18*G.s};},
+ cat(q,G,t){return{st:"sleep",f:7,x:G.W*(.5+.16*Math.sin(q.e*.21)),y:G.H*(.66+.035*Math.sin(q.e*.5)),sc:0.72}}},
+moon:{bg(g,W,H,s){drSky(g,W,H,[[0,"#05071c"],[.5,"#15164a"],[1,"#2c2656"]]);drNeb(g,W,H,[110,100,200],12,21,.5);drStars(g,W,H,200,22,.9);
+   const mx=W*.68,my=H*.2,R=Math.min(W*.34,H*.19);drGlow(g,"200,200,255",mx,my,R*3.2,.55);drGlow(g,"255,250,230",mx,my,R*1.6,.5);drSp(g,"moon",mx,my,R*2);
+   for(const [n,x,y,w,a] of [["cloudB",W*.15,H*.3,W*.5,.35],["cloudC",W*.9,H*.42,W*.4,.3],["cloudA",W*.35,H*.52,W*.7,.28]])drSp(g,n,x,y,w,a);
+   const sea=g.createLinearGradient(0,H*.8,0,H);sea.addColorStop(0,"rgba(90,84,150,0)");sea.addColorStop(1,"rgba(90,84,150,.5)");g.fillStyle=sea;g.fillRect(0,H*.8,W,H*.2);drVig(g,W,H,.45);},
+ init(q,G){const W=G.W,H=G.H;q.steps=[];for(let i=0;i<7;i++){const u=i/6;q.steps.push({x:W*(.26+u*.36)+(i%2?1:-1)*W*.13*(1-u*.5),y:H*(.88-u*.54),w:Math.min(W*.5,300*G.s)*(1-u*.52),n:["cloudA","cloudB","cloudC"][i%3],ph:i*1.7});}},
+ stepAt(q,i,t){const c=q.steps[i];return[c.x,c.y+Math.sin(t*.7+c.ph)*5*q.s];},
+ back(q,G,g,t){for(let i=6;i>=0;i--){const c=q.steps[i],[x,y]=this.stepAt(q,i,t);drSp(g,c.n,x,y,c.w,.95);}},
+ front(q,G,g,t){const W=G.W,H=G.H;drSp(g,"cloudA",W*.12+Math.sin(t*.1)*20,H*1.0,W*.8,.6);drSp(g,"cloudB",W*.92-Math.sin(t*.12)*20,H*.99,W*.6,.55);},
+ spawn(q,G){const cur=this.cur(q);if(Math.random()<.35)return{x:G.W*rand(.1,.9),y:-10,vx:-8*G.s,vy:22*G.s,amp:10*G.s};const i=Math.min(6,cur+1+Math.floor(Math.random()*3)),c=q.steps[i];return{x:c.x+rand(-.3,.3)*c.w,y:c.y-c.w*.12,vx:0,vy:0,amp:0,step:i};},
+ cur(q){return Math.min(6,Math.floor(q.e/(q.dur/7)));},
+ cat(q,G,t){const T=q.dur/7,i=this.cur(q),u=(q.e-i*T)/.9,[x1,y1]=this.stepAt(q,i,t),c=q.steps[i];let x=x1,y=y1-c.w*.06;
+   if(i>0&&u<1){const [x0,y0]=this.stepAt(q,i-1,t),cp=q.steps[i-1];x=mix(x0,x1,smooth(u));y=mix(y0-cp.w*.06,y1-c.w*.06,smooth(u))-Math.sin(Math.PI*clamp(u,0,1))*50*G.s;}
+   return{st:"rest",f:Math.floor(q.e/2.6)%2,x,y,sc:0.74-.3*i/6}}},
+doors:{bg(g,W,H,s){g.fillStyle="#0a070c";g.fillRect(0,0,W,H);const vx=W/2,vy=H*.44;drGlow(g,"255,196,120",vx,vy,Math.max(W,H)*.45,.35);drGlow(g,"255,226,170",vx,vy,W*.18,.8);
+   const fl=g.createLinearGradient(0,vy,0,H);fl.addColorStop(0,"#3a2616");fl.addColorStop(1,"#120a06");g.fillStyle=fl;g.beginPath();g.moveTo(vx,vy);g.lineTo(-W,H);g.lineTo(W*2,H);g.fill();
+   g.strokeStyle="rgba(0,0,0,.35)";g.lineWidth=1;for(let i=-8;i<=8;i++){g.beginPath();g.moveTo(vx,vy);g.lineTo(vx+i*W*.18,H);g.stroke();}
+   const ce=g.createLinearGradient(0,0,0,vy);ce.addColorStop(0,"#0c0808");ce.addColorStop(1,"#2a1a12");g.fillStyle=ce;g.beginPath();g.moveTo(vx,vy);g.lineTo(-W,0);g.lineTo(W*2,0);g.fill();drVig(g,W,H,.35);},
+ init(q,G){q.sil=drSil();},
+ geo(G){const W=G.W,H=G.H;return{vx:W/2,vy:H*.44,span:Math.max(W*.62,H*.3),top:H*.5,bot:H*.42};},
+ back(q,G,g,t){const o=this.geo(G),adv=q.e*.32,off=adv%1,base=Math.floor(adv);q.open=[];
+   for(let i=11;i>=0;i--){const z0=.5+(i-off)*.5,z1=z0+.5;if(z0<.3)continue;const s0=1/z0,s1=1/z1,fog=clamp(1.2-z0*.19,.06,1),id=i+base,h=Math.abs(Math.sin(id*12.9898)*43758.5453)%1;
+     for(const sd of[-1,1]){const xa=o.vx+sd*o.span*s1,xb=o.vx+sd*o.span*s0,ta=o.vy-o.top*s1,tb=o.vy-o.top*s0,ba=o.vy+o.bot*s1,bb=o.vy+o.bot*s0,kind=(h+(sd>0?.5:0))%1;
+       const P=[[xa,ta],[xb,tb],[xb,bb],[xa,ba]];g.beginPath();P.forEach(([x,y],k)=>k?g.lineTo(x,y):g.moveTo(x,y));g.closePath();
+       g.fillStyle=`rgba(${226*fog+14|0},${196*fog+10|0},${148*fog+12|0},1)`;g.fill();
+       const lerp=(u,v)=>{const zz=1/mix(s1,s0,u),x=o.vx+sd*o.span/zz,y=o.vy+mix(-o.top,o.bot,v)/zz;return[x,y];};
+       if(kind<.14&&z0<5){g.save();g.clip();const [cx,cy]=lerp(.5,.35),sil=q.sil[id%Math.max(1,q.sil.length)];if(sil){const hh=(o.top+o.bot)*mix(s1,s0,.5)*.7,ww=hh*sil.width/sil.height,sx=cx+Math.sin(t*.6+id)*ww*.35;g.globalAlpha=fog;g.drawImage(sil,sx-ww/2,cy-hh*.35,ww,hh);}g.restore();}
+       else if(kind>.86&&z0<6){const [x1,y1]=lerp(.25,0),[x2,y2]=lerp(.25,1),[x3,y3]=lerp(.6,1),[x4,y4]=lerp(.6,0);g.fillStyle=`rgba(255,${200+30*fog|0},150,${.9*fog})`;g.beginPath();g.moveTo(x1,y1);g.lineTo(x4,y4);g.lineTo(x3,y3);g.lineTo(x2,y2);g.fill();q.open.push({x:(x1+x3)/2,y:(y1+y3)/2,z:z0,sd});}
+       g.strokeStyle=`rgba(30,18,12,${.5+.5*fog})`;g.lineWidth=Math.max(1,3.2*s0);g.beginPath();for(const v of[.33,.66]){const [x1,y1]=lerp(0,v),[x2,y2]=lerp(1,v);g.moveTo(x1,y1);g.lineTo(x2,y2);}const [m1,n1]=lerp(.5,0),[m2,n2]=lerp(.5,1);g.moveTo(m1,n1);g.lineTo(m2,n2);g.stroke();
+       g.lineWidth=Math.max(1.4,7*s0);g.strokeStyle=`rgba(24,14,10,${.7+.3*fog})`;g.beginPath();g.moveTo(xb,tb);g.lineTo(xb,bb);g.moveTo(xa,ta);g.lineTo(xb,tb);g.moveTo(xa,ba);g.lineTo(xb,bb);g.stroke();}
+     g.fillStyle=`rgba(24,14,10,${.8*Math.min(1,fog+.2)})`;const ty=o.vy-o.top*s0;g.fillRect(o.vx-o.span*s0,ty-6*s0,o.span*s0*2,10*s0);
+     g.strokeStyle=`rgba(0,0,0,${.4*fog})`;g.lineWidth=Math.max(1,2*s0);g.beginPath();g.moveTo(o.vx-o.span*s0,o.vy+o.bot*s0);g.lineTo(o.vx+o.span*s0,o.vy+o.bot*s0);g.stroke();}},
+ front(){},
+ spawn(q,G){const d=pick(q.open||[]);if(d)return{x:d.x,y:d.y,vx:d.sd*14*G.s,vy:6*G.s,amp:8*G.s};return{x:G.W*rand(.3,.7),y:G.H*.44,vx:rand(-20,20)*G.s,vy:10*G.s,amp:10*G.s};},
+ cat(q,G,t){return{st:"sleep",f:7,x:G.W*(.5+.1*Math.sin(q.e*.3)),y:G.H*(.72+.025*Math.sin(q.e*.7)),sc:0.77}}},
+furin:{bg(g,W,H,s){drSky(g,W,H,[[0,"#06111e"],[.6,"#0f2434"],[1,"#0a1a22"]]);drNeb(g,W,H,[60,140,160],12,31,.4);drStars(g,W,H,120,32,.6);drGlow(g,"200,230,255",W*.2,H*.12,70*s,.5);g.fillStyle="#d8e8f0";g.beginPath();g.arc(W*.2,H*.12,15*s,0,Math.PI*2);g.fill();
+   const r=rng(33);for(const side of[0,1])for(let i=0;i<5;i++){const x=side?W-(8+i*16+r()*10)*s:(8+i*16+r()*10)*s,w=(4+r()*5)*s;g.fillStyle=`rgba(4,12,16,${.7+i*.06})`;g.fillRect(x-w/2,0,w,H);for(let y=r()*40;y<H;y+=(60+r()*40)*s){g.fillRect(x-w*.8,y,w*1.6,2*s);if(r()<.5){g.beginPath();g.ellipse(x+(side?-1:1)*14*s,y+6*s,16*s,3*s,(side?1:-1)*.5,0,Math.PI*2);g.fill();}}}
+   const gy=H*.82;g.fillStyle=vGrad(g,gy,H,[[0,"#0a1a1c"],[1,"#040b0c"]]);g.beginPath();g.moveTo(0,gy);for(let x=0;x<=W;x+=24*s)g.lineTo(x,gy-Math.abs(Math.sin(x*.05))*14*s-r()*6*s);g.lineTo(W,H);g.lineTo(0,H);g.fill();
+   for(const [x,y,w] of[[W*.5,H*.9,70],[W*.28,H*.95,54],[W*.74,H*.94,58]]){g.fillStyle="#223034";g.beginPath();g.ellipse(x,y,w*s,w*.28*s,0,0,Math.PI*2);g.fill();g.fillStyle="rgba(190,220,230,.18)";g.beginPath();g.ellipse(x-w*.1*s,y-w*.1*s,w*.7*s,w*.12*s,0,0,Math.PI*2);g.fill();}
+   const mi=g.createLinearGradient(0,H*.6,0,H*.85);mi.addColorStop(0,"rgba(150,200,210,0)");mi.addColorStop(1,"rgba(150,200,210,.14)");g.fillStyle=mi;g.fillRect(0,H*.6,W,H*.25);drVig(g,W,H,.5);},
+ init(q,G){const W=G.W,H=G.H,r=rng(34);q.bells=[];[[5,.02,1],[6,.1,.8],[7,.17,.62]].forEach(([n,y,z],row)=>{for(let i=0;i<n;i++)q.bells.push({x:W*(i+.5+(row%2?.3:0))/n,y:H*y,L:(30+r()*70)*G.s*z,z,sp:["furinA","furinB","furinC"][(i+row)%3],ph:r()*6,row});});q.bells.sort((a,b)=>a.z-b.z);q.gust=0;q.nextGust=q.t0+4;q.wind=[];},
+ step(q,G,t,dt){q.gust=Math.max(0,q.gust-dt*.35);if(t>q.nextGust&&!q.end){q.gust=1;q.nextGust=t+rand(5,7.5);for(let i=0;i<5;i++)q.wind.push({y:G.H*rand(.1,.7),x:-60,v:rand(260,380)*G.s,l:rand(60,140)*G.s});
+   [1568,1760,2093,2349].slice(0,2+Math.floor(Math.random()*2)).forEach((f,i)=>setTimeout(()=>tone(f*(Math.random()<.5?1:1.5),1.4,"sine",.018),i*170+Math.random()*120));for(let k=0;k<2;k++)drFrag(q,G,t,this.spawn(q,G));}
+   for(const w of q.wind)w.x+=w.v*dt;q.wind=q.wind.filter(w=>w.x<G.W+200);},
+ bellAt(b,t,q,s){const a=.09*Math.sin(t*1.1+b.ph)+q.gust*.32*Math.sin(t*2.7+b.ph)*b.z;return[b.x+Math.sin(a)*b.L,b.y+Math.cos(a)*b.L,a];},
+ back(q,G,g,t){const s=G.s;g.strokeStyle="rgba(200,220,230,.25)";g.lineWidth=1;g.beginPath();for(const row of[0,1,2]){const b=q.bells.find(b=>b.row===row);g.moveTo(0,b.y);g.quadraticCurveTo(G.W/2,b.y+10*s,G.W,b.y);}g.stroke();
+   for(const b of q.bells){const [x,y,a]=this.bellAt(b,t,q,s),w=62*b.z*s;g.strokeStyle="rgba(210,220,225,.35)";g.beginPath();g.moveTo(b.x,b.y);g.lineTo(x,y);g.stroke();drGlow(g,"170,230,240",x,y+w*.4,w*.9,.18+.25*q.gust);drSp(g,b.sp,x,y,w,.4+.6*b.z,a*.9,false,.15);b.sx=x;b.sy=y+w*1.5;}
+   g.strokeStyle="rgba(220,240,255,.18)";g.lineWidth=1.2;for(const w of q.wind){g.beginPath();g.moveTo(w.x,w.y);g.quadraticCurveTo(w.x+w.l*.5,w.y-8*s,w.x+w.l,w.y);g.stroke();}},
+ front(){},
+ spawn(q,G){const b=pick(q.bells.filter(b=>b.z>.7));return{x:b.sx||b.x,y:b.sy||b.y+b.L,vx:rand(-10,10)*G.s,vy:20*G.s,amp:24*G.s};},
+ cat(q,G,t){return{st:"play",f:Math.floor(q.e*2.2)%8,x:G.W*.5,y:G.H*.9,sc:0.72}}},
+river:{C(G,u){const W=G.W,H=G.H,a=[W*.2,H*.3],c=[W*1.05,H*.5],b=[W*.35,H*1.08],x=(1-u)*(1-u)*a[0]+2*(1-u)*u*c[0]+u*u*b[0],y=(1-u)*(1-u)*a[1]+2*(1-u)*u*c[1]+u*u*b[1],dx=2*(1-u)*(c[0]-a[0])+2*u*(b[0]-c[0]),dy=2*(1-u)*(c[1]-a[1])+2*u*(b[1]-c[1]),l=Math.hypot(dx,dy)||1;return{x,y,nx:-dy/l,ny:dx/l,w:W*(.05+.95*Math.pow(u,1.5))*.55};},
+ pt(G,u,v){const c=this.C(G,u);return[c.x+c.nx*v*c.w,c.y+c.ny*v*c.w,c];},
+ bg(g,W,H,s){drSky(g,W,H,[[0,"#03051a"],[.5,"#0b0e30"],[1,"#15123a"]]);drNeb(g,W,H,[90,80,190],12,41,.45);drStars(g,W,H,220,42,1);
+   drRidge(g,W,H*.36,28*s,43,"#0b0c26",H);drRidge(g,W,H*.42,22*s,44,"#08091f",H);g.fillStyle=vGrad(g,H*.45,H,[[0,"rgba(30,30,80,0)"],[1,"rgba(40,36,96,.45)"]]);g.fillRect(0,H*.45,W,H*.55);drStars(g,W,H,60,47,1);
+   const G_={W,H};g.save();g.beginPath();for(let i=0;i<=40;i++){const [x,y]=this.pt(G_,i/40,-1);i?g.lineTo(x,y):g.moveTo(x,y);}for(let i=40;i>=0;i--){const [x,y]=this.pt(G_,i/40,1);g.lineTo(x,y);}g.closePath();
+   const rg=g.createLinearGradient(0,H*.3,0,H);rg.addColorStop(0,"rgba(120,130,230,.22)");rg.addColorStop(1,"rgba(150,140,240,.34)");g.fillStyle=rg;g.filter=`blur(${10*s}px)`;g.fill();g.filter="none";g.globalCompositeOperation="lighter";g.lineWidth=18*s;g.strokeStyle="rgba(90,90,200,.12)";g.filter=`blur(${14*s}px)`;g.stroke();g.filter="none";g.globalCompositeOperation="source-over";g.clip();drNeb(g,W,H,[210,200,255],30,45,.45);
+   const r=rng(46);for(let i=0;i<900;i++){const u=Math.pow(r(),.8),v=(r()*2-1)*(.4+.6*r()),[x,y]=this.pt(G_,u,v);g.fillStyle=`rgba(240,238,255,${.25+r()*.6})`;const z=(.4+u*1.6)*(r()<.1?2:1);g.fillRect(x,y,z,z);}g.restore();drVig(g,W,H,.45);},
+ init(q,G){q.flow=[];for(let i=0;i<70;i++)q.flow.push({u:Math.random(),v:rand(-1,1)});q.mag=null;q.nextMag=q.t0+7;},
+ step(q,G,t,dt){for(const p of q.flow){p.u+=dt*(.02+.05*p.u);if(p.u>1){p.u=0;p.v=rand(-1,1);}}for(const f of q.frags)if(f.u!=null&&!f.got){f.u+=dt*(.016+.04*f.u);if(f.u>1.02)f.life=0;}
+   if(t>q.nextMag&&!q.mag){q.mag={t0:t,y:G.H*rand(.08,.22),dir:Math.random()<.5?-1:1};q.nextMag=t+rand(10,16);}if(q.mag&&t-q.mag.t0>9)q.mag=null;},
+ back(q,G,g,t){const s=G.s;g.save();g.globalCompositeOperation="lighter";for(const p of q.flow){const [x,y]=this.pt(G,p.u,p.v),z=(.6+p.u*2.2)*s;g.fillStyle=`rgba(220,220,255,${.35+.4*Math.sin(t*3+p.v*9)})`;g.fillRect(x,y,z,z);}g.restore();
+   if(q.mag){const e=t-q.mag.t0,W=G.W;for(let k=0;k<3;k++){const x=q.mag.dir>0?-40+e*70*s-k*26*s:W+40-e*70*s+k*26*s,y=q.mag.y+k*10*s+Math.sin(e*2+k)*6*s,fl=Math.sin(t*9+k)*6*s;g.strokeStyle="rgba(10,10,24,.9)";g.lineWidth=2.4*s;g.beginPath();g.moveTo(x-10*s,y-fl);g.quadraticCurveTo(x-4*s,y-2*s,x,y);g.quadraticCurveTo(x+4*s,y-2*s,x+10*s,y-fl);g.stroke();g.fillStyle="rgba(10,10,24,.9)";g.beginPath();g.ellipse(x,y+1*s,4*s,2*s,0,0,Math.PI*2);g.fill();}}},
+ boatPos(q,G,t){const [x,y,c]=this.pt(G,.74,.12*Math.sin(q.e*.18));return[x,y+Math.sin(t*1.2)*3*G.s,c];},
+ front(q,G,g,t){const [x,y]=this.boatPos(q,G,t),w=185*G.s;drSp(g,"boat",x,y+10*G.s,w,1,Math.sin(t*.9)*.03);g.save();g.globalCompositeOperation="lighter";g.fillStyle="rgba(200,200,255,.08)";g.beginPath();g.ellipse(x,y+26*G.s,w*.55,8*G.s,0,0,Math.PI*2);g.fill();g.restore();},
+ spawn(q,G){return{u:rand(.05,.3),v:rand(-.8,.8),x:0,y:0,vx:0,vy:0,amp:0};},
+ cat(q,G,t){const [x,y]=this.boatPos(q,G,t);return{st:"rest",f:Math.floor(q.e/2.8)%2,x,y:y+14*G.s,sc:.6,boat:1}}},
+temple:{wl:H=>H*.58,
+ bg(g,W,H,s){const wl=H*.58;drSky(g,W,H,[[0,"#0a0d24"],[.45,"#1c1c44"],[.58,"#302a58"],[1,"#07101e"]]);drNeb(g,W,H*.6,[170,120,190],12,51,.45);drStars(g,W,H,120,52,.45);
+   drRidge(g,W,wl-40*s,30*s,53,"#141432",H);drRidge(g,W,wl-12*s,16*s,54,"#0d0e26",H);
+   const sw=Math.min(W*.86,440*s),sh=sw*280/460,sx=W*.6,sy=wl+sh*.12;drGlow(g,"255,200,150",sx,wl-sh*.3,sw*.6,.25);
+   const tw=Math.min(W*.42,200*s),th=tw*270/300,tx=W*.2,ty=wl+th*.2;
+   g.save();g.beginPath();g.rect(0,0,W,wl);g.clip();drSp(g,"shrine",sx,sy-sh/2,sw);drSp(g,"torii",tx,ty-th/2,tw);g.restore();
+   g.save();g.beginPath();g.rect(0,wl,W,H);g.clip();g.globalAlpha=.3;g.translate(0,wl*2);g.scale(1,-1);drSp(g,"shrine",sx,sy-sh/2,sw);drSp(g,"torii",tx,ty-th/2,tw);g.restore();
+   const wa=g.createLinearGradient(0,wl,0,H);wa.addColorStop(0,"rgba(40,50,100,.55)");wa.addColorStop(.4,"rgba(12,20,44,.8)");wa.addColorStop(1,"rgba(4,8,18,.95)");g.fillStyle=wa;g.fillRect(0,wl,W,H-wl);
+   g.save();g.beginPath();g.rect(0,wl,W,H);g.clip();g.globalAlpha=.35;drSp(g,"shrine",sx,sy+sh*.35,sw*.98);drSp(g,"torii",tx,ty+th*.3,tw);g.restore();
+   g.fillStyle="rgba(8,14,30,.55)";g.fillRect(0,wl+H*.06,W,H);
+   g.save();g.globalCompositeOperation="lighter";for(let i=0;i<4;i++){const x=W*(.15+i*.25),gr=g.createLinearGradient(0,0,0,wl);gr.addColorStop(0,"rgba(220,200,255,.07)");gr.addColorStop(1,"rgba(220,200,255,0)");g.fillStyle=gr;g.beginPath();g.moveTo(x,0);g.lineTo(x+40*s,0);g.lineTo(x+120*s,wl);g.lineTo(x+40*s,wl);g.fill();}g.restore();
+   g.fillStyle="rgba(210,210,255,.25)";g.fillRect(0,wl-1,W,1.5);drVig(g,W,H,.5);},
+ init(q,G){q.pet=[];for(let i=0;i<46;i++)q.pet.push({x:Math.random()*G.W,y:Math.random()*G.H,vy:rand(18,40)*G.s,vx:rand(-8,14)*G.s,rot:rand(0,6),vr:rand(-2,2),sz:rand(4,8)*G.s,ph:rand(0,6)});q.rip=[];},
+ step(q,G,t,dt){const wl=this.wl(G.H);for(const p of q.pet){p.x+=(p.vx+Math.sin(t+p.ph)*10*G.s)*dt;p.y+=p.vy*dt;p.rot+=p.vr*dt;if(p.y>wl+p.ph*G.H*.07){if(Math.random()<.25)q.rip.push({x:p.x,y:p.y,t});p.y=-10;p.x=Math.random()*G.W;}}
+   for(const f of q.frags)if(!f.got&&f.y>wl+8*G.s&&!f.sank){f.sank=1;f.vy=4*G.s;f.life=Math.min(f.life,1.2);q.rip.push({x:f.x,y:f.y,t,big:1});}q.rip=q.rip.filter(r=>t-r.t<2);},
+ back(q,G,g,t){const wl=this.wl(G.H),s=G.s;for(const r of q.rip){const e=(t-r.t)/2;g.strokeStyle=`rgba(220,200,255,${.35*(1-e)})`;g.lineWidth=1;g.beginPath();g.ellipse(r.x,r.y,(6+e*(r.big?60:30))*s,(2+e*(r.big?12:6))*s,0,0,Math.PI*2);g.stroke();}
+   g.fillStyle="rgba(210,210,255,.12)";for(let i=0;i<9;i++){const x=(i*97+t*12)%G.W,y=wl+(i*23%60)*s;g.fillRect(x,y,24*s,1);}for(const p of q.pet)if(p.sz<6*s)drawPetal(g,p.x,p.y,p.sz,p.rot,.75);},
+ front(q,G,g,t){for(const p of q.pet)if(p.sz>=6*G.s)drawPetal(g,p.x,p.y,p.sz,p.rot,.85);},
+ spawn(q,G){return{x:G.W*rand(.1,.9),y:-12,vx:rand(-6,10)*G.s,vy:rand(20,30)*G.s,amp:26*G.s,petal:1};},
+ cat(q,G,t){return{st:"sleep",f:7,x:G.W*(.46+.12*Math.sin(q.e*.2)),y:this.wl(G.H)-26*G.s+Math.sin(q.e*.8)*6*G.s,sc:.67,mirror:this.wl(G.H)}}}
+};
+
+// ───── the dream as a hidden mini-game ─────
+let drRun=null,drNap=-1,drNext=null;
+const DR_PENT=[523,587,659,784,880,1046,1175,1318,1568,1760];
+const DR_BAKU_HI=["Опять эта тень? Позови меня.","Чую горький сон… Только позови.","Я рядом. Нажми на меня."],DR_BAKU_EAT=["Ням. Страшные сны — самые сытные.","Горько… но я привык.","Спи, маленькая. Я посторожу.","Вот и нет кошмара."];
+function drPickKind(){const D=drS(),un=DRK.filter(k=>!D.seen[k.id]);return(un.length?pick(un):pick(DRK.filter(k=>k.id!==D.last)||DRK)).id;}
+function drFrag(q,G,t,o){if(!o)return;q.frags.push(Object.assign({t0:t,life:o.u!=null?30:rand(6.5,8.5),ph:rand(0,6),sw:rand(1,2)},o));}
+function drSay(q,txt,t,d=3.6){q.say={txt,t,d};}
+function drBakuOn(q,t,sh){const G_=G,side=sh.x<G_.W/2?1:-1;q.baku={x:side>0?G_.W+90*G_.s:-90*G_.s,y:G_.H*.3,tx:G_.W*(.5+side*.26),ty:G_.H*.3,state:"in",t0:t,sh,face:-side};
+  if(!ST.seen.includes("dr_baku")){ST.seen.push("dr_baku");drSay(q,"Я Баку. Позови меня — и я съем её дурной сон.",t,4.5);setTimeout(()=>toast("Новая запись в бестиарии"),1200);save();}else drSay(q,pick(DR_BAKU_HI),t);chime([392,494,587]);}
+function drMusya(q,G,t){const c=DRW[q.k.id].cat(q,G,t);if(q.play&&t-q.play<.9&&c.st!=="sleep"){c.st="play";c.f=Math.floor((t-q.play)*9)%8;}return c;}
+const DREAM={id:"dream",hidden:true,n:"Сон Муси",tag:"夢 · Юмэ",bg:"dr",lives:null,time:null,icon:"💭",lore:"",how:"",
+ init(G,t){const q=G.st,K=DRK_BY[(drRun&&drRun.kind)||drPickKind()];Object.assign(q,{k:K,t0:t,e:0,dur:56,s:G.s,frags:[],fx:[],sh:[],baku:null,got:0,lost:0,eaten:0,nextFrag:t+1.6,nextSh:t+rand(9,12),say:null,play:0,hurt:-9,end:0,W:0});
+   drSay(q,"Лови светящиеся осколки сна",t+3,3.4);drBuild(q,G);$("gTitle").textContent=K.n;chime([523,659,784,1046]);},
+ step(G,t,dt){const q=G.st,W=G.W,H=G.H,s=G.s,Wd=DRW[q.k.id];q.e=t-q.t0;q.s=s;if(q.W!==W||q.H!==H)drBuild(q,G);G.bgc=q.bg;if(Wd.step)Wd.step(q,G,t,dt);
+   if(!q.end&&q.e>=q.dur){q.end=t;drFinish(q);}if(q.end&&t-q.end>2.6){gEnd();return;}
+   if(!q.end&&q.e>2.5&&t>q.nextFrag){drFrag(q,G,t,Wd.spawn(q,G));q.nextFrag=t+rand(1.5,2.3);}
+   for(const f of q.frags){if(f.got){f.k=Math.min(1,f.k+dt*2.2);continue;}if(f.u==null){f.x+=(f.vx+Math.sin(t*f.sw+f.ph)*f.amp)*dt;f.y+=f.vy*dt;}f.life-=dt;}
+   q.frags=q.frags.filter(f=>f.got?f.k<1:f.life>0&&f.y<H+30);
+   for(const p of q.fx){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=p.g*dt;p.life-=dt;}q.fx=q.fx.filter(p=>p.life>0);
+   const cat=drMusya(q,G,t);q.cat=cat;const cy=cat.y-60*cat.sc*s;
+   // nightmare shadows creep toward loose fragments or toward Musya
+   if(!q.end&&t>q.nextSh&&q.e<q.dur-7&&q.sh.filter(h=>h.st!=="flee").length<(q.e>30?2:1)){const L=Math.random()<.5;const sh={x:L?-50*s:W+50*s,y:H*rand(.55,.85),st:"creep",carry:0,t0:t,ph:rand(0,6),push:0,r:34*s};q.sh.push(sh);q.nextSh=t+rand(10,14);
+     tone(65,.9,"sawtooth",.025);const D=drS();if(!q.baku&&(!q.shN||Math.random()<.75))setTimeout(()=>{if(G.id==="dream"&&!q.baku&&sh.st==="creep")drBakuOn(q,now(),sh);},1400);else if(!q.shN)drSay(q,"Тень крадёт осколки! Нажми на неё",t);q.shN=(q.shN||0)+1;}
+   for(const h of q.sh){if(h.st==="eaten")continue;let tx,ty;
+     if(h.st==="flee"){tx=h.x<W/2?-400*s:W+400*s;ty=h.y;}else{let best=null,bd=1e9;for(const f of q.frags){if(f.got)continue;const fx=f.sx??f.x,fy=f.sy??f.y,d=Math.hypot(fx-h.x,fy-h.y);if(d<bd){bd=d;best=f;}}
+       if(best&&bd<W*.6){tx=best.sx??best.x;ty=best.sy??best.y;if(bd<h.r*.8){best.life=0;best.stolen=1;h.carry++;q.lost++;tone(90,.4,"triangle",.04);}}else{tx=cat.x;ty=cy;if(Math.hypot(cat.x-h.x,cy-h.y)<52*s){if(q.got>0){q.got--;h.carry++;q.lost++;q.hurt=t;tone(80,.5,"sawtooth",.04);}h.st="flee";}}}
+     const d=Math.hypot(tx-h.x,ty-h.y)||1,v=(h.st==="flee"?110:36)*s*(t<h.push?-.8:1);h.x+=(tx-h.x)/d*v*dt;h.y+=(ty-h.y)/d*v*dt+Math.sin(t*1.7+h.ph)*8*s*dt;h.r=(34+h.carry*4)*s;}
+   q.sh=q.sh.filter(h=>h.st!=="eaten"&&h.x>-160*s&&h.x<W+160*s);
+   // Baku: floats in, waits to be called, eats the shadow, leaves
+   const b=q.baku;if(b){const e=t-b.t0;
+     if(b.state==="in"){b.x=mix(b.x,b.tx,dt*2.2);b.y=mix(b.y,b.ty,dt*2.2);if(e>1.2){b.state="wait";b.t0=t;}}
+     else if(b.state==="wait"){b.y=b.ty+Math.sin(t*1.4)*8*s;if(e>8||!q.sh.includes(b.sh)||b.sh.st!=="creep"){b.state="out";b.t0=t;}}
+     else if(b.state==="go"){const h=b.sh,mx=h.x-b.face*70*s,my=h.y-30*s,d=Math.hypot(mx-b.x,my-b.y);b.x+=(mx-b.x)*Math.min(1,dt*4);b.y+=(my-b.y)*Math.min(1,dt*4);if(d<20*s||e>1.4){b.state="eat";b.t0=t;tone(110,.6,"triangle",.07);tone(220,.4,"sine",.03);}}
+     else if(b.state==="eat"){const h=b.sh,[tx,ty]=[b.x+b.face*62*s,b.y+34*s];h.x=mix(h.x,tx,dt*3);h.y=mix(h.y,ty,dt*3);h.r=Math.max(2,h.r-dt*30*s);
+       if(e>1.3){h.st="eaten";const n=h.carry+1;for(let i=0;i<n;i++)drFrag(q,G,t,{x:tx,y:ty,vx:rand(-60,60)*s,vy:rand(-40,10)*s,amp:14*s});q.eaten++;drSay(q,pick(DR_BAKU_EAT),t);chime([659,784,988]);b.state="out";b.t0=t;}}
+     else if(b.state==="out"){b.y-=dt*90*s;b.x+=b.face*dt*40*s;if(e>2)q.baku=null;}}},
+ draw(G,g,t){const q=G.st,W=G.W,H=G.H,s=G.s,Wd=DRW[q.k.id],cat=q.cat;if(!cat)return;
+   Wd.back&&Wd.back(q,G,g,t);
+   // shadows under everything that glows
+   for(const h of q.sh){const sm=drSmoke(),a=h.st==="flee"?.7:.9;drGlow(g,"120,60,150",h.x,h.y,h.r*2.4,.35*a);g.save();g.globalAlpha=a;for(let i=0;i<6;i++){const ox=Math.sin(t*1.3+i*2+h.ph)*h.r*.45,oy=Math.cos(t*1.1+i*1.7)*h.r*.3,r=h.r*(1.1-i*.08);g.drawImage(sm,h.x+ox-r,h.y+oy-r,r*2,r*2);}
+     g.strokeStyle="rgba(8,4,14,.6)";g.lineWidth=3*s;for(let i=0;i<4;i++){const a0=i*1.6+h.ph,L=h.r*(1.2+.4*Math.sin(t*2+i));g.beginPath();g.moveTo(h.x,h.y);g.quadraticCurveTo(h.x+Math.cos(a0+t*.7)*L*.6,h.y+Math.sin(a0+t)*L*.5,h.x+Math.cos(a0)*L,h.y+Math.sin(a0)*L*.7+h.r*.3);g.stroke();}
+     if(Math.sin(t*1.9+h.ph)>-.92&&h.r>8*s){g.fillStyle="rgba(255,120,100,.85)";for(const sd of[-1,1]){g.beginPath();g.ellipse(h.x+sd*h.r*.22,h.y-h.r*.1,3.2*s,1.8*s,0,0,Math.PI*2);g.fill();}}g.restore();}
+   // Musya, softly glowing, drifting
+   const hurt=clamp(1-(t-q.hurt)/1.2,0,1),ca=(1-.5*hurt*(Math.sin(t*30)>0?1:0));drGlow(g,"190,180,255",cat.x,cat.y-70*cat.sc*s,150*cat.sc*s,.35);
+   if(cat.mirror)drCat(g,q.k.tint,cat.st,cat.f,cat.x,cat.y,cat.sc*s,.18,cat.mirror);
+   drCat(g,q.k.tint,cat.st,cat.f,cat.x,cat.y,cat.sc*s,ca);
+   Wd.front&&Wd.front(q,G,g,t);
+   // fragments: a glow and a little four-pointed crystal
+   for(const f of q.frags){let x=f.x,y=f.y,sc=1;if(f.u!=null){const [px_,py_]=DRW.river.pt(G,f.u,f.v);x=px_;y=py_;sc=.55+f.u*.8;}
+     if(f.got){const k=smooth(f.k);x=mix(f.gx,cat.x,k);y=mix(f.gy,cat.y-60*cat.sc*s,k);sc*=1-k*.7;}f.sx=x;f.sy=y;
+     const a=f.got?1:clamp(Math.min((t-f.t0)/.6,f.life/1),0,1),pul=.8+.2*Math.sin(t*4+f.ph),r=19*s*sc*pul;drGlow(g,q.k.glow,x,y,r*3,a);drGlow(g,"255,255,245",x,y,r*.9,a*.8);
+     g.save();g.globalAlpha=a;g.translate(x,y);g.rotate(Math.sin(t+f.ph)*.4);g.fillStyle=`rgba(${q.k.glow},1)`;g.beginPath();for(let i=0;i<8;i++){const ang=i*Math.PI/4,rr=i%2?r*.22:r*.62;g.lineTo(Math.cos(ang)*rr,Math.sin(ang)*rr);}g.fill();
+     g.fillStyle="#fffdf4";g.beginPath();g.arc(0,0,r*.16,0,Math.PI*2);g.fill();g.restore();}
+   for(const p of q.fx){g.save();g.globalAlpha=clamp(p.life/p.L,0,1);g.fillStyle=`rgba(${q.k.glow},1)`;g.fillRect(p.x-1.2*s,p.y-1.2*s,2.4*s,2.4*s);g.restore();}
+   // Baku
+   const b=q.baku;if(b&&MIMG.m_dr_baku){const h=150*s,w=h*460/400,e=t-b.t0,a=b.state==="out"?clamp(1-e/1.6,0,1):b.state==="in"?clamp(e/.6,0,1):1,bob=b.state==="wait"?1+.03*Math.sin(t*2.2):1;
+     drGlow(g,"200,190,255",b.x,b.y,h*.95,.45*a*(b.state==="wait"?.8+.2*Math.sin(t*3):1));g.save();g.globalAlpha=a;g.translate(b.x,b.y);g.scale(b.face*bob,bob);g.drawImage(MIMG.m_dr_baku,-w/2,-h/2,w,h);g.restore();b.hx=b.x;b.hy=b.y;b.hw=w;b.hh=h;
+     if(b.state==="eat"){const h2=b.sh;g.strokeStyle="rgba(200,190,255,.35)";g.lineWidth=2*s;for(let k=0;k<4;k++){const u=((t*1.8+k/4)%1);g.beginPath();g.arc(mix(h2.x,b.x+b.face*62*s,u),mix(h2.y,b.y+34*s,u),(1-u)*16*s+3*s,0,Math.PI*2);g.stroke();}}
+     if(b.state==="wait"){const u=(t*.8)%1;g.strokeStyle=`rgba(220,210,255,${.55*(1-u)})`;g.lineWidth=2*s;g.beginPath();g.ellipse(b.x,b.y,w*(.42+u*.2),h*(.4+u*.2),0,0,Math.PI*2);g.stroke();}}
+   // caption (Baku speaks; hints)
+   if(q.say&&t>q.say.t&&t-q.say.t<q.say.d){const a=clamp(Math.min((t-q.say.t)/.4,(q.say.d-(t-q.say.t))/.5),0,1);g.save();g.globalAlpha=a;g.font=`600 ${Math.round(14*s)}px ${getComputedStyle(document.body).fontFamily}`;const tw=Math.min(W-24,g.measureText(q.say.txt).width+28);
+     g.fillStyle="rgba(10,10,26,.72)";g.beginPath();g.roundRect(W/2-tw/2,H*.06,tw,30*s,15*s);g.fill();g.restore();g.save();g.globalAlpha=a;textC(g,q.say.txt,W/2,H*.06+15*s,Math.min(14*s,(W-40)/q.say.txt.length*1.9),"#ece6ff",600);g.restore();}
+   // fade in from sleep, title card; fade out when the dream melts
+   const e=q.e;if(e<3.2){g.save();g.globalAlpha=clamp(1-e/1.4,0,1);g.fillStyle="#05040c";g.fillRect(0,0,W,H);g.globalAlpha=clamp(Math.min(e/.6,(3.2-e)/.8),0,1);jpText(g,q.k.jp,W/2,H*.4,26*s,"rgba(238,163,187,.9)");textC(g,q.k.n,W/2,H*.4+34*s,22*s,"#ece6ff",600);g.restore();}
+   if(q.end){const u=clamp((t-q.end)/2.4,0,1);g.save();g.fillStyle=`rgba(226,222,248,${u*.9})`;g.fillRect(0,0,W,H);g.globalAlpha=clamp(u*2-.4,0,1);textC(g,"Сон тает…",W/2,H*.45,20*s,"#3a3460",600);g.restore();}
+   if(hurt>0){g.fillStyle=`rgba(20,0,20,${.25*hurt})`;g.fillRect(0,0,W,H);}},
+ down(G,x,y,t){const q=G.st,s=G.s;if(q.end||q.e<1)return;const b=q.baku;
+   if(b&&(b.state==="wait"||b.state==="in")&&b.hw&&Math.abs(x-b.hx)<b.hw*.5&&Math.abs(y-b.hy)<b.hh*.5){b.state="go";b.t0=t;b.face=b.sh.x<b.x?-1:1;tone(330,.2,"sine",.05);return;}
+   let best=null,bd=40*s;for(const f of q.frags){if(f.got||f.sx==null)continue;const d=Math.hypot(x-f.sx,y-f.sy);if(d<bd){bd=d;best=f;}}
+   if(best){best.got=1;best.k=0;best.gx=best.sx;best.gy=best.sy;q.got++;q.play=t;tone(DR_PENT[Math.min(DR_PENT.length-1,q.got%DR_PENT.length)],1,"sine",.04);
+     for(let i=0;i<9;i++){const a=i/9*6.28;q.fx.push({x:best.sx,y:best.sy,vx:Math.cos(a)*70*s,vy:Math.sin(a)*70*s-20*s,g:60*s,life:.7,L:.7});}return;}
+   for(const h of q.sh)if(h.st==="creep"&&Math.hypot(x-h.x,y-h.y)<h.r*1.3){h.push=t+.9;tone(120,.2,"triangle",.04);return;}},
+ stat:G=>{const q=G.st;return q.k?`✦ ${q.got} · ${Math.max(0,Math.ceil(q.dur-q.e))} с`:""},
+ card(G){const q=G.st,K=q.k,it=q.prize&&IT[q.prize];S.needs.energy=clamp(Math.max(S.needs.energy+8,drRun?drRun.en:0),0,100);
+   return`<div class="card dr-card"><p class="tag">夢 · ${K.jp}</p><h3>${K.n}</h3><p class="lore">${K.line}</p><p>Осколков сна: <b>${q.got}</b>${q.eaten?` · Баку съел кошмаров: <b>${q.eaten}</b>`:""}</p>
+    ${it?`<div class="dish">${itemThumb(it,150,120)}</div><p>Муся принесла из сна: <b>${it.n}</b>. Её можно поставить в любой комнате — «🧺 Вещи» → «Из снов».</p>`:`<p>Сон растаял и ничего не оставил… ${q.got<8?"Чем больше осколков, тем вернее из сна что-то вынесешь.":"Может, в следующий раз."}</p>`}
+    <div class="row"><button class="btn primary" id="gHome">Пусть спит дальше</button><button class="btn" id="gAgain" style="display:none"></button></div></div>`;},
+ after(G){}};
+GAMES.push(DREAM);
+// static layer of the current world, rebuilt only when the field size changes
+function drBuild(q,G){const [c,g]=drCv(G.W,G.H);DRW[q.k.id].bg(g,G.W,G.H,G.s);q.bg=c;q.W=G.W;q.H=G.H;G.bgc=c;if(DRW[q.k.id].init)DRW[q.k.id].init(q,G);}
+// the reward: Baku's mask for a well-guarded dream, else one of the dream's own things (the first dream always gives one)
+function drFinish(q){const D=drS(),K=q.k,own=id=>S.owned.has(id);D.n++;D.seen[K.id]=(D.seen[K.id]||0)+1;D.frag+=q.got;D.eaten+=q.eaten;D.last=K.id;
+  let prize=null;if(q.eaten>=2&&!own("dr_baku"))prize="dr_baku";
+  else if(D.n===1||Math.random()<clamp(.3+q.got*.025,.3,.8)){let pool=K.items.filter(i=>!own(i));if(!pool.length&&Math.random()<.5)pool=DR_ITEMS.filter(i=>!own(i)&&i!=="dr_baku");if(pool.length)prize=pick(pool);}
+  q.prize=prize;if(prize){S.owned.add(prize);disc("dream",prize);}disc("dream","scene_"+K.id);
+  award("dr_dream");if(DRK.every(k=>D.seen[k.id]))award("dr_all");if(D.eaten>=5)award("dr_bakufr");G.score=0;save();}
+
+// ───── in the room: the thought bubble over sleeping Musya ─────
+const drB={a:0,r:null};
+function drAvail(){return !petAway()&&!scene.on&&pet.action==="sleep"&&now()-pet.start>3.5&&drNap!==pet.start&&!drRun;}
+function drOpen(kind){if(!kind&&!drAvail())return false;drNap=pet.start;drNext=drNext||drPickKind();drRun={kind:kind||drNext,en:S.needs.energy};drNext=null;if(pet.action==="sleep"&&pet.napUntil)pet.napUntil=Math.max(pet.napUntil,now()+200);closePanel();openPlace("dream");return true;}
+hook("tick",(t,dt)=>{const on=drAvail();if(on&&!drNext)drNext=drPickKind();drB.a+=((on?1:0)-drB.a)*Math.min(1,dt*(on?1.4:3));
+  if(drRun&&G.id!=="dream"){if(pet.action==="sleep"&&pet.napUntil)pet.napUntil=now()+rand(14,24);drRun=null;}});
+hook("overlay",t=>{if(drB.a<.02||petAway()){drB.r=null;return;}const s=view.s,a=drB.a,[hx,hy]=cellToStage(66,120),pul=1+.035*Math.sin(t*1.7),bw=112*s*pul,bh=bw*170/230;
+  const bx=clamp(hx-58*s,bw/2+6,view.W-bw/2-6),by=hy-78*s+Math.sin(t*1.1)*3*s;
+  for(const [k,cx,cy,w] of[[0,mix(hx,bx,.18),hy-14*s+Math.sin(t*1.3)*1.5*s,12*s],[1,mix(hx,bx,.42),hy-34*s+Math.sin(t*1.2+1)*2*s,19*s]]){drGlow(ctx,"200,190,255",cx,cy,w*1.4,.25*a);drSp(ctx,"puff",cx,cy,w,a*clamp((t%3.2)/.4+.6-k*.3,.55,.9));}
+  drGlow(ctx,"200,190,255",bx,by,bw*.95,.35*a);drSp(ctx,"bubble",bx,by,bw,.9*a);
+  const K=DRK_BY[drNext];if(K){ctx.save();ctx.beginPath();ctx.ellipse(bx,by+2*s,bw*.36,bh*.3,0,0,Math.PI*2);ctx.clip();const bob=Math.sin(t*1.5)*2*s,ps=bh*.52;
+    if(K.pv==="door"){ctx.globalAlpha=.75*a;ctx.fillStyle="#f0d8a8";ctx.fillRect(bx-ps*.3,by-ps*.42+bob,ps*.6,ps*.84);ctx.strokeStyle="#4a3424";ctx.lineWidth=1.5*s;ctx.strokeRect(bx-ps*.3,by-ps*.42+bob,ps*.6,ps*.84);ctx.beginPath();ctx.moveTo(bx,by-ps*.42+bob);ctx.lineTo(bx,by+ps*.42+bob);ctx.moveTo(bx-ps*.3,by+bob);ctx.lineTo(bx+ps*.3,by+bob);ctx.stroke();}
+    else drSp(ctx,K.pv,bx+(K.pv==="fishR"?Math.sin(t*.9)*6*s:0),by+bob,K.pv==="moon"?ps*.95:K.pv==="furinA"?ps*.42:ps*1.25,.72*a,Math.sin(t*.8)*.08);ctx.restore();}
+  drB.r=[bx-bw/2,by-bh/2,bw,bh];});
+hook("hit",(x,y)=>{const r=drB.r;if(!r||drB.a<.5||!drAvail())return false;if(x>r[0]&&x<r[0]+r[2]&&y>r[1]&&y<r[1]+r[3]){audioInit();drOpen();return true;}return false;});
+hook("sleepTap",()=>drB.a>.3&&drAvail()?drOpen():false);
+hook("hubDot",()=>drB.a>.5&&drAvail());
+hook("hub",()=>{const D=drS(),n=DRK.filter(k=>D.seen[k.id]).length,av=drAvail();
+  return`<div class="hubc"><h4>💭 Сны Муси <i>夢</i></h4><p>${av?"Муся спит, и над ней плывёт облачко сна — можно заглянуть.":pet.action==="sleep"?"Муся спит без снов… Облачко появится в следующий раз.":"Уложи Мусю спать: погаси андон в спальне."} Снов увидено: ${n} из ${DRK.length}.</p><div class="row">${av?`<button class="btn primary" data-x="dr:open">Заглянуть в сон</button>`:pet.action!=="sleep"&&S.room!=="bedroom"?`<button class="btn" data-x="dr:bed">В спальню</button>`:""}</div></div>`;});
+hook("click",k=>{if(k==="dr:open"){closePanel();drOpen();return true;}if(k==="dr:bed"){closePanel();goRoom("bedroom");return true;}});
+hook("album",el=>{const D=drS(),n=DRK.filter(k=>D.seen[k.id]).length;
+  el.insertAdjacentHTML("beforeend",`<h3 class="bh">Сонник</h3><p class="lead">Сны Муси: ${n} из ${DRK.length}. Осколков сна собрано: ${D.frag}.${D.eaten?` Баку съел кошмаров: ${D.eaten}.`:""} Уложи Мусю спать и нажми на облачко над ней.</p><div class="dr-book">${DRK.map(K=>{const on=D.seen[K.id];
+   return`<div class="dr-d ${on?"":"off"}"><b>${on?K.n:"???"}</b>${on?`<i>${K.jp}</i>`:""}<p>${on?K.line+(on>1?` Снился ${on} раза.`:""):"Этот сон Муся ещё не видела."}</p><div class="dr-its">${K.items.map(id=>{const o=S.owned.has(id);return`<span class="${o?"on":""}">${itemThumb(IT[id],56,52)}${o?IT[id].n:"???"}</span>`;}).join("")}</div></div>`;}).join("")}</div>`);});
+X.dream={next:k=>{drNext=k;},open:k=>{drRun=null;drNap=pet.start;drRun={kind:k||drPickKind(),en:S.needs.energy};openPlace("dream");},avail:drAvail,bubble:drB,kinds:DRK.map(k=>k.id),end:()=>{if(G.id==="dream"){G.st.e=G.st.dur;G.st.t0=now()-G.st.dur;}}};
+}
+// ═════ end of add-ons ═════
+
 // ───────────────────────── Boot ─────────────────────────
 grainPat=ctx.createPattern(makeGrain(),"repeat");fogTex=makeFog();
 new ResizeObserver(()=>resize()).observe(cv);
