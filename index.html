@@ -2985,7 +2985,7 @@ function itemLock(i){if(i.src)return i.src;if(i.story)return"🔒 сюжет";if
 
 // ───────────────────────── Add-on plumbing: shared panel, dialog, «家 Дом» hub, items, rooms, tabs ─────────────────────────
 // a full-screen panel like the album; [data-x] buttons inside go to hook "click"
-function openPanel(title,html,id){const P=$("xpanel"),B=$("xpBody"),same=!P.hidden&&P.dataset.id===(id||""),top=B.scrollTop;P.dataset.id=id||"";$("xpTitle").textContent=title;B.innerHTML=html;B.scrollTop=same?top:0;P.hidden=false;}
+function openPanel(title,html,id){const P=$("xpanel"),B=$("xpBody"),same=!P.hidden&&P.dataset.id===(id||""),top=B.scrollTop;P.dataset.id=id||"";$("xpTitle").textContent=title;B.innerHTML=html;P.hidden=false;B.scrollTop=same?top:0;}   // scroll only once visible: a hidden panel keeps the old scroll
 function panelIs(id){const P=$("xpanel");return !P.hidden&&P.dataset.id===id;}
 function closePanel(){const P=$("xpanel");if(P.hidden)return;P.hidden=true;const id=P.dataset.id;P.dataset.id="";hkAll("panelClose",id);}
 $("xpClose").addEventListener("click",closePanel);
