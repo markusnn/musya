@@ -17,6 +17,14 @@ If you truly need a change in core code, do NOT edit index.html: describe the ex
 `--pre` (e.g. reassigning a core function: `someCoreFn=function(){…}` works because function declarations
 are mutable bindings). Prefer hooks.
 
+## Speed rules (the player wants results fast)
+- Get it WORKING first, polish after. Test on phone 480×900 only (the lead checks wide screens at assembly).
+- At most 4 runs of tools/shot.py, re-render art at most twice; render art at the needed size only.
+- Report as soon as the feature works — aim for ~60–75 minutes. Read skills notes for known pitfalls:
+  /Users/markvozdvizenskij/work/claude-brain/skills/playwright-game-shots.md, musya-art-toolkit.md, musya-room-layers.md.
+- Already built into index.html (feat/READY): rooms, rooms2, story2, return, lanterns, visitors, rumors, haunt, dreams,
+  candles, trust, travel, sakura, gacha, kimono3d — look at their hub cards and hit zones so you don't overlap them.
+
 ## Look & tone
 - Dark painterly Japan at night, muted colours, film grain; rare pink sakura. «Говорящая Анджела 2» without ads.
   Musya is a real-looking tabby kitten (photo-like sprite frames). She **never talks** — only wordless emoji
@@ -84,7 +92,8 @@ Things (collectible items)
   Categories appear automatically in «🧺 Вещи» and in the album collection. Look at existing item art sizes
   (`ITEMS` entries in index.html) — typical 100–240 px.
 - Pantry food: `FOOD` ids (i_*, v_*, u_*, ds_*), `have(id)`, `give(id,n)`, `take(id)`, `fThumb(id,w,h)` html,
-  `fDraw(ctx,id,x,y,size)`. Guests: `GUESTS`, `S.guest`, `S.friends`.
+  `fDraw(ctx,id,x,y,size)`. New food/dish pictures: add `FATL.<key>={w,h,r:{id:[x,y,w,h]}}` (→ assets/items/atlas_<key>.webp)
+  and `FOOD.<id>={n,k:"dish",food,joy}`; new recipes: `RECIPES.push(…)` (see the COOK code). Guests: `GUESTS`, `S.guest`, `S.friends`.
 - Stamps: `STAMPS.push([id,"漢","Название","Как получить"])`, `award(id)` gives it once with a toast.
 - `itemThumb(IT[id],w,h)` html thumbnail for panels.
 
@@ -112,6 +121,9 @@ Hooks — `hook(name, fn)` at block top-level
 | `disc` | (kind,id) | someone discovered something (see below) |
 | `panelClose` | (id) | the shared panel was closed |
 | `drawBody` | (g,st,f,k,id) → true | draw the kimono yourself (kimono add-on only) |
+| `itemTap` | (it,I,t) → true | the player tapped a placed thing (custom reaction for your items) |
+| `weather` | () → "rain"\|"clear"\|null | only while the weather button is on «авто»: force rain or clear (real weather) |
+| `fx` | (k) → true | turn on a festival effect outside festivals: snow, peach, momiji, sakura, moon, stars, koinobori, spirits, yuzu, shobu |
 
 Shared UI
 - `openPanel(title,html,id)` — full-screen panel like the album (classes: `lead`, `bh`, `hubc`, `coll`, `ci`, `btn`,
@@ -138,7 +150,7 @@ Shared UI
 Discoveries and the hundred candles
 - Call `disc(kind,id)` the FIRST time the player gets/meets each collectible thing of yours (it returns true only
   the first time). The «Сто свечей» add-on counts all discoveries as candles. Kinds in use:
-  `find` (Musya's finds) · `rareguest` · `visitor` (yōkai lured by things) · `rumor` (rumours solved) · `chapter2`
+  `find` (Musya's finds) · `rareguest` · `ema` · `parade` · `forest` · `season` · `birthday` · `pet` · `visitor` (yōkai lured by things) · `rumor` (rumours solved) · `chapter2`
   (second story chapters) · `dream` · `haunt` · `postcard` · `souvenir` · `room` (rooms opened) · `figure`
   (gachapon figurines) · `bloom` · `trust` (trust levels). `discN(kind)` counts.
 
