@@ -29,7 +29,8 @@ body = ''
 for f in files + extra:
     if not os.path.exists(f): print('missing:', os.path.basename(f)); continue
     code = open(f, encoding='utf-8').read().strip()
-    assert code.startswith('{') and code.endswith('}'), os.path.basename(f) + ' must be one { … } block'
+    body_ = re.sub(r'^(\s*//[^\n]*\n)+', '', code + '\n').strip()   # leading comment lines are fine
+    assert body_.startswith('{') and body_.endswith('}'), os.path.basename(f) + ' must be one { … } block'
     body += '// ── %s\n%s\n' % (os.path.basename(f), code)
 i, j = s.index(BEGIN) + len(BEGIN), s.index(END)
 if '--check-only' not in sys.argv:
