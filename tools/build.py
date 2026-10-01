@@ -14,7 +14,8 @@ BEGIN, END = '// ═════ add-ons (built from feat/*.js by tools/build.py
 ORDER = ['rooms', 'rooms2', 'story2', 'return', 'lanterns', 'visitors', 'rumors', 'haunt', 'dreams',
          'candles', 'trust', 'travel', 'sakura', 'gacha', 'kimono3d',
          'ema', 'parade', 'forest', 'seasons', 'birthday', 'pet2', 'zen',
-         'stars', 'hanafuda', 'workshop', 'cranes', 'birds', 'koi', 'serial', 'ryokan', 'kanji']
+         'stars', 'hanafuda', 'workshop', 'cranes', 'birds', 'koi', 'serial', 'ryokan', 'kanji',
+         'friends', 'shop', 'capsule', 'daruma', 'bonsai', 'ikebana', 'tea', 'shadow', 'paint']
 
 s = open(HTML, encoding='utf-8').read()
 if BEGIN not in s:

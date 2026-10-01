@@ -24,8 +24,20 @@ are mutable bindings). Prefer hooks.
   /Users/markvozdvizenskij/work/claude-brain/skills/playwright-game-shots.md, musya-art-toolkit.md, musya-room-layers.md.
 - Already built into index.html (feat/READY): rooms, rooms2, story2, return, lanterns, visitors, rumors, haunt, dreams,
   candles, trust, travel, sakura, gacha, kimono3d, ema, parade, forest, seasons (real weather), birthday, pet2 (a kitten
-  that follows Musya), zen (a zen garden patch in the courtyard) — look at their hub cards, tray buttons and hit zones
+  that follows Musya), zen (a zen garden patch in the courtyard), stars, hanafuda, workshop, cranes, birds, koi,
+  serial (the fox at the kitchen hearth), ryokan, kanji — look at their hub cards, tray buttons and hit zones
   so you don't overlap them (feat/<name>.js).
+
+## Lessons from the player (MUST follow)
+- Characters who "come" (guests, the fox, a shopkeeper, tea guests…) appear BY SCHEDULE — every other day, in the
+  evening, on an event — never sit in a room all the time. On other days they are absent, and the 家 card says when
+  they come next. State the visit rhythm explicitly in your report.
+- The 家 hub folds every card to its `<h4>` title plus the FIRST `<p>`: start the card with `<h4>` and make the first
+  `<p>` a short live status line («Сегодня у лавки: веер и данго», «Капсула откроется через 12 дней»).
+- Crowded zones — do not place things there: the left half of the courtyard (image x < 800: feeder, koi tub, zen
+  patch), the veranda eaves (7 lanterns), the entrance left of the torii (ema rack, post box), the fair at x≈1275
+  (gachapon), the kitchen hearth (the fox, every other day), the bedroom shoji right side (crane garland).
+- Musya never talks; yōkai do. Russian texts must be literate and natural.
 
 ## Look & tone
 - Dark painterly Japan at night, muted colours, film grain; rare pink sakura. «Говорящая Анджела 2» without ads.
@@ -152,7 +164,7 @@ Shared UI
 Discoveries and the hundred candles
 - Call `disc(kind,id)` the FIRST time the player gets/meets each collectible thing of yours (it returns true only
   the first time). The «Сто свечей» add-on counts all discoveries as candles. Kinds in use:
-  `find` (Musya's finds) · `rareguest` · `ema` · `parade` · `forest` · `season` · `birthday` · `pet` · `star` · `hanafuda` · `craft` · `crane` · `bird` · `koi` · `serial` · `ryokan` · `kanji` · `visitor` (yōkai lured by things) · `rumor` (rumours solved) · `chapter2`
+  `find` (Musya's finds) · `rareguest` · `ema` · `parade` · `forest` · `season` · `birthday` · `pet` · `star` · `hanafuda` · `craft` · `crane` · `bird` · `koi` · `serial` · `ryokan` · `kanji` · `friend` · `shop` · `capsule` · `daruma` · `bonsai` · `ikebana` · `tea` · `shadow` · `paint` · `visitor` (yōkai lured by things) · `rumor` (rumours solved) · `chapter2`
   (second story chapters) · `dream` · `haunt` · `postcard` · `souvenir` · `room` (rooms opened) · `figure`
   (gachapon figurines) · `bloom` · `trust` (trust levels). `discN(kind)` counts.
 
