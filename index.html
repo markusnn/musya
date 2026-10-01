@@ -8273,10 +8273,14 @@ function srUnread(){return srS().heard<srAvail();}
 function srWord(n,f){const a=n%10,b=n%100;return n+" "+(a===1&&b!==11?f[0]:a>=2&&a<=4&&(b<12||b>14)?f[1]:f[2]);}
 function srWhen(){const d=srNextIn();return d===1?"завтра, в понедельник":`в понедельник, через ${srWord(d,["день","дня","дней"])}`;}
 function srFirst(){const s=srS();return s.heard<srAvail()?s.heard:null;}
+// the fox drops by every other day, counted from the day she first came; new episodes are told only when she is here
+function srVisit(k=dayKey()){return((srDay(k)-srDay(srS().start))%2+2)%2===0;}
+function srComeIn(){return srVisit()?0:1;}   // days until she comes (0 — today)
+function srUnreadNow(){return srUnread()&&srVisit();}
 // ── the fox at the kitchen hearth ──
 let srSat=false,srR=null,srLoopOn=false;
 const SR_FH=340;
-function srHere(){return S.room==="kitchen"&&!scene.on&&(dayTint()[1]||srUnread()||srSat);}
+function srHere(){return S.room==="kitchen"&&!scene.on&&(srVisit()||srSat);}
 function srPos(){const [x,y]=propAt("p_kit_kamado",1240,1195);return{x:visX(x,150),y};}
 function srFire(){return propAt("p_kit_kamado",1385,1015);}
 hook("draw",(t,front)=>{if(!srHere()||!MIMG.m_kitsune)return;const P=srPos(),back=(P.y>catLineY()+6)===front;
@@ -8307,9 +8311,9 @@ function srOpen(e,pg){srR={e,pg};const s=srS(),E=SR[e],PG=srPages(e),last=pg===P
   $("xpBody").scrollTop=0;srLoop();tone(pg?520:392,.5,"sine",.025);if(srScary(par))setTimeout(()=>tone(70,1.1,"sawtooth",.03),300);
   if(S.room==="kitchen"&&!petAway())react(srScary(par)?"🙀":"😼",2.4);}
 function srList(){srR=null;const s=srS(),A=srAvail();
-  const L=SR.map((E,i)=>i<A?`<button class="scard" data-x="sr:ep:${i}"><b>${i+1}. ${E.t}</b><span>${i<s.heard?"Прослушано — послушать ещё раз":"🦊 Новая серия"}</span></button>`
+  const V=srVisit(),L=SR.map((E,i)=>i<A?`<button class="scard${i>=s.heard&&!V?" sr-off":""}" data-x="sr:ep:${i}"><b>${i+1}. ${E.t}</b><span>${i<s.heard?"Прослушано — послушать ещё раз":V?"🦊 Новая серия":"🦊 Лиса расскажет её завтра"}</span></button>`
     :`<div class="scard sr-off"><b>${i+1}. ${i===A?E.t:"· · ·"}</b><span>${i===A?"Откроется "+srWhen():"🔒 Позже"}</span></div>`).join("");
-  openPanel("Лиса у очага",`<div class="sr-stage"><canvas id="srCv"></canvas></div><h3 class="sr-h">${SR_T} <i class="sr-jp">${SR_JP}</i></h3><p class="lead">Кайдан с продолжением. Лиса-невеста рассказывает его у кухонного очага — по серии в неделю. Новая серия открывается по понедельникам, пропущенные ждут тебя в любой день.</p><div class="slist">${L}</div>`,"sr");
+  openPanel("Лиса у очага",`<div class="sr-stage"><canvas id="srCv"></canvas></div><h3 class="sr-h">${SR_T} <i class="sr-jp">${SR_JP}</i></h3><p class="lead">Кайдан с продолжением. Лиса-невеста рассказывает его у кухонного очага — по серии в неделю. Новая серия открывается по понедельникам, а сама лиса заглядывает к очагу через день — тогда и расскажет то, что ты пропустила.</p><div class="slist">${L}</div>`,"sr");
   $("xpBody").scrollTop=0;srLoop();}
 function srHeard(e){const s=srS();if(e<s.heard)return;s.heard=e+1;disc("serial",e+1);const b=SR_BEAST[e];if(b&&!ST.seen.includes(b))ST.seen.push(b);
   S.needs.joy=clamp(S.needs.joy+4,0,100);
@@ -8319,9 +8323,10 @@ hook("click",k=>{if(!k.startsWith("sr:"))return;const a=k.split(":");
   if(a[1]==="fox")srGo();
   else if(a[1]==="next"&&srR)srOpen(srR.e,Math.min(srR.pg+1,srPages(srR.e).length-1));
   else if(a[1]==="prev"&&srR)srOpen(srR.e,Math.max(0,srR.pg-1));
-  else if(a[1]==="ep"){const e=+a[2];if(e<srAvail())srOpen(e,0);}
+  else if(a[1]==="ep"){const e=+a[2];if(e<srS().heard||e<srAvail()&&srVisit())srOpen(e,0);else if(e<srAvail())toast("🦊 Эту серию лиса расскажет завтра");}
   else if(a[1]==="list")srList();
   else if(a[1]==="close")closePanel();
+  else if(a[1]==="hublist"&&!srVisit()){closePanel();srList();}
   else if(a[1]==="hub"||a[1]==="hublist"){closePanel();const go=()=>{srSit();if(a[1]==="hub"&&srFirst()!=null)srOpen(srFirst(),0);else srList();};if(S.room!=="kitchen"){goRoom("kitchen");setTimeout(go,700);}else go();}
   return true;});
 hook("panelClose",id=>{if(id!=="sr")return;srR=null;if(S.room==="kitchen"&&!petAway()&&pet.action!=="sleep")react(srS().heard>=SR_N?"😻":"😺",2);});
@@ -8358,15 +8363,17 @@ document.head.insertAdjacentHTML("beforeend",`<style>.sr-stage{margin:0 -16px 12
 // ── hub card, dots, the away postcard ──
 hook("hub",()=>{const s=srS(),A=srAvail(),u=s.heard<A;
   const info=s.heard>=SR_N?`<p><b>Все ${SR_N} серий прослушаны.</b> На память лиса подарила фонарь «Домой».</p>`
-    :u?`<p><b>Серия ${s.heard+1} из ${SR_N}</b> — «${SR[s.heard].t}» ждёт у очага.${A-s.heard>1?` Непрослушанных серий: ${A-s.heard}.`:""}</p>`
+    :u&&srVisit()?`<p><b>Серия ${s.heard+1} из ${SR_N}</b> — «${SR[s.heard].t}»: лиса сегодня у очага.${A-s.heard>1?` Непрослушанных серий: ${A-s.heard}.`:""}</p>`
+    :u?`<p><b>Серия ${s.heard+1} из ${SR_N}</b> — «${SR[s.heard].t}». Лиса придёт к очагу завтра и расскажет.</p>`
     :`<p><b>Прослушано ${s.heard} из ${SR_N}.</b> Серия ${s.heard+1} — ${srWhen()}.</p>`;
-  return`<div class="hubc"><h4>🦊 ${SR_T} <i>${SR_JP}</i></h4><p>Лиса-невеста рассказывает у кухонного очага кайдан с продолжением — по серии в неделю.</p>${info}<div class="sr-bar"><i style="width:${s.heard/SR_N*100}%"></i></div><div class="row">${u?`<button class="btn primary" data-x="sr:hub">Слушать</button>`:""}<button class="btn" data-x="sr:hublist">Все серии</button></div></div>`;});
-hook("hubDot",()=>srUnread());
-hook("tabDot",r=>r==="kitchen"&&srUnread());
-hook("away",ms=>{if(srUnread()&&ms>3*3600e3)return{i:"🦊",t:`Лиса у очага ждёт с серией ${srS().heard+1} кайдана`};});
+  return`<div class="hubc"><h4>🦊 ${SR_T} <i>${SR_JP}</i></h4><p>Лиса-невеста заглядывает к кухонному очагу через день и рассказывает кайдан с продолжением — по серии в неделю. ${srVisit()?"Сегодня она здесь.":"Сегодня её нет — придёт завтра."}</p>${info}<div class="sr-bar"><i style="width:${s.heard/SR_N*100}%"></i></div><div class="row">${u&&srVisit()?`<button class="btn primary" data-x="sr:hub">Слушать</button>`:""}<button class="btn" data-x="sr:hublist">Все серии</button></div></div>`;});
+hook("hubDot",()=>srUnreadNow());
+hook("tabDot",r=>r==="kitchen"&&srUnreadNow());
+hook("away",ms=>{if(srUnreadNow()&&ms>3*3600e3)return{i:"🦊",t:`Лиса у очага ждёт с серией ${srS().heard+1} кайдана`};});
 hook("boot",()=>{const s=srS();s.told=Math.max(s.told||1,srAvail());save();});
-hook("sec",()=>{const s=srS(),A=srAvail();if(A>(s.told||1)){s.told=A;save();if(s.heard<A){toast("🦊 У очага на кухне — новая серия кайдана");ui();}}});
-X.sr={st:srS,avail:srAvail,open:srOpen,list:srList,go:srGo,here:srHere,box:srBox,
+hook("sec",()=>{const s=srS(),A=srAvail();if(A>(s.told||1)){s.told=A;save();if(s.heard<A&&srVisit()){toast("🦊 У очага на кухне — новая серия кайдана");ui();}}
+  if(srVisit()&&srUnread()&&s.came!==dayKey()&&now()>8){s.came=dayKey();save();toast("🦊 Лиса пришла к очагу на кухне");ui();}});
+X.sr={visit:srVisit,st:srS,avail:srAvail,open:srOpen,list:srList,go:srGo,here:srHere,box:srBox,
   set(start,heard){const s=srS();s.start=start;s.heard=heard;s.told=srAvail();save();hubDot();tabDots();ui();},
   tap(){const B=srBox(),r=cv.getBoundingClientRect();cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:r.left+B.x,clientY:r.top+B.y-B.h*.5,pointerId:1,bubbles:true}));}};
 }
