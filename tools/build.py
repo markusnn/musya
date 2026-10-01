@@ -13,7 +13,8 @@ BEGIN, END = '// ═════ add-ons (built from feat/*.js by tools/build.py
 # order matters for hooks that stop at the first answer (hit, gate, click, sleepTap)
 ORDER = ['rooms', 'rooms2', 'story2', 'return', 'lanterns', 'visitors', 'rumors', 'haunt', 'dreams',
          'candles', 'trust', 'travel', 'sakura', 'gacha', 'kimono3d',
-         'ema', 'parade', 'forest', 'seasons', 'birthday', 'pet2', 'zen']
+         'ema', 'parade', 'forest', 'seasons', 'birthday', 'pet2', 'zen',
+         'stars', 'hanafuda', 'workshop', 'cranes', 'birds', 'koi', 'serial', 'ryokan', 'kanji']
 
 s = open(HTML, encoding='utf-8').read()
 if BEGIN not in s:

@@ -23,7 +23,9 @@ are mutable bindings). Prefer hooks.
 - Report as soon as the feature works — aim for ~60–75 minutes. Read skills notes for known pitfalls:
   /Users/markvozdvizenskij/work/claude-brain/skills/playwright-game-shots.md, musya-art-toolkit.md, musya-room-layers.md.
 - Already built into index.html (feat/READY): rooms, rooms2, story2, return, lanterns, visitors, rumors, haunt, dreams,
-  candles, trust, travel, sakura, gacha, kimono3d — look at their hub cards and hit zones so you don't overlap them.
+  candles, trust, travel, sakura, gacha, kimono3d, ema, parade, forest, seasons (real weather), birthday, pet2 (a kitten
+  that follows Musya), zen (a zen garden patch in the courtyard) — look at their hub cards, tray buttons and hit zones
+  so you don't overlap them (feat/<name>.js).
 
 ## Look & tone
 - Dark painterly Japan at night, muted colours, film grain; rare pink sakura. «Говорящая Анджела 2» without ads.
@@ -150,7 +152,7 @@ Shared UI
 Discoveries and the hundred candles
 - Call `disc(kind,id)` the FIRST time the player gets/meets each collectible thing of yours (it returns true only
   the first time). The «Сто свечей» add-on counts all discoveries as candles. Kinds in use:
-  `find` (Musya's finds) · `rareguest` · `ema` · `parade` · `forest` · `season` · `birthday` · `pet` · `visitor` (yōkai lured by things) · `rumor` (rumours solved) · `chapter2`
+  `find` (Musya's finds) · `rareguest` · `ema` · `parade` · `forest` · `season` · `birthday` · `pet` · `star` · `hanafuda` · `craft` · `crane` · `bird` · `koi` · `serial` · `ryokan` · `kanji` · `visitor` (yōkai lured by things) · `rumor` (rumours solved) · `chapter2`
   (second story chapters) · `dream` · `haunt` · `postcard` · `souvenir` · `room` (rooms opened) · `figure`
   (gachapon figurines) · `bloom` · `trust` (trust levels). `discN(kind)` counts.
 
