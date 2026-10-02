@@ -25,7 +25,10 @@ document.head.insertAdjacentHTML("beforeend",`<style>
 </style>`);
 
 // ── counting ──
-const CD_KIND={find:"Находка Муси",rareguest:"Редкий гость",visitor:"Гость пришёл на вещи",rumor:"Слух подтвердился",chapter2:"Глава второй истории",dream:"Сон Муси",haunt:"Одержимая комната",postcard:"Открытка из путешествия",souvenir:"Сувенир из путешествия",room:"Открыта комната",figure:"Фигурка из гатяпона",bloom:"Цветение",trust:"Доверие Муси"};
+const CD_KIND={find:"Находка Муси",rareguest:"Редкий гость",visitor:"Гость пришёл на вещи",rumor:"Слух подтвердился",chapter2:"Глава второй истории",dream:"Сон Муси",haunt:"Одержимая комната",postcard:"Открытка из путешествия",souvenir:"Сувенир из путешествия",room:"Открыта комната",figure:"Фигурка из гатяпона",bloom:"Цветение",trust:"Доверие Муси",
+  ema:"Дар с доски эма",parade:"Ночной парад",forest:"Лес за тории",season:"Новое время года",birthday:"Праздник Муси",pet:"Котёнок подрос",
+  star:"Звёздное небо",hanafuda:"Ханафуда",craft:"Поделка",crane:"Журавлики",bird:"Новая птица",koi:"Новый карп",serial:"Серия кайдана",ryokan:"Постоялец рёкана",kanji:"Иероглиф",
+  friend:"Письмо друга",shop:"Лавка тануки",capsule:"Капсула времени",daruma:"Дарума исполнился",bonsai:"Бонсай",ikebana:"Икебана",tea:"Чайная церемония",shadow:"Теневой театр",paint:"Краски Муси"};
 function cdAll(){const o=[];
   for(let k=0;k<Math.min(QS.ch,STORY.length);k++)o.push("q:"+k);
   for(const i of ST.stories)if(KAIDAN[i])o.push("k:"+i);
