@@ -841,7 +841,7 @@ function render(t,dt){
   const e=t-pet.start;
   if(pet.action==="cucumber"){const al=clamp(Math.min(e/.6,(7.4-e)/.5),0,1);if(al>0){ctx.save();ctx.globalAlpha=al;const [cx,]=cellToStage(192,0);ctx.translate(cx,view.floor-10*s);ctx.rotate(-Math.PI/4.4);drawEmoji(ctx,"🥒",0,0,34*s);ctx.restore();}}
   drawSceneChars(t,false);drawGuest(t,false);hkAll("draw",t,false);
-  const away=petAway();if(!away)renderCat(p,t);
+  const away=petAway()||!!hk("hideCat");if(!away)renderCat(p,t);   // hideCat: an add-on hides Musya (hide-and-seek)
   drawThings(t,dt,true);
   drawSceneChars(t,true);drawGuest(t,true);hkAll("draw",t,true);
   if(!draw3D(t,true))drawLayers(t,true);
@@ -922,7 +922,7 @@ document.addEventListener("visibilitychange",()=>{if(!document.hidden){const t=n
 
 // ───────────────────────── Input on the stage ─────────────────────────
 const drag={active:false,mode:null,sx:0,sy:0,px:0,py:0,dist:0,startX:0,lastTap:0,tapTimer:null};
-function hitCat(x,y){if(petAway())return false;const [cx,cy]=stageToCell(x,y);return cx>28&&cx<168&&cy>10&&cy<205;}
+function hitCat(x,y){if(petAway()||hk("hideCat"))return false;const [cx,cy]=stageToCell(x,y);return cx>28&&cx<168&&cy>10&&cy<205;}
 function onHead(x,y){if(petAway())return false;const [cx,cy]=stageToCell(x,y);return cx>37&&cx<149&&cy>116&&cy<204;}
 function local(ev){const r=cv.getBoundingClientRect();return[ev.clientX-r.left,ev.clientY-r.top];}
 let strokeDist=0,strokeT=0;

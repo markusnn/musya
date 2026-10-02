@@ -15,7 +15,9 @@ ORDER = ['rooms', 'rooms2', 'story2', 'return', 'lanterns', 'visitors', 'rumors'
          'candles', 'trust', 'travel', 'sakura', 'gacha', 'kimono3d',
          'ema', 'parade', 'forest', 'seasons', 'birthday', 'pet2', 'zen',
          'stars', 'hanafuda', 'workshop', 'cranes', 'birds', 'koi', 'serial', 'ryokan', 'kanji',
-         'friends', 'shop', 'capsule', 'daruma', 'bonsai', 'ikebana', 'tea', 'shadow', 'paint']
+         'friends', 'shop', 'capsule', 'daruma', 'bonsai', 'ikebana', 'tea', 'shadow', 'paint',
+         'holidays', 'cats', 'mystery', 'insects', 'news', 'music', 'hide', 'kimodameshi', 'sumo', 'kamidana', 'haiku',
+         'snow', 'loom', 'rice', 'kite', 'chest', 'nurikabe', 'chronicle']
 
 s = open(HTML, encoding='utf-8').read()
 if BEGIN not in s:

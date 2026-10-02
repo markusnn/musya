@@ -25,7 +25,9 @@ are mutable bindings). Prefer hooks.
 - Already built into index.html (feat/READY): rooms, rooms2, story2, return, lanterns, visitors, rumors, haunt, dreams,
   candles, trust, travel, sakura, gacha, kimono3d, ema, parade, forest, seasons (real weather), birthday, pet2 (a kitten
   that follows Musya), zen (a zen garden patch in the courtyard), stars, hanafuda, workshop, cranes, birds, koi,
-  serial (the fox at the kitchen hearth), ryokan, kanji — look at their hub cards, tray buttons and hit zones
+  serial (the fox at the kitchen hearth, every other day), ryokan, kanji, friends (letters; an envelope by the
+  entrance post box), shop (tanuki cart at the fair, left), capsule (box on the kura wall), daruma, bonsai (veranda,
+  right of Musya), ikebana (bedroom tokonoma), tea (a guest on the veranda LEFT side / tea house), shadow, paint — look at their hub cards, tray buttons and hit zones
   so you don't overlap them (feat/<name>.js).
 
 ## Lessons from the player (MUST follow)
@@ -35,8 +37,10 @@ are mutable bindings). Prefer hooks.
 - The 家 hub folds every card to its `<h4>` title plus the FIRST `<p>`: start the card with `<h4>` and make the first
   `<p>` a short live status line («Сегодня у лавки: веер и данго», «Капсула откроется через 12 дней»).
 - Crowded zones — do not place things there: the left half of the courtyard (image x < 800: feeder, koi tub, zen
-  patch), the veranda eaves (7 lanterns), the entrance left of the torii (ema rack, post box), the fair at x≈1275
+  patch), the veranda right of Musya (bonsai) and its left side on tea evenings, the veranda eaves (7 lanterns), the entrance left of the torii (ema rack, post box), the fair at x≈1275
   (gachapon), the kitchen hearth (the fox, every other day), the bedroom shoji right side (crane garland).
+- The machine has only 8 GB RAM and ~15 workers run at once: run at most ONE tools/shot.py at a time, never in
+  parallel, and keep runs short. If a run is killed (exit 137) just re-run it once.
 - Musya never talks; yōkai do. Russian texts must be literate and natural.
 
 ## Look & tone
@@ -135,6 +139,7 @@ Hooks — `hook(name, fn)` at block top-level
 | `disc` | (kind,id) | someone discovered something (see below) |
 | `panelClose` | (id) | the shared panel was closed |
 | `drawBody` | (g,st,f,k,id) → true | draw the kimono yourself (kimono add-on only) |
+| `hideCat` | () → true | Musya is hidden somewhere (hide-and-seek add-on only): not drawn, not tappable |
 | `itemTap` | (it,I,t) → true | the player tapped a placed thing (custom reaction for your items) |
 | `weather` | () → "rain"\|"clear"\|null | only while the weather button is on «авто»: force rain or clear (real weather) |
 | `fx` | (k) → true | turn on a festival effect outside festivals: snow, peach, momiji, sakura, moon, stars, koinobori, spirits, yuzu, shobu |
@@ -164,7 +169,7 @@ Shared UI
 Discoveries and the hundred candles
 - Call `disc(kind,id)` the FIRST time the player gets/meets each collectible thing of yours (it returns true only
   the first time). The «Сто свечей» add-on counts all discoveries as candles. Kinds in use:
-  `find` (Musya's finds) · `rareguest` · `ema` · `parade` · `forest` · `season` · `birthday` · `pet` · `star` · `hanafuda` · `craft` · `crane` · `bird` · `koi` · `serial` · `ryokan` · `kanji` · `friend` · `shop` · `capsule` · `daruma` · `bonsai` · `ikebana` · `tea` · `shadow` · `paint` · `visitor` (yōkai lured by things) · `rumor` (rumours solved) · `chapter2`
+  `find` (Musya's finds) · `rareguest` · `ema` · `parade` · `forest` · `season` · `birthday` · `pet` · `star` · `hanafuda` · `craft` · `crane` · `bird` · `koi` · `serial` · `ryokan` · `kanji` · `friend` · `shop` · `capsule` · `daruma` · `bonsai` · `ikebana` · `tea` · `shadow` · `paint` · `holiday` · `cat` · `mystery` · `insect` · `news` · `music` · `hide` · `kimo` · `sumo` · `kamidana` · `haiku` · `snow` · `loom` · `rice` · `kite` · `chest` · `nurikabe` · `chronicle` · `visitor` (yōkai lured by things) · `rumor` (rumours solved) · `chapter2`
   (second story chapters) · `dream` · `haunt` · `postcard` · `souvenir` · `room` (rooms opened) · `figure`
   (gachapon figurines) · `bloom` · `trust` (trust levels). `discN(kind)` counts.
 
