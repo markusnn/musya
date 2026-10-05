@@ -172,7 +172,7 @@ hook("boot",()=>{atlasImg("nu",im=>{nuAt=im;});const h=HK.draw,i=h.indexOf(nuDra
 document.head.insertAdjacentHTML("beforeend",`<style>#xdlg .nu-q{margin:0 0 2px}#xdlg .nu-o{display:flex;flex-direction:column;gap:7px;margin:10px 0 0}
 #xdlg .nu-o .btn{text-align:left;justify-content:flex-start;font-size:16px;padding:9px 14px;width:100%;line-height:1.25}
 #xdlg p.nu-h{font-size:15px;color:#d9c9a8;font-style:italic;margin:0 0 6px}#xdlg p.nu-r{margin:0 0 6px;color:#f0dcae}#xdlg p.nu-e{font-size:15px;line-height:1.45;color:#cfc8b8;margin:0 0 4px}</style>`);
-X.nu={st:nuS,R:NU_R,ord:NU_ORD,eve:nuEve,here:nuHere,waits:nuWaits,stands:nuStands,next:nuNext,status:nuStatus,ask:nuAsk,ans:nuAns,pass:nuPass,box:()=>nuBox,
+X.nu={st:nuS,R:NU_R,ord:NU_ORD,eve:nuEve,here:nuHere,waits:nuWaits,stands:nuStands,next:nuNext,status:nuStatus,ask:nuAsk,ans:nuAns,pass:nuPass,tickle:nuTickle,box:()=>nuBox,
   anim(k){nuA={k,t0:now()};},reset(){S.ext.nurikabe=null;nuS();save();},
   tap(low){const b=nuBox;if(!b)return"nobox";return hk("hit",b.x0+b.w*(low?.12:.5),b.y0+b.h*(low?.86:.3))?"hit":"miss";},
   geo(){const G=nuGeo();return[G.x0,G.y0,G.w,G.h,G.gY,G.ext].map(v=>Math.round(v));},want:()=>Math.round(nuExtWant())};
