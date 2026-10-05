@@ -231,14 +231,22 @@ def it_kesho():
 
 
 def gunbai_fan(img, ox, oy, sc=1.0):
+    """The gyōji's gunbai: a light gold-ivory lacquered face inside a thick black-lacquer rim (reads at a glance in the dark
+    arena), a red sun disc with 勝, a dark wooden handle and a purple cord with a tassel."""
     X = lambda x: ox + x * sc; Y = lambda y: oy + y * sc
-    shape(img, hexc('#4a3424'), 7, pts=[(X(41), Y(108)), (X(49), Y(108)), (X(50), Y(150)), (X(40), Y(150))], smooth=False, scale=3, k=.6, feather=.3)
+    shape(img, hexc('#3a281a'), 7, pts=[(X(40), Y(104)), (X(50), Y(104)), (X(51), Y(150)), (X(39), Y(150))], smooth=False, scale=3, k=.6, feather=.3)
     pts = [(X(45), Y(2)), (X(78), Y(12)), (X(88), Y(46)), (X(74), Y(86)), (X(56), Y(104)), (X(45), Y(112)), (X(34), Y(104)), (X(16), Y(86)), (X(2), Y(46)), (X(12), Y(12))]
-    shape(img, LAC, 8, pts=pts, scale=4, k=.7, rim=.35, spec=.2, feather=.4)
-    m = mask_of(img, pts, feather=.4)
-    clipped(img, m, lambda dd, l: (dd.line([(px(a), px(b)) for a, b in cr(pts, 8)] + [(px(pts[0][0]), px(pts[0][1]))], fill=GOLD, width=px(3 * sc)),
-                                   dd.ellipse([px(X(28)), px(Y(28)), px(X(62)), px(Y(62))], fill=(176, 42, 34, 255))))
-    text(img, '勝', X(45), Y(46), 24 * sc, (236, 222, 190, 255), SERIF)
+    shape(img, LAC, 8, pts=pts, scale=4, k=.7, rim=.2, spec=.3, feather=.4)                        # black lacquer body = the rim
+    cx, cy = X(45), Y(52)
+    inner = [(cx + (x - cx) * .8, cy + (y - cy) * .8) for x, y in pts]
+    shape(img, hexc('#ead8a2'), 11, pts=inner, scale=5, dk=.18, lt=.3, k=.5, rim=.22, spec=.45, feather=.35)   # light lacquered face
+    m = mask_of(img, inner, feather=.35)
+    def deco(dd, l):
+        dd.line([(px(a), px(b)) for a, b in cr(inner, 8)] + [(px(inner[0][0]), px(inner[0][1]))], fill=hexc('#b08a34'), width=px(2 * sc))
+        dd.ellipse([px(X(27)), px(Y(31)), px(X(63)), px(Y(67))], fill=(40, 22, 16, 255))
+        dd.ellipse([px(X(29)), px(Y(33)), px(X(61)), px(Y(65))], fill=(184, 40, 32, 255))
+    clipped(img, m, deco)
+    text(img, '勝', X(45), Y(49), 21 * sc, (246, 232, 200, 255), SERIF)
     d = ImageDraw.Draw(img)
     d.line([(px(X(45)), px(Y(150))), (px(X(52)), px(Y(170)))], fill=PURPLE, width=px(2.5 * sc))
     d.polygon([(px(X(48)), px(Y(168))), (px(X(57)), px(Y(168))), (px(X(61)), px(Y(190))), (px(X(45)), px(Y(190)))], fill=PURPLE)

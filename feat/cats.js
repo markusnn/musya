@@ -1,19 +1,20 @@
 {
-// ───────────────────────── «Кошки соседей»: 8 ordinary neighbour cats visit the garden wall, the onsen fence and the torii by schedule ─────────────────────────
+// ───────────────────────── «Кошки соседей»: 8 ordinary neighbour cats visit the veranda edge, the onsen fence and the torii by schedule ─────────────────────────
 // S.ext.cats = {c:{id:{met:ms first acquaintance, fr:0..5 friendship, fed:dayKey of the last fish, seen:dayKey greeted, down:dayKey came down to Musya}}}
 // atlas nk: per cat sit / ear (ear flicked) / lie / w0,w1 (walk) / tail — [x,y,w,h,[[eye x,y,rx,ry]…],tail root?]; atlas nk2: the gifts
 const NK_F={"daifuku_sit":[0,0,120,150,[[51.3,61.2,5.5,4.6],[68.7,61.2,5.5,4.6]]],"daifuku_ear":[122,0,120,150,[[51.3,61.2,5.5,4.6],[68.7,61.2,5.5,4.6]]],"daifuku_lie":[244,0,168,96,[[107.4,45.2,5.2,4.4],[124.1,45.2,5.2,4.4]],[22,89]],"daifuku_w0":[414,0,176,124,[[140.4,38.1,4.9,4.1],[156.2,38.1,4.9,4.1]]],"daifuku_w1":[592,0,176,124,[[140.4,38.1,4.9,4.1],[156.2,38.1,4.9,4.1]]],"daifuku_tail":[770,0,34,112,[]],"mike_sit":[0,152,120,150,[[52.0,68.6,5.0,4.2],[68.0,68.6,5.0,4.2]]],"mike_ear":[122,152,120,150,[[52.0,68.6,5.0,4.2],[68.0,68.6,5.0,4.2]]],"mike_lie":[244,152,168,96,[[99.7,58.6,4.8,4.0],[114.9,58.6,4.8,4.0]],[22,89]],"mike_w0":[414,152,176,124,[[131.4,54.4,4.5,3.8],[145.8,54.4,4.5,3.8]]],"mike_w1":[592,152,176,124,[[131.4,54.4,4.5,3.8],[145.8,54.4,4.5,3.8]]],"mike_tail":[770,152,34,112,[]],"sumimi_sit":[0,304,120,150,[[51.6,64.5,5.2,4.4],[68.4,64.5,5.2,4.4]]],"sumimi_ear":[122,304,120,150,[[51.6,64.5,5.2,4.4],[68.4,64.5,5.2,4.4]]],"sumimi_lie":[244,304,168,96,[[104.0,58.0,5.0,4.2],[120.0,58.0,5.0,4.2]],[22,89]],"sumimi_w0":[414,304,176,124,[[136.4,52.1,4.8,4.0],[151.6,52.1,4.8,4.0]]],"sumimi_w1":[592,304,176,124,[[136.4,52.1,4.8,4.0],[151.6,52.1,4.8,4.0]]],"sumimi_tail":[770,304,34,112,[]],"yuki_sit":[0,456,120,150,[[51.8,66.1,5.1,4.3],[68.2,66.1,5.1,4.3]]],"yuki_ear":[122,456,120,150,[[51.8,66.1,5.1,4.3],[68.2,66.1,5.1,4.3]]],"yuki_lie":[244,456,168,96,[[102.3,55.1,4.9,4.1],[118.0,55.1,4.9,4.1]],[22,89]],"yuki_w0":[414,456,176,124,[[134.4,50.0,4.7,3.9],[149.3,50.0,4.7,3.9]]],"yuki_w1":[592,456,176,124,[[134.4,50.0,4.7,3.9],[149.3,50.0,4.7,3.9]]],"yuki_tail":[770,456,34,112,[]],"tora_sit":[0,608,120,150,[[51.1,59.5,5.6,4.7],[68.9,59.5,5.6,4.7]]],"tora_ear":[122,608,120,150,[[51.1,59.5,5.6,4.7],[68.9,59.5,5.6,4.7]]],"tora_lie":[244,608,168,96,[[109.2,51.4,5.3,4.5],[126.1,51.4,5.3,4.5]],[22,89]],"tora_w0":[414,608,176,124,[[142.4,43.5,5.0,4.2],[158.5,43.5,5.0,4.2]]],"tora_w1":[592,608,176,124,[[142.4,43.5,5.0,4.2],[158.5,43.5,5.0,4.2]]],"tora_tail":[770,608,34,112,[]],"kinako_sit":[0,760,120,150,[[51.8,66.1,5.1,4.3],[68.2,66.1,5.1,4.3]]],"kinako_ear":[122,760,120,150,[[51.8,66.1,5.1,4.3],[68.2,66.1,5.1,4.3]]],"kinako_lie":[244,760,168,96,[[102.3,61.1,4.9,4.1],[118.0,61.1,4.9,4.1]],[22,89]],"kinako_w0":[414,760,176,124,[[134.4,55.9,4.7,3.9],[149.3,55.9,4.7,3.9]]],"kinako_w1":[592,760,176,124,[[134.4,55.9,4.7,3.9],[149.3,55.9,4.7,3.9]]],"kinako_tail":[770,760,34,112,[]],"pochi_sit":[0,912,120,150,[[51.8,66.1,5.1,4.3],[68.2,66.1,5.1,4.3]]],"pochi_ear":[122,912,120,150,[[51.8,66.1,5.1,4.3],[68.2,66.1,5.1,4.3]]],"pochi_lie":[244,912,168,96,[[102.3,57.5,4.9,4.1],[118.0,57.5,4.9,4.1]],[22,89]],"pochi_w0":[414,912,176,124,[[134.4,52.3,4.7,3.9],[149.3,52.3,4.7,3.9]]],"pochi_w1":[592,912,176,124,[[134.4,52.3,4.7,3.9],[149.3,52.3,4.7,3.9]]],"pochi_tail":[770,912,34,112,[]],"maru_sit":[0,1064,120,150,[[52.9,80.5,4.4,4.4],[67.1,80.5,4.4,4.4]]],"maru_ear":[122,1064,120,150,[[52.9,80.5,4.4,4.4],[67.1,80.5,4.4,4.4]]],"maru_lie":[244,1064,168,96,[[86.8,66.5,4.0,4.0],[99.6,66.5,4.0,4.0]],[22,89]],"maru_w0":[414,1064,176,124,[[116.3,67.3,3.8,3.8],[128.5,67.3,3.8,3.8]]],"maru_w1":[592,1064,176,124,[[116.3,67.3,3.8,3.8],[128.5,67.3,3.8,3.8]]],"maru_tail":[770,1064,34,112,[]]};
 const NK_G={"nk_shell":[0,0,110,76],"nk_ribbon":[112,0,124,84],"nk_cap":[238,0,84,60],"nk_feather":[324,0,60,196],"nk_omamori":[386,0,76,120],"nk_bag":[464,0,104,130],"nk_leaf":[570,0,110,110],"nk_yarn":[682,0,100,92]};
 const NK_A={nk:[806, 1216],nk2:[784, 196]},NK_C="Подарки соседских кошек";
-// spots: room, depth, edge line (image y for x), the free strip, frame px → image px, where (for texts)
+// spots: room, depth, edge line (image y for x), the free strip, frame px → image px, where (for texts);
+// edge = the far edge of the veranda boards right of Musya (floor plane, ~3× nearer than the old garden-wall perch), near: redraw nearer things over the cat
 const NK_SP={
- wall:{room:"engawa",d:.2,y:()=>521,x0:965,x1:1180,f:.95,at:"на стене сада у веранды",go:"на стену сада у веранды"},
+ edge:{room:"engawa",d:.8,y:()=>1122,x0:1140,x1:1360,f:1.75,near:1,at:"на краю веранды",go:"на край веранды"},
  fence:{room:"onsen",d:.28,y:()=>760,x0:430,x1:1370,f:.95,at:"на заборе у онсэна",go:"на забор у онсэна"},
  torii:{room:"entrance",d:.38,y:x=>357+3.33e-4*(x-900)**2,x0:540,x1:1260,f:.88,at:"на тории у входа",go:"на тории у входа"}};
 const NK_DOW=["вс","пн","вт","ср","чт","пт","сб"],NK_DOWF=["в воскресенье","в понедельник","во вторник","в среду","в четверг","в пятницу","в субботу"];
 // the cats: who owns them, schedule (days of week 0=Sun, hours [from,to)), spot, home x, idle pose, walker, gift, Musya's face, lines by friendship
 const NK=[
- {id:"daifuku",n:"Дайфуку",jp:"大福",sex:1,who:"Кот булочника Окады из пекарни через дорогу",sp:"wall",x:1075,pose:"lie",d:[1,3,5],h:[11,13],dry:1,gift:"nk_bag",mf:"😺",
+ {id:"daifuku",n:"Дайфуку",jp:"大福",sex:1,who:"Кот булочника Окады из пекарни через дорогу",sp:"edge",x:1265,pose:"lie",d:[1,3,5],h:[11,13],dry:1,gift:"nk_bag",mf:"😺",
   hint:"пн, ср, пт с 11 до 13 — в обед пекарни; в дождь сидит дома",
   desc:"Рыжий толстяк, круглый, как пирожок, в честь которого его назвали. От него пахнет тёплым хлебом.",
   L:["Дайфуку лежит буханкой и даже не смотрит в вашу сторону. Ему лень.","Дайфуку приоткрывает один глаз и снова засыпает. Это почти приветствие.","Дайфуку зевает так широко, что видно все зубы, и сладко потягивается.","Дайфуку мурчит на всю улицу. Наверное, снится свежая выпечка.","Дайфуку перекатывается на спину и подставляет живот солнцу. Он вам доверяет."]},
@@ -25,10 +26,10 @@ const NK=[
   hint:"каждый день в сумерки, с 17 до 19",
   desc:"Чёрный, как тушь, которой пишет его хозяин. Приходит только в сумерки и никогда не шумит.",
   L:["Сумими сидит неподвижно — в сумерках виден только жёлтый блеск глаз.","Сумими беззвучно переступает лапами и снова замирает.","Сумими долго смотрит на пар над онсэном, словно читает в нём иероглифы.","Сумими еле слышно мурлычет. Для него это целая речь.","Сумими сворачивается клубком — чёрной кляксой на заборе. Ему здесь спокойно."]},
- {id:"yuki",n:"Юки",jp:"雪",sex:0,who:"Кошка бабушки Ханы из дома с глицинией",sp:"wall",x:1100,pose:"lie",d:[2,4,6],h:[11,15],sun:1,gift:"nk_yarn",mf:"😺",
+ {id:"yuki",n:"Юки",jp:"雪",sex:0,who:"Кошка бабушки Ханы из дома с глицинией",sp:"edge",x:1240,pose:"lie",d:[2,4,6],h:[11,15],sun:1,gift:"nk_yarn",mf:"😺",
   hint:"вт, чт, сб с 11 до 15 — но только когда солнечно",
   desc:"Белая старушка с разными глазами: один голубой, другой золотой. Глуховата и больше всего на свете любит солнце.",
-  L:["Юки греется на солнце и не слышит, как вы подходите.","Юки поворачивает ухо на звук — с опозданием, но вежливо.","Юки щурит разноцветные глаза и греет на стене старые косточки.","Юки дремлет, и во сне у неё подрагивают усы.","Юки медленно моргает обоими глазами — голубым и золотым. Теперь вы старые друзья."]},
+  L:["Юки греется на солнце и не слышит, как вы подходите.","Юки поворачивает ухо на звук — с опозданием, но вежливо.","Юки щурит разноцветные глаза и греет на тёплых досках старые косточки.","Юки дремлет, и во сне у неё подрагивают усы.","Юки медленно моргает обоими глазами — голубым и золотым. Теперь вы старые друзья."]},
  {id:"tora",n:"Тора",jp:"虎",sex:1,who:"Ничей. Живёт у рыбной лавки на углу, его подкармливает рыбник Гэн",sp:"fence",x:760,pose:"sit",d:[1,4,6],h:[6,9],walk:1,gift:"nk_feather",mf:"😾",crow:1,
   hint:"пн, чт, сб по утрам, с 6 до 9",
   desc:"Полосатый хулиган с рваным ухом. Каждое утро воюет с вороной за рыбьи головы — и не всегда побеждает.",
@@ -41,10 +42,10 @@ const NK=[
   hint:"вт, сб, вс вечером, с 20 до 23",
   desc:"Японский бобтейл: вместо хвоста — помпон. Обходит свои владения каждый вечер, как сторож.",
   L:["Почи обходит тории дозором и считает, всё ли на месте.","Почи вертит хвостом-помпоном — он в хорошем настроении.","Почи сидит на тории, как на сторожевой вышке.","Почи громко мяукает куда-то в темноту — кажется, рапортует.","Почи спрыгивает поближе и бодается лбом. Теперь вы его улица."]},
- {id:"maru",n:"Мару",jp:"丸",sex:1,who:"Котёнок-подросток из семьи почтальона Кэнты",sp:"wall",x:1010,pose:"sit",d:[0,3,6],h:[15,17],walk:1,gift:"nk_shell",mf:"😸",young:1,
+ {id:"maru",n:"Мару",jp:"丸",sex:1,who:"Котёнок-подросток из семьи почтальона Кэнты",sp:"edge",x:1205,pose:"sit",d:[0,3,6],h:[15,17],walk:1,gift:"nk_shell",mf:"😸",young:1,
   hint:"ср, сб, вс после обеда, с 15 до 17",
   desc:"Серый полосатый подросток с белыми носочками. Всё ему интересно, всего ему мало.",
-  L:["Мару охотится на листок, который давно не шевелится.","Мару ловит собственный хвост и чуть не падает со стены.","Мару с любопытством разглядывает Мусю: кто это такой маленький?","Мару пытается мурчать басом, как взрослый. Выходит смешно.","Мару хочет играть с Мусей — и, кажется, Муся тоже."]}];
+  L:["Мару охотится на листок, который давно не шевелится.","Мару ловит собственный хвост и чуть не падает с веранды.","Мару с любопытством разглядывает Мусю: кто это такой маленький?","Мару пытается мурчать басом, как взрослый. Выходит смешно.","Мару хочет играть с Мусей — и, кажется, Муся тоже."]}];
 const NK_ID={};NK.forEach(c=>NK_ID[c.id]=c);
 addItems([
  {id:"nk_bag",n:"Пакетик из пекарни",c:NK_C,w:104,h:130,a:"b",p:60,at:["nk2",464,0],src:"🐈 подарок кошки",hint:"Подарок рыжего Дайфуку — подружись с ним"},
@@ -90,18 +91,20 @@ function nkLeave(r){const sp=NK_SP[NK_ID[r.id].sp];r.leave=1;r.mode="walk";r.tx=
 function nkSync(arrive){const room=S.room;for(const c of NK){const vis=nkVis(c)&&NK_SP[c.sp].room===room,r=nkRT[c.id];
   if(vis&&!r)nkSpawn(c,arrive);else if(!vis&&r&&!r.leave&&r.mode!=="down"&&r.mode!=="jump")nkLeave(r);}}
 function nkStep(t,dt){for(const id in nkRT){const r=nkRT[id],c=NK_ID[id];
-  if(r.mode==="walk"){const v=(c.young?95:70)*dt;if(Math.abs(r.tx-r.x)<=v){r.x=r.tx;if(r.leave){delete nkRT[id];continue;}r.mode=c.pose;r.na=t+rand(14,30);}else r.x+=Math.sign(r.tx-r.x)*v;continue;}
+  if(r.mode==="walk"){if(r.lim&&!r.leave&&r.tx>r.lim)r.tx=r.lim;const v=(c.young?95:70)*dt;if(Math.abs(r.tx-r.x)<=v){r.x=r.tx;if(r.leave){delete nkRT[id];continue;}r.mode=c.pose;r.na=t+rand(14,30);}else r.x+=Math.sign(r.tx-r.x)*v;continue;}
   if(r.mode==="jump"){if(t-r.t0>=r.dur){r.mode=r.back?c.pose:"down";r.t0=t;if(!r.back){nkSeat(c);}}continue;}
   if(r.mode==="down"){if(t-r.t0>75||petAway()||pet.action==="sleep"){r.mode="jump";r.back=1;r.t0=t;r.dur=.9;}continue;}
   if(t>r.na){r.na=t+rand(16,34);const sp=NK_SP[c.sp];
-    if(c.walk&&Math.random()<.55){r.tx=clamp(r.x+rand(-1,1)*320,sp.x0+30,sp.x1-30);if(Math.abs(r.tx-r.x)>40){r.mode="walk";r.face=r.tx>r.x?1:-1;}}
+    if(c.walk&&Math.random()<.55){r.tx=clamp(r.x+rand(-1,1)*320,sp.x0+30,Math.min(sp.x1-30,r.lim||1e9));if(Math.abs(r.tx-r.x)>40){r.mode="walk";r.face=r.tx>r.x?1:-1;}}
     else r.mode=r.mode==="sit"?"lie":"sit";}
   if(c.crow&&S.room==="onsen"&&t-nkCrowT>40&&Math.random()<.004){nkCrowT=t;nkCaw();r.hop=t;}}}
 function nkCaw(){audioInit();for(const [a,b,d,at] of [[640,470,.32,0],[620,450,.34,.5]])setTimeout(()=>tone(a,d,"sawtooth",.02),at*1000);}
 
 // ── geometry and drawing
 const nkCv=document.createElement("canvas");nkCv.width=200;nkCv.height=160;const nkG=nkCv.getContext("2d");
-function nkK(sp,x){const y=sp.y(x),a=imgToStage(x,y,sp.d),b=imgToStage(x+100,y,sp.d);return[a[0],a[1],(b[0]-a[0])/100];}
+function nkK(sp,x){const cr=curRow;curRow=null;const y=sp.y(x),a=imgToStage(x,y,sp.d),b=imgToStage(x+100,y,sp.d);curRow=cr;return[a[0],a[1],(b[0]-a[0])/100];}
+// the veranda edge on a narrow phone: the rightmost image x where a whole cat (half-width ≈ 90 frame px) still fits on the stage
+function nkLim(sp,k){const [ax,,kk]=nkK(sp,1000);return 1000+(view.W-90*k-4-ax)/Math.max(.05,kk);}
 function nkTint(){const night=dayTint()[1];return[TINT[S.room]||"rgba(14,18,18,.28)",night?"rgba(10,14,30,.24)":null];}
 // one frame (tinted, with a blink) → ctx at (x,y) = bottom anchor (ax,ay in frame px), size k = stage px per frame px
 function nkSpr(key,x,y,k,flip,ax,ay,blink,al=1,rot=0){const r=NK_F[key];if(!NK_IM||!r)return null;const w=r[2],h=r[3];
@@ -120,7 +123,7 @@ function nkSeat(c){const C=nkC(c.id);C.down=dayKey();save();if(petAway()||pet.ac
 const nkBox={};
 function nkDraw(t){for(const k in nkBox)delete nkBox[k];
   for(const id in nkRT){const r=nkRT[id],c=NK_ID[id],sp=NK_SP[c.sp];if(sp.room!==S.room)continue;
-    const [sx,sy,ks]=nkK(sp,r.x),k=ks*sp.f,edge=Math.min(1,(r.x-sp.x0+60)/60,(sp.x1+60-r.x)/60),al=clamp(edge,0,1);if(al<=0)continue;
+    if(sp.near)r.lim=nkLim(sp,nkK(sp,r.x)[2]*sp.f);const [sx,sy,ks]=nkK(sp,r.mode==="walk"||!sp.near?r.x:Math.min(r.x,r.lim)),k=ks*sp.f,edge=Math.min(1,(r.x-sp.x0+60)/60,(sp.x1+60-r.x)/60),al=clamp(edge,0,1);if(al<=0)continue;
     const blink=t>r.nb&&t<r.nb+.16;if(t>r.nb+.16){r.nb=t+rand(2.5,6);}
     const ear=r.mode==="sit"&&t>r.ne&&t<r.ne+.28;if(t>r.ne+.28)r.ne=t+rand(4,9);
     const hop=r.hop&&t-r.hop<.5?Math.sin((t-r.hop)/.5*Math.PI)*10*k:0;
@@ -132,10 +135,18 @@ function nkDraw(t){for(const k in nkBox)delete nkBox[k];
       nkBox[id]=nkSpr(c.id+"_sit",x,y,kk*(1+.01*Math.sin(t*2)),side<0,60,147,blink||(t+r.ph)%7<.6);continue;}
     if(r.mode==="walk"){const st=Math.floor(t*(c.young?6:4.5)+r.ph)%2,bob=Math.abs(Math.sin(t*4.5))*1.5*k;nkBox[id]=nkSpr(c.id+"_w"+st,sx,sy-bob-hop,k,r.face<0,88,121,false,al);continue;}
     const sw=Math.sin(t*1.25+r.ph)*.13+(c.crow&&hop?.4:0);
-    if(r.mode==="lie"){const f=NK_F[c.id+"_lie"],fl=r.face<0,rx=(f[5][0]-84)*k*(fl?-1:1);nkTail(c,sx+rx,sy-4*k,k,sw*.8,al);
+    // on a wall/fence the tail hangs down its face; on the veranda boards it lies on the floor, curled to the side
+    if(r.mode==="lie"){const f=NK_F[c.id+"_lie"],fl=r.face<0,rx=(f[5][0]-84)*k*(fl?-1:1);nkTail(c,sx+rx,sy-4*k,k,sp.near?(fl?-1:1)*(1.42+sw*.25):sw*.8,al);
       nkBox[id]=nkSpr(c.id+"_lie",sx,sy-hop,k,fl,84,93,blink,al);}
-    else{nkTail(c,sx+(r.face<0?-16:16)*k,sy-5*k,k,sw,al);nkBox[id]=nkSpr(c.id+(ear?"_ear":"_sit"),sx,sy-hop,k*(1+.008*Math.sin(t*2.1+r.ph)),r.face<0,60,147,blink,al);}
-    if(nkGiftHere(c)&&r.mode!=="walk")nkGiftDraw(c,sx+(r.face<0?32:-34)*k,sy,k);}}
+    else{nkTail(c,sx+(r.face<0?-16:16)*k,sy-5*k,k,sp.near?(r.face<0?1:-1)*(1.45+sw*.3):sw,al);nkBox[id]=nkSpr(c.id+(ear?"_ear":"_sit"),sx,sy-hop,k*(1+.008*Math.sin(t*2.1+r.ph)),r.face<0,60,147,blink,al);}
+    if(nkGiftHere(c)&&r.mode!=="walk")nkGiftDraw(c,sx+(r.face<0?32:-34)*k,sy,k);}
+  if(Object.keys(nkBox).length&&Object.values(NK_SP).some(s=>s.near&&s.room===S.room))nkOver();}
+// things nearer than the veranda edge (y below it) that overlap a cat are drawn again on top (hook draw runs after drawThings)
+function nkOver(){const d0=curD,bs=Object.values(nkBox).filter(Boolean);if(!bs.length)return;
+  for(const it of roomThings().map(ipos)){if(isFront(it))continue;const iid=it.imgId||it.id;if(!DMETA[iid])continue;const d=it.prop?it.d:(DECOR_D[it.id]??CAT_D);if(d<.75||it.y<1150)continue;
+    curD=d;curRow=it.y;const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0,y0),[ex,ey]=imgToStage(x0+w,y0+h);
+    if(bs.some(b=>sx<b[0]+b[2]&&ex>b[0]&&sy<b[1]+b[3]&&ey>b[1]))drawSprite(ctx,iid,it.x,it.y,0,[it.x,it.y],1,it.sc,!!it.prop);}
+  curD=d0;curRow=null;}
 hook("draw",(t,front)=>{if(front||scene.on||!Object.keys(nkRT).length)return;nkLoad();nkDraw(t);});
 hook("tick",(t,dt)=>{if(Object.keys(nkRT).length)nkStep(t,Math.min(dt,.1));});
 hook("room",id=>{for(const k in nkRT)delete nkRT[k];if(Object.values(NK_SP).some(s=>s.room===id)){nkLoad();nkSync(false);if(Object.keys(nkRT).length)nkReactAt=now()+2.2;}});
@@ -167,7 +178,7 @@ function nkFeed(id){const c=NK_ID[id],C=nkC(id);if(!take("u_any")){toast("🐟 �
   if(C.fr>=5){setTimeout(()=>award("nk_best"),2400);if(r&&r.mode===c.pose&&!petAway()){C.down=dayKey();save();setTimeout(()=>{if(nkRT[id]===r){r.mode="jump";r.back=0;r.t0=now();r.dur=.9;}},1200);}}}
 function nkHit(x,y){let best=null,bd=1e9;for(const id in nkBox){const b=nkBox[id];if(!b)continue;const cx=b[0]+b[2]/2,cy=b[1]+b[3]*.55,hw=Math.max(30,b[2]*.4),hh=Math.max(30,b[3]*.5);
   if(Math.abs(x-cx)<hw&&Math.abs(y-cy)<hh){const d=Math.abs(x-cx)+Math.abs(y-cy);if(d<bd){bd=d;best=id;}}}return best;}
-hook("hit",(x,y)=>{if(scene.on)return;const id=nkHit(x,y);if(!id)return;nkCard(id);return true;});
+hook("hit",(x,y)=>{if(scene.on||hitCat(x,y))return;const id=nkHit(x,y);if(!id)return;nkCard(id);return true;});
 
 // ── hub, dots, album
 function nkStatus(){const L=nkNowL();
@@ -177,7 +188,7 @@ function nkStatus(){const L=nkNowL();
   if(!best)return"Сегодня никто не придёт.";const c=best.c,met=nkC(c.id).met;
   return met?`${c.n} придёт ${nkWhen(best.n)} — ${NK_SP[c.sp].go}${c.sun?" (если будет солнце)":""}.`:`${nkWhen(best.n)[0].toUpperCase()+nkWhen(best.n).slice(1)} ${NK_SP[c.sp].go} заглянет ${c.sex?"незнакомый кот":"незнакомая кошка"}.`;}
 hook("hub",()=>{const n=nkMetN(),L=nkNowL(),go=L[0]||null;
-  return`<div class="hubc"><h4>🐈 Кошки соседей <i>近所の猫</i></h4><p>${nkStatus()}</p><p>Знакомых кошек: ${n} из ${NK.length}. Соседские кошки приходят по своему расписанию: на стену сада у веранды, на забор онсэна и на тории у входа. Нажми на кошку, чтобы познакомиться, а рыбкой из кладовой можно завоевать её дружбу.</p>
+  return`<div class="hubc"><h4>🐈 Кошки соседей <i>近所の猫</i></h4><p>${nkStatus()}</p><p>Знакомых кошек: ${n} из ${NK.length}. Соседские кошки приходят по своему расписанию: на край веранды, на забор онсэна и на тории у входа. Нажми на кошку, чтобы познакомиться, а рыбкой из кладовой можно завоевать её дружбу.</p>
   ${n?`<div class="nk-row">${NK.filter(c=>nkC(c.id).met).map(c=>`<span>${nkThumb(c.id+"_sit",40,50)}<small>${c.n}<br>${nkHearts(nkC(c.id).fr)}</small></span>`).join("")}</div>`:""}
   <div class="row">${go?`<button class="btn primary" data-x="nk:go:${go.id}">Посмотреть</button>`:""}</div></div>`;});
 hook("click",k=>{if(!k.startsWith("nk:"))return;const p=k.split(":");if(p[1]==="go"){const c=NK_ID[p[2]];closePanel();if(c&&S.room!==NK_SP[c.sp].room)goRoom(NK_SP[c.sp].room);}return true;});

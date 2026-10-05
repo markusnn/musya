@@ -123,14 +123,23 @@ function nuPrep(){if(nuCv||!MIMG.m_nu_wall||!nuAt)return;const T=TINT.entrance||
   const mk=(w,h,f)=>{const c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");f(g);g.globalCompositeOperation="source-atop";g.fillStyle=T;g.fillRect(0,0,w,h);return c;};
   nuCv={wall:mk(NU_MW,NU_MH,g=>g.drawImage(MIMG.m_nu_wall,0,0))};for(const k of["blink","yawn"]){const r=NU_AT[k];nuCv[k]=mk(r[2],r[3],g=>g.drawImage(nuAt,r[0],r[1],r[2],r[3],0,0,r[2],r[3]));}
   nuPuff=document.createElement("canvas");nuPuff.width=nuPuff.height=64;const g=nuPuff.getContext("2d"),gr=g.createRadialGradient(32,32,0,32,32,32);gr.addColorStop(0,"rgba(120,112,98,.55)");gr.addColorStop(1,"rgba(120,112,98,0)");g.fillStyle=gr;g.fillRect(0,0,64,64);}
-let nuBox0=null;
-function nuGeo(){curRow=null;const [bx,by]=imgToStage(NU_BASE[0],NU_BASE[1],NU_BASE[2]),[cx]=imgToStage(NU_BASE[0]+100,NU_BASE[1],NU_BASE[2]),k=(cx-bx)/100,w=NU_IW*k,h=w*NU_MH/NU_MW;
-  return{bx,by,k,w,h,x0:bx-w/2,y0:by-h,gY:by-h*(1-466/NU_MH)};}
+let nuBox0=null,nuExt=0,nuExtT0=0;
+// ext = how much the wall has grown taller (stage px): the plain plaster band (picture rows 340–420) stretches, roof + face stay as painted
+function nuGeo(ext=nuExt){curRow=null;const [bx,by]=imgToStage(NU_BASE[0],NU_BASE[1],NU_BASE[2]),[cx]=imgToStage(NU_BASE[0]+100,NU_BASE[1],NU_BASE[2]),k=(cx-bx)/100,w=NU_IW*k,h0=w*NU_MH/NU_MW,h=h0+ext;
+  return{bx,by,k,w,h,ext,q:w/NU_MW,x0:bx-w/2,y0:by-h,gY:by-h0*(1-466/NU_MH)};}
+// on wide screens Musya is big and stands right in the gate, covering the face: the wall grows up until its eyes and mouth
+// look over her ears (she never has to move); on a phone she is below the face and nothing changes
+function nuExtWant(){if(petAway()||hk("hideCat"))return 0;const G=nuGeo(0),q=G.q,[ox,oy]=camOff(CAT_D),s=view.s,
+    hl=pet.x+ox+(56-96)*s,hr=pet.x+ox+(140-96)*s,ht=view.floor+oy-(192-13)*s;   // her head and ear tips (sprite cells 56–140, 192)
+  if(hr<G.x0+200*q||hl>G.x0+440*q)return 0;return clamp(G.y0+292*q-(ht-7*s),0,Math.max(0,G.y0-8));}   // face: picture x 200–440, chin y 292
+function nuWall(G){const q=G.q,W=G.w,c=nuCv.wall,yB=-(138*q+G.ext);   // roof+face [0,340] · plaster [340,420] stretched by ext · stones [420,478]
+  ctx.drawImage(c,0,0,NU_MW,340,-W/2,-G.h,W,340*q);ctx.drawImage(c,0,340,NU_MW,80,-W/2,yB-.5,W,80*q+G.ext+1);ctx.drawImage(c,0,420,NU_MW,58,-W/2,-58*q,W,58*q);}
 function nuOver(t,G){const d0=curD;for(const it of roomThings().map(ipos)){if(isFront(it))continue;const iid=it.imgId||it.id,m=DMETA[iid];if(!m)continue;const d=it.prop?it.d:(DECOR_D[it.id]??CAT_D);if(d<.45)continue;
     curD=d;curRow=it.y;const [x0,y0,w,h]=spriteBox(it),[sx,sy]=imgToStage(x0,y0);if(sx<G.x0+G.w&&sx+w*BGM.k>G.x0&&sy<G.gY&&sy+h*BGM.k>G.y0)drawSprite(ctx,iid,it.x,it.y,0,[it.x,it.y],1,it.sc,!!it.prop);}
   curD=d0;curRow=null;const q=S.guest;if(q&&(q.state==="here"||q.state==="fed"))drawGuest(t,false);}
 const nuDraw=(t,front)=>{if(front)return;nuBox=null;if(S.room!=="entrance"||scene.on||nuHideGame())return;const a=nuA,sink=a&&a.k==="sink";
   if(!nuStands()&&!sink)return;nuPrep();if(!nuCv)return;if(!ST.seen.includes("nu_wall"))ST.seen.push("nu_wall");
+  const dt=clamp(t-nuExtT0,0,.1);nuExtT0=t;nuExt+=(nuExtWant()-nuExt)*Math.min(1,dt*2.4);if(nuExt<.3)nuExt=0;
   const G=nuGeo(),e=a?t-a.t0:99,s=view.s;nuBox0=G;let dy=0,rot=0,al=1,sh=0,face=(t*.19)%1<.03?"blink":null,dust=0;
   if(a&&a.k==="rise"){const u=clamp(e/1.8,0,1);dy=Math.pow(1-u,3)*G.h;al=clamp(u*3,0,1);if(u<1){sh=Math.sin(t*55)*1.6*s;dust=1-u;}else nuA=null;}
   else if(sink){const u=clamp(e/2.6,0,1);dy=u*u*G.h;face="blink";if(e>0&&u<1){sh=Math.sin(t*50)*1.6*s;dust=Math.min(1,u*3);}if(u>=1){nuA=null;return;}}
@@ -139,7 +148,7 @@ const nuDraw=(t,front)=>{if(front)return;nuBox=null;if(S.room!=="entrance"||scen
   else if(a&&a.k==="smile"){if(e<1.8)face="blink";else nuA=null;}
   const sy=1+.006*Math.sin(t*1.2);
   ctx.save();ctx.beginPath();ctx.rect(0,0,view.W,G.gY+1);ctx.clip();ctx.translate(G.bx+sh,G.by+dy);if(rot)ctx.rotate(rot);ctx.scale(1,sy);ctx.globalAlpha=al*.97;
-  ctx.drawImage(nuCv.wall,-G.w/2,-G.h,G.w,G.h);if(face){const p=NU_PATCH[face],q=G.w/NU_MW;ctx.drawImage(nuCv[face],-G.w/2+p[0]*q,-G.h+p[1]*q,p[2]*q,p[3]*q);}ctx.restore();
+  nuWall(G);if(face){const p=NU_PATCH[face],q=G.w/NU_MW;ctx.drawImage(nuCv[face],-G.w/2+p[0]*q,-G.h+p[1]*q,p[2]*q,p[3]*q);}ctx.restore();
   if(dust>0){ctx.save();for(let i=0;i<9;i++){const x=G.x0+G.w*(i+.5)/9+Math.sin(t*2.3+i)*8*s,r=(26+12*Math.sin(t*3.1+i*1.7))*G.k*2.2;ctx.globalAlpha=dust*(.55+.3*Math.sin(t*4+i));ctx.drawImage(nuPuff,x-r,G.gY-r*.9,r*2,r*1.4);}ctx.restore();}
   nuOver(t,G);if(!sink&&!(a&&a.k==="rise"))nuBox=G;};
 hook("draw",nuDraw);
@@ -166,5 +175,5 @@ document.head.insertAdjacentHTML("beforeend",`<style>#xdlg .nu-q{margin:0 0 2px}
 X.nu={st:nuS,R:NU_R,ord:NU_ORD,eve:nuEve,here:nuHere,waits:nuWaits,stands:nuStands,next:nuNext,status:nuStatus,ask:nuAsk,ans:nuAns,pass:nuPass,box:()=>nuBox,
   anim(k){nuA={k,t0:now()};},reset(){S.ext.nurikabe=null;nuS();save();},
   tap(low){const b=nuBox;if(!b)return"nobox";return hk("hit",b.x0+b.w*(low?.12:.5),b.y0+b.h*(low?.86:.3))?"hit":"miss";},
-  geo(){const G=nuGeo();return[G.x0,G.y0,G.w,G.h,G.gY].map(v=>Math.round(v));}};
+  geo(){const G=nuGeo();return[G.x0,G.y0,G.w,G.h,G.gY,G.ext].map(v=>Math.round(v));},want:()=>Math.round(nuExtWant())};
 }

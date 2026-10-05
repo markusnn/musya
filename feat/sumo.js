@@ -109,7 +109,7 @@ function smBowU(q){const u=((q.clk-q.pt)/1.3)%2;return u<1?u:2-u;}
 // ── drawing ──
 function smOppCv(o){let c=SM.oc[o.id];if(c)return c;const im=MIMG[o.mon];if(!im||!im.width)return null;const [w,h]=MON[o.mon];
   c=document.createElement("canvas");c.width=w;c.height=h;const g=c.getContext("2d");g.drawImage(im,0,0,w,h);g.globalCompositeOperation="source-atop";
-  if(o.old){g.fillStyle="rgba(150,160,168,.24)";g.fillRect(0,0,w,h);g.fillStyle="rgba(232,228,214,.85)";for(const s of[-1,1]){g.beginPath();g.ellipse(w*(.5+s*.13),h*.205,w*.07,h*.016,s*.25,0,7);g.fill();}}   // white old brows
+  if(o.old){g.fillStyle="rgba(150,160,168,.24)";g.fillRect(0,0,w,h);g.globalCompositeOperation="source-over";smBrows(g,w,h);g.globalCompositeOperation="source-atop";}   // the old master's white brows
   const [y0,y1,x0,x1]=o.belt,sag=h*.025,mid=w*(x0+x1)/2,band=()=>{g.beginPath();g.moveTo(x0*w,y0*h);g.quadraticCurveTo(mid,y0*h+sag*2,x1*w,y0*h);g.lineTo(x1*w,y1*h);g.quadraticCurveTo(mid,y1*h+sag*2,x0*w,y1*h);g.closePath();};
   band();const gr=g.createLinearGradient(0,y0*h,0,y1*h+sag);gr.addColorStop(0,o.col);gr.addColorStop(.45,smTint(o.col,.25));gr.addColorStop(1,smTint(o.col,-.4));g.fillStyle=gr;g.fill();
   const hg=g.createLinearGradient(x0*w,0,x1*w,0);hg.addColorStop(0,"rgba(0,0,0,.5)");hg.addColorStop(.38,"rgba(255,240,220,.08)");hg.addColorStop(1,"rgba(0,0,0,.55)");g.fillStyle=hg;band();g.fill();
@@ -122,6 +122,13 @@ function smOppCv(o){let c=SM.oc[o.id];if(c)return c;const im=MIMG[o.mon];if(!im|
     g.fillStyle="#f4f1e8";g.strokeStyle="rgba(90,80,70,.5)";g.lineWidth=1;
     for(const dx of[-.16,0,.16]){const x=mid+dx*w,yy=ty+sag*2*(1-(dx*2)**2)+h*.012;g.beginPath();g.moveTo(x-w*.02,yy);g.lineTo(x+w*.02,yy);g.lineTo(x+w*.03,yy+h*.03);g.lineTo(x,yy+h*.03);g.lineTo(x+w*.012,yy+h*.06);g.lineTo(x-w*.015,yy+h*.06);g.lineTo(x-w*.022,yy+h*.03);g.closePath();g.fill();g.stroke();}}
   SM.oc[o.id]=c;return c;}
+// long bushy white brows of the old yokozuna: tufts from above each eye sweeping out and drooping past the cheeks (m_kappa 340×480: eyes at x .40/.60, y .254)
+function smBrows(g,w,h){g.save();g.lineCap="round";const u=w/340;
+  for(const pass of[0,1])for(const s of[-1,1]){const ex=w*(.5+s*.103),ey=h*.254-u*24;
+    for(let i=0;i<9;i++){const f=i/8,x0=ex-s*u*(14-f*6),y0=ey+u*(f*5-2),x1=ex+s*u*(30+f*16),y1=ey+u*(-6+f*12),x2=ex+s*u*(44+f*12),y2=ey+u*(10+f*16);
+      g.strokeStyle=pass?`rgba(${246-i*3},${243-i*3},${232-i*4},.97)`:"rgba(16,22,16,.55)";g.lineWidth=u*(pass?3.4-f*.9:6.5);
+      g.beginPath();g.moveTo(x0,y0);g.quadraticCurveTo(x1,y1,x2,y2);g.stroke();}}
+  g.restore();}
 function smTint(hex,k){const n=parseInt(hex.slice(1),16),f=v=>Math.round(k>0?v+(255-v)*k:v*(1+k));return`rgb(${f(n>>16&255)},${f(n>>8&255)},${f(n&255)})`;}
 function smLay(G){const W=G.W,H=G.H,k=Math.min(W/740,H/1180);return{k,ox:W/2-500*k,oy:H-1310*k};}
 function smBg(G){const W=G.W,H=G.H,c=document.createElement("canvas"),d=Math.min(2,devicePixelRatio||1);c.width=W*d;c.height=H*d;const g=c.getContext("2d");g.setTransform(d,0,0,d,0,0);
@@ -153,11 +160,11 @@ function smDraw(G,g,t){const q=G.st,o=q.o,c=q.clk,L=smLay(G),k=L.k,X=ix=>L.ox+ix
   if(ph==="end"){const v=smE((c-q.endT)/1.2);if(q.res==="w"){odx=30*v;orot=.5*v;}else mx-=50*v;}
   q.mx=mx;q.ox=ox+odx;
   // gyōji fox with the gunbai
-  const fox=MIMG.m_kitsune;if(fox&&fox.width){const fh=205*k,fw=fh*400/450;g.drawImage(fox,X(500)-fw/2,Y(905)-fh,fw,fh);}
-  if(SM.at){const r=SM_R.sm_fan,fh=112*k,fw=fh*r[2]/r[3];let a=.3+.08*Math.sin(t*1.3);
-    if(ph==="tachi")a=q.sigOn?1.45-1.5*smE((c-q.sigOn)/.12):1.45+.05*Math.sin(t*9);
-    g.save();g.translate(X(578),Y(842));g.rotate(a);g.drawImage(SM.at,r[0],r[1],r[2],r[3],-fw/2,-fh*150/192,fw,fh);g.restore();
-    if(q.sigOn&&c-q.sigOn<.5){g.save();g.globalAlpha=1-(c-q.sigOn)/.5;g.strokeStyle="#fff2c8";g.lineWidth=4;g.beginPath();g.arc(X(576),Y(770),(20+140*(c-q.sigOn))*k,0,7);g.stroke();g.restore();}}
+  const fox=MIMG.m_kitsune;if(fox&&fox.width){const fh=205*k,fw=fh*400/450;g.drawImage(fox,X(478)-fw/2,Y(905)-fh,fw,fh);}
+  if(SM.at){const r=SM_R.sm_fan,fh=168*k,fw=fh*r[2]/r[3],sg=ph==="tachi"&&q.sigOn?smE((c-q.sigOn)/.12):0,py=836-96*sg;let a=-.1+.06*Math.sin(t*1.3);
+    if(ph==="tachi")a=q.sigOn?-.08-.22*sg:-.08+.035*Math.sin(t*9);   // trembles before tachi-ai, jerks up on «Нокотта!» (the gyōji's bubble is gone then)
+    g.save();g.translate(X(558),Y(py));g.rotate(a);g.drawImage(SM.at,r[0],r[1],r[2],r[3],-fw/2,-fh*150/192,fw,fh);g.restore();
+    if(q.sigOn&&c-q.sigOn<.5){const d=fh*94/192,fx=X(558)+Math.sin(a)*d,fy=Y(py)-Math.cos(a)*d;g.save();g.globalAlpha=1-(c-q.sigOn)/.5;g.strokeStyle="#fff2c8";g.lineWidth=4;g.beginPath();g.arc(fx,fy,(20+140*(c-q.sigOn))*k,0,7);g.stroke();g.restore();}}
   // opponent
   if(oc){const sc=o.h/mh*k,w=mw*sc,h=mh*sc,shake=q.hitT>0&&c-q.hitT<.3?(Math.random()-.5)*6:0;
     g.save();g.fillStyle="rgba(0,0,0,.35)";g.beginPath();g.ellipse(X(q.ox),Y(970),w*.42,h*.05,0,0,7);g.fill();

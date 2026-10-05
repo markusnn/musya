@@ -216,15 +216,27 @@ function taStripC(G,L){if(!taSky)return null;const k=[L.W,L.H,taTod(),G.st.sg].j
   g.save();if(G.st.sg<0){g.translate(L.W,0);g.scale(-1,1);}g.drawImage(taSky,L.x0,L.top,1600*L.sc,600*L.sc);g.restore();
   const tod=taTod();g.globalCompositeOperation="source-atop";g.fillStyle=tod==="n"?"rgba(8,12,34,.55)":tod==="e"?"rgba(70,30,40,.3)":"rgba(40,50,70,.12)";g.fillRect(0,0,L.W,L.H);
   taStripCv=c;return c;}
-// choosing the kite before the flight (locked ones as dark silhouettes, no ctx.filter for Safari)
-const taSilC={};function taSil(im,id){if(taSilC[id])return taSilC[id];const r=TA_R[id],c=document.createElement("canvas");c.width=r[2];c.height=r[3];const x=c.getContext("2d");
-  x.drawImage(im,r[0],r[1],r[2],r[3],0,0,r[2],r[3]);x.globalCompositeOperation="source-in";x.fillStyle="#0c0e16";x.fillRect(0,0,r[2],r[3]);return taSilC[id]=c;}
+// locked kites = a backlit silhouette: the kite's own shape from the atlas alpha, its picture showing through dimly like paper against
+// the night sky, the bamboo cross of the frame, a faint moonlit rim (composite ops only — no ctx.filter / getImageData, Safari-safe)
+const TA_SP=2,taSilC={},taSilU={};
+function taSil(im,id){if(taSilC[id])return taSilC[id];const r=TA_R[id],w=r[2],h=r[3],P=TA_SP,cv=()=>document.createElement("canvas"),m=cv(),t=cv(),c=cv();
+  m.width=t.width=w;m.height=t.height=h;c.width=w+2*P;c.height=h+2*P;const a=m.getContext("2d"),b=t.getContext("2d"),x=c.getContext("2d");
+  a.drawImage(im,r[0],r[1],w,h,0,0,w,h);a.globalCompositeOperation="saturation";a.fillStyle="#888";a.fillRect(0,0,w,h);   // grey, keeps the light and dark of the picture
+  a.globalCompositeOperation="multiply";a.fillStyle="#3c4462";a.fillRect(0,0,w,h);                                          // → dim night blue
+  a.globalCompositeOperation="destination-in";a.drawImage(im,r[0],r[1],w,h,0,0,w,h);                                      // back to the kite's alpha
+  a.globalCompositeOperation="source-atop";a.strokeStyle="rgba(6,7,12,.55)";a.lineWidth=Math.max(2,w*.018);a.beginPath();a.moveTo(w/2,0);a.lineTo(w/2,h);a.moveTo(0,0);a.lineTo(w,h);a.moveTo(w,0);a.lineTo(0,h);a.stroke();
+  b.drawImage(im,r[0],r[1],w,h,0,0,w,h);b.globalCompositeOperation="source-in";b.fillStyle="rgba(176,186,222,.5)";b.fillRect(0,0,w,h);
+  for(const [dx,dy] of[[-1.5,0],[1.5,0],[0,-1.5],[0,1.5]])x.drawImage(t,P+dx,P+dy);x.drawImage(m,P,P);return taSilC[id]=c;}
+function taSilUrl(id){if(taSilU[id])return taSilU[id];if(!taIm)return null;try{return taSilU[id]=taSil(taIm,id).toDataURL();}catch(e){return null;}}
+// a thumbnail for panels: the painted kite if it is ours, else its silhouette (the plain dark .ath box until the atlas has loaded)
+function taThumb(id,mw,mh,got){const u=!got&&taSilUrl(id);if(!u)return itemThumb(IT[id],mw,mh);const c=taSilC[id],k=Math.min(mw/c.width,mh/c.height,1);
+  return`<img class="ta-sil" src="${u}" alt="" style="width:${(c.width*k).toFixed(1)}px;height:${(c.height*k).toFixed(1)}px">`;}
 function taPick(G,g,L,im){const q=G.st,K=taS(),W=L.W,H=L.H,s=L.s;g.fillStyle="rgba(8,10,18,.62)";g.fillRect(0,0,W,H);
   textC(g,"Какого змея запустим?",W/2,96*s+20,20*s,"#f6efe0",800);
   const ids=TA_D.map(d=>d[0]),cols=W<640?3:5,cw=Math.min(130*s,(W-40)/cols-10),ch=cw*1.45,x0=(W-cols*(cw+10)+10)/2,y0=96*s+50;q.btns=[];
   ids.forEach((id,i)=>{const x=x0+(i%cols)*(cw+10),y=y0+Math.floor(i/cols)*(ch+10),got=K.got.includes(id),on=id===q.sel,D=TA_ID[id];
     g.fillStyle=on?"rgba(230,162,180,.25)":"rgba(255,255,255,.06)";g.strokeStyle=on?"rgba(230,162,180,.9)":"rgba(255,255,255,.18)";g.beginPath();g.roundRect(x,y,cw,ch,10);g.fill();g.stroke();
-    if(im){const r=TA_R[id],k=Math.min((cw-16)/r[2],(ch-44*s)/r[3]);g.save();if(got)g.drawImage(im,r[0],r[1],r[2],r[3],x+cw/2-r[2]*k/2,y+8,r[2]*k,r[3]*k);else{g.globalAlpha=.4;g.drawImage(taSil(im,id),x+cw/2-r[2]*k/2,y+8,r[2]*k,r[3]*k);}g.restore();}
+    if(im){const r=TA_R[id],k=Math.min((cw-16)/r[2],(ch-44*s)/r[3]);g.save();if(got)g.drawImage(im,r[0],r[1],r[2],r[3],x+cw/2-r[2]*k/2,y+8,r[2]*k,r[3]*k);else{const c=taSil(im,id);g.drawImage(c,x+cw/2-c.width*k/2,y+8-TA_SP*k,c.width*k,c.height*k);}g.restore();}
     textC(g,got?D[1].replace(/ — .*/,""):"???",x+cw/2,y+ch-26*s,11*s,got?"#f6efe0":"rgba(240,230,210,.5)",700);
     if(!got)textC(g,D[6],x+cw/2,y+ch-12*s,10*s,"rgba(240,230,210,.5)",500);else textC(g,D[2],x+cw/2,y+ch-12*s,11*s,"rgba(238,163,187,.85)",600);
     if(got)q.btns.push([x,y,cw,ch,id]);});}
@@ -267,14 +279,15 @@ hook("hub",()=>{const K=taS(),day=taIsDay(),wk=taWeek(),tg=K.n>=1&&K.tgw!==wk&&d
    ${K.n>=1?`<p class="ta-s">${K.tgw===wk?"👺 Бой змеев с тэнгу на этой неделе уже был — следующий через неделю.":"👺 Тэнгу с дальней крыши ждёт боя змеев (кэнка-дако): он поднимет своего змея в следующий полёт."}</p>`:""}
    <div class="row">${day?`<button class="btn primary" data-x="ta:open">🪁 Запустить «${sel[1].replace(/ — .*/,"")}»</button>`:""}<button class="btn" data-x="ta:list">Змеи</button></div></div>`;});
 function taList(){const K=taS();if(!K.got.includes("ta_kaze"))taGive("ta_kaze",true);
+  if(!taIm){let sync=1;atlasImg("ta",im=>{taIm=im;if(!sync&&panelIs("ta_list"))taList();});sync=0;}   // silhouettes need the atlas
   openPanel("Воздушные змеи",`<p class="lead">Выбери змея для следующего полёта. Каждый полученный змей ещё и висит в «🧺 Вещи» — его можно повесить на стену.</p>
-   <div class="ta-grid">${TA_D.map(d=>{const got=K.got.includes(d[0]);return`<button class="btn ta-k ${got?"":"off"} ${got&&K.sel===d[0]?"on":""}" data-x="ta:sel:${d[0]}">${itemThumb(IT[d[0]],80,90)}<b>${got?d[1]:"???"}</b><small>${got?d[2]:d[5]}</small></button>`;}).join("")}</div>
+   <div class="ta-grid">${TA_D.map(d=>{const got=K.got.includes(d[0]);return`<button class="btn ta-k ${got?"":"off"} ${got&&K.sel===d[0]?"on":""}" data-x="ta:sel:${d[0]}">${taThumb(d[0],80,90,got)}<b>${got?d[1]:"???"}</b><small>${got?d[2]:d[5]}</small></button>`;}).join("")}</div>
    <p class="ta-s">Рекорд высоты: ${K.best} м. Ветреные дни — по настоящему ветру в твоём городе (📍 в карточке погоды), а в Новый год змей летит всегда.</p>`,"ta_list");}
 hook("click",k=>{if(!k.startsWith("ta:"))return false;
   if(k==="ta:open"){taOpen();return true;}if(k==="ta:list"){taList();return true;}
   if(k.startsWith("ta:sel:")){const id=k.slice(7),K=taS();if(K.got.includes(id)){K.sel=id;save();sfx("pop");}else toast("🪁 "+TA_ID[id][5]);taList();return true;}return true;});
-hook("album",el=>{const K=taS();if(!K.got.length)return;
-  el.insertAdjacentHTML("beforeend",`<h3 class="bh">Воздушные змеи</h3><p class="lead">Рекорд высоты ${K.best} м, полётов ${K.n}.</p><div class="coll">${TA_D.map(d=>`<div class="ci ${K.got.includes(d[0])?"on":""}">${itemThumb(IT[d[0]],60,70)}<small>${K.got.includes(d[0])?d[1]:"???"}</small></div>`).join("")}</div>`);});
+hook("album",el=>{const K=taS();if(!K.got.length)return;if(!taIm)atlasImg("ta",im=>{taIm=im;});
+  el.insertAdjacentHTML("beforeend",`<h3 class="bh">Воздушные змеи</h3><p class="lead">Рекорд высоты ${K.best} м, полётов ${K.n}.</p><div class="coll">${TA_D.map(d=>`<div class="ci ${K.got.includes(d[0])?"on":""}">${taThumb(d[0],60,70,K.got.includes(d[0]))}<small>${K.got.includes(d[0])?d[1]:"???"}</small></div>`).join("")}</div>`);});
 hook("away",ms=>{const K=taS();if(ms<3*3600e3||!taIsDay()||K.fl===dayKey())return null;return{i:"🪁",t:"Поднялся ветер — можно запустить змея"};});
 
 // on a kite day a neighbour's kite hangs in the courtyard sky (a tap opens the flight)
