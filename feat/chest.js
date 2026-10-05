@@ -77,7 +77,7 @@ STAMPS.push(["ob_first","簪","Сундук прабабушки","Получи 
 function obWeek(d=today()){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),wd=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-wd);
   const y=t.getUTCFullYear();return y+"-W"+String(Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7)).padStart(2,"0");}
 const obOpenR=id=>!!ROOMX[id]&&!(X.ro&&X.ro.locked&&X.ro.locked(id));
-function obRoom(){return obOpenR("attic")?"attic":obOpenR("kura")?"kura":null;}
+function obRoom(){return obOpenR("attic")?"attic":null;}   // the kura is full (workshop, loom): the chest waits in the attic only
 function obWaits(){return OB.n<OB_N&&OB.wk!==obWeek();}
 function obNew(){return obWaits()&&!!obRoom();}
 const OB_KJ=["一","二","三","四","五","六","七","八","九","十","十一","十二"],obWk=k=>"第"+OB_KJ[k]+"週";
