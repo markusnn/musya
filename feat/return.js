@@ -55,6 +55,8 @@ document.head.insertAdjacentHTML("beforeend",`<style>
 .ret-find b{font-family:var(--display);font-size:22px;color:#2b1d14}
 .story-body .ret-find small{font-size:13.5px;color:#5e4a36;line-height:1.35;max-width:22em}
 .ret-card .ret-btn{margin-top:8px;padding:10px 26px;border-radius:999px;background:#2b2119;color:#f0e6d0;font-weight:700;border:0;box-shadow:0 3px 10px rgba(0,0,0,.35)}
+.ret-two{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}.ret-two>div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.ret-find .ret-two b{font-size:17px;line-height:1.15}.story-body .ret-find .ret-two small{font-size:12.5px}
 .ret-paw{position:absolute;right:16px;bottom:12px;font-size:18px;opacity:.35;transform:rotate(-12deg)}
 </style>`);
 
@@ -129,15 +131,24 @@ function pickFind(ms){
 function bigThumb(i,mw,mh){const a=IATL[i.at[0]],k=Math.min(mw/i.w,mh/i.h,1.5),f=v=>(v*k).toFixed(1);
   return`<span style="display:inline-block;width:${f(i.w)}px;height:${f(i.h)}px;background:url(assets/items/atlas_${i.at[0]}.webp) -${f(i.at[1])}px -${f(i.at[2])}px/${f(a[0])}px ${f(a[1])}px no-repeat"></span>`;}
 
-const R={pending:false,shown:false,find:null,rep:false};
+const R={pending:false,shown:false,find:null,find2:null,rep:false};
+// kamidana blessing «Находчивость» (X.kmd.luck, the day of the offering): a find for sure + one extra
+const retLuck=()=>!!(X.kmd&&X.kmd.luck)&&!petAway();
+function retGot(id){const rep=S.owned.has(id);RET.cnt[id]=(RET.cnt[id]||0)+1;if(!rep){S.owned.add(id);disc("find",id);}else S.needs.joy=clamp(S.needs.joy+10,0,100);return rep;}
+function retOne(id,rep,w,h){const f=FDW[id],sm=w<170?` style="width:${w+24}px;height:${h+20}px"`:"";
+  return`<span class="ret-pic ${f[6]?"rare":""}"${sm}>${bigThumb(IT[id],w,h)}</span><b>${f[1]}</b><small>${rep?`Такая у тебя уже есть, но Муся так гордится, что радости хватит на двоих.`:f[7]}</small>`;}
 function show(ms){
-  R.pending=false;R.shown=true;const t=today(),hn=hourNow();
-  const id=pickFind(ms),f=id&&FDW[id];let findHtml="";
-  if(f){const rep=S.owned.has(id);R.find=id;R.rep=rep;RET.cnt[id]=(RET.cnt[id]||0)+1;
-    if(!rep){S.owned.add(id);disc("find",id);}else S.needs.joy=clamp(S.needs.joy+10,0,100);
+  R.pending=false;R.shown=true;const t=today(),hn=hourNow(),luck=retLuck();
+  let id=pickFind(ms);if(luck&&!id)id=pickFind(2*36e5);
+  let id2=null;if(luck&&id)for(let i=0;i<8&&(!id2||id2===id);i++)id2=pickFind(2*36e5);if(id2===id)id2=null;
+  const f=id&&FDW[id];let findHtml="";R.find2=null;
+  if(f&&id2){const r1=retGot(id),r2=retGot(id2);R.find=id;R.find2=id2;R.rep=r1&&r2;
+    findHtml=`<div class="ret-hr"></div><div class="ret-find"><span class="ret-k rare">🍀 Находчивость: сразу две находки</span>
+      <div class="ret-two"><div>${retOne(id,r1,120,108)}</div><div>${retOne(id2,r2,120,108)}</div></div>
+      <button class="ret-btn" data-x="ret:take">${R.rep?"Погладить Мусю":"Забрать обе"}</button></div>`;}
+  else if(f){const rep=retGot(id);R.find=id;R.rep=rep;
     findHtml=`<div class="ret-hr"></div><div class="ret-find"><span class="ret-k ${f[6]?"rare":""}">${rep?"Муся снова кое-что принесла":f[6]?"✦ Редкая находка ✦":"Муся принесла находку"}</span>
-      <span class="ret-pic ${f[6]?"rare":""}">${bigThumb(IT[id],170,150)}</span><b>${f[1]}</b>
-      <small>${rep?`Такая у тебя уже есть, но Муся так гордится, что радости хватит на двоих.`:f[7]}</small>
+      ${retOne(id,rep,170,150)}
       <button class="ret-btn" data-x="ret:take">${rep?"Погладить Мусю":"Забрать"}</button></div>`;}
   const lines=news(ms);
   const html=`<div class="ret-card"><div class="ret-date">${t.getDate()} ${MON_G[t.getMonth()]} · ${PART_RU[partOf(hn)]}</div><div class="ret-seal">留守</div>
@@ -154,9 +165,9 @@ function tryShow(ms,t0){
 }
 function take(){
   const f=R.find&&FDW[R.find];closePanel();
-  if(f){toast(R.rep?"Муся мурлычет от гордости":"🐾 Находка лежит в 🧺 Вещах");chime([1046,1318,1568]);}
+  if(f){toast(R.rep?"Муся мурлычет от гордости":R.find2?"🐾 Обе находки — в 🧺 Вещах":"🐾 Находка лежит в 🧺 Вещах");chime([1046,1318,1568]);}
   if(!petAway()){react(f?"😸":"😺",2.2);S.needs.joy=clamp(S.needs.joy+5,0,100);if(f)burst(6);}
-  R.find=null;save();
+  R.find=R.find2=null;save();
 }
 hook("boot",()=>{const ms=saved.t?Date.now()-saved.t:0;if(ms>=RET_MIN)tryShow(ms,now());});
 // the page stayed open in the background (phones): the same card when the player comes back after 45 min
@@ -164,5 +175,5 @@ let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden
   const ms=hidAt?Date.now()-hidAt:0;hidAt=0;if(ms>=RET_MIN&&!R.pending&&!panelIs("ret"))tryShow(ms,now());});
 hook("click",k=>{if(k==="ret:take"){take();return true;}if(k==="ret:ok"){closePanel();if(!petAway())react("😺",2);return true;}});
 hook("panelClose",id=>{if(id==="ret")R.find=null;});
-X.ret={show,awayText,pickFind,news,doing,R,FD};
+X.ret={luck:retLuck,show,awayText,pickFind,news,doing,R,FD};
 }

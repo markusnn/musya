@@ -30,9 +30,20 @@ assert not unknown, 'add to ORDER: %s' % unknown
 files = [os.path.join(ROOT, 'feat', n + '.js') for n in ORDER if n in ready]
 extra = []
 body = ''
+# --fresh a,b,c: take only these add-ons from the working files, all others from the last commit (git HEAD) —
+# so that blocks other workers are still editing don't get into index.html half-done
+fresh = None
+for k, v in enumerate(sys.argv):
+    if v == '--fresh': fresh = set(sys.argv[k + 1].split(','))
 for f in files + extra:
-    if not os.path.exists(f): print('missing:', os.path.basename(f)); continue
-    code = open(f, encoding='utf-8').read().strip()
+    nm = os.path.basename(f)[:-3]
+    if fresh is not None and nm not in fresh:
+        r = subprocess.run(['git', '-C', ROOT, 'show', 'HEAD:feat/%s.js' % nm], capture_output=True, text=True)
+        if r.returncode != 0: print('not in HEAD, skipped:', nm); continue
+        code = r.stdout.strip()
+    else:
+        if not os.path.exists(f): print('missing:', os.path.basename(f)); continue
+        code = open(f, encoding='utf-8').read().strip()
     body_ = re.sub(r'^(\s*//[^\n]*\n)+', '', code + '\n').strip()   # leading comment lines are fine
     assert body_.startswith('{') and body_.endswith('}'), os.path.basename(f) + ' must be one { … } block'
     body += '// ── %s\nHBLK="%s";\n%s\n' % (os.path.basename(f), os.path.basename(f)[:-3], code)

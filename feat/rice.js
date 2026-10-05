@@ -175,7 +175,7 @@ function riCut(q,i,t){const R=riS(),h=RI_H[i];R.cut[i]=1;const n=riCnt(R.cut),sl
   save();}
 function riThresh(q,k,t){const R=riS(),[x,y]=RI_SL[k];R.th[k]=1;q.fx.push({k:"grain",x,y:y+60,t,d:1});tone(rand(900,1200),.05,"triangle",.03);q.look={x,y,t};
   if(riCnt(R.th)>=RI_SLOTS){const n=5+Math.min(2,R.sc)+(R.lz?0:1);give("v_ri_kome",n);give("i_rice",n);R.st="fallow";R.c++;R.fl=[0,0,0];q.joy=t;sfx("coin");chime([784,988,1318]);
-    S.needs.joy=clamp(S.needs.joy+8,0,100);riMsg(q,`Свой рис: +${n} мешочков в кладовую!`,t);}save();}
+    S.needs.joy=clamp(S.needs.joy+8,0,100);riMsg(q,X.ws?`Свой рис: +${n} в кладовую, солома — в мастерскую`:`Свой рис: +${n} мешочков в кладовую!`,t);}save();}
 function riTouch(G,x,y,t,drag){const q=G.st,R=riS(),sx=(x-q.ox)/q.k,sy=(y-q.oy)/q.k;
   if(q.mode==="mochi"){if(!drag)riMochiTap(G,t);return;}
   if(R.st==="fallow"||R.st==="flood"){if(drag)return;for(let p=2;p>=0;p--)if(riIn(p,sx,sy)){riFlood(q,p,t);return;}return;}
@@ -225,6 +225,33 @@ const RI_GAME={id:"ri_field",hidden:true,n:"Рисовое поле",tag:"棚田
  after(){ui();}};
 GAMES.push(RI_GAME);
 
+// ── own rice in the kitchen: three recipes that need «Свой рис» (more joy than the usual dishes).
+// Pictures: onigiri and sekihan reuse the core/birthday dish pictures (aliased rects), chazuke → art/links_art.py → atlas_ri2.webp
+FATL.ri2={w:140,h:98,r:{ds_ri_chazuke:[0,2,140,96]}};
+const RI_ALIAS=[["ds_ri_onigiri","ds_onigiri"],["ds_ri_sekihan","ds_bd_sekihan","ds_onigiri"]];
+function riAlias(){for(const [id,...src] of RI_ALIAS){if(fAtlas(id))continue;for(const s of src){const A=fAtlas(s);if(A){A[1].r[id]=A[1].r[s];break;}}}}
+riAlias();
+Object.assign(FOOD,{ds_ri_onigiri:{n:"Онигири из своего риса",k:"dish",food:32,joy:22},ds_ri_chazuke:{n:"Тядзукэ из своего риса",k:"dish",food:26,joy:18},
+  ds_ri_sekihan:{n:"Сэкихан из своего риса",k:"dish",food:34,joy:26}});
+const RI_RC=[
+ {id:"ri_onigiri",dish:"ds_ri_onigiri",n:"Онигири из своего риса",jp:"新米のおにぎり",after:"onigiri",
+  lore:"Рис нового урожая с собственных террас — Муся видела, как он рос. Такие онигири пахнут полем и солнцем, и радости от них почти втрое больше, чем от обычных.",
+  need:["v_ri_kome","i_nori"],steps:[{k:"add",it:["v_ri_kome"]},{k:"shape",n:3,pic:"ds_ri_onigiri"},{k:"add",it:["i_nori"]}]},
+ {id:"ri_chazuke",dish:"ds_ri_chazuke",n:"Тядзукэ из своего риса",jp:"お茶漬け",after:"ri_onigiri",
+  lore:"Миску своего риса заливают горячим зелёным чаем, сверху — полоски нори и кислая слива умэбоси. Так ужинают поздним вечером, когда хочется тепла.",
+  need:["v_ri_kome","i_nori"],steps:[{k:"add",it:["v_ri_kome"]},{k:"add",it:["i_nori"]},{k:"stir",n:2}]},
+ {id:"ri_sekihan",dish:"ds_ri_sekihan",n:"Сэкихан из своего риса",jp:"赤飯",after:"bd_sekihan",
+  lore:"Свой рис, сваренный с бобами адзуки, к празднику становится розово-красным. Сэкихан из риса нового урожая варят, чтобы поблагодарить поле.",
+  need:["v_ri_kome","i_azuki"],steps:[{k:"add",it:["i_azuki"]},{k:"heat",n:2,lb:"Отвари бобы"},{k:"add",it:["v_ri_kome"]},{k:"stir",n:2},{k:"shape",n:2,pic:"ds_ri_sekihan"}]}];
+for(const r of RI_RC){if(RECIPES.some(x=>x.id===r.id))continue;const i=RECIPES.findIndex(x=>x.id===r.after);RECIPES.splice(i<0?RECIPES.length:i+1,0,r);}
+const RI_WHERE="Свой рис растят на террасах за домом: «Дворик» → 🌾 Рисовое поле. После обмолота мешочки риса появятся в кладовой.";
+// the recipe card names the missing ingredient's source; the core text says «grows in the garden» for every veg → fix it for own rice
+function riCookFix(){const R=cook.R,el=$("gResult");if(G.id!=="cook"||!R||!el||el.hidden||!R.need.includes("v_ri_kome")||!el.querySelector("#gGo"))return;
+  const m=el.querySelector("p.miss");if(m&&!have("v_ri_kome"))m.textContent=RI_WHERE;
+  const tg=el.querySelector("p.tag");if(tg&&!tg.dataset.ri){tg.dataset.ri=1;tg.textContent=`${R.jp} · 🌾 свой рис`;}}
+hook("boot",()=>{riAlias();const el=$("gResult");if(el)new MutationObserver(riCookFix).observe(el,{childList:true});});
+hook("ev",(e,d)=>{if(e==="eat"&&/^ds_ri_/.test(d)&&!petAway())setTimeout(()=>{burst(6);react("😻",1.8);},1500);});
+
 // ── courtyard tray, hub card, dots, postcard
 hook("tray",(tray,room)=>{if(room!=="courtyard"||(S.trayMode[room]||"play")!=="play")return;const el=tray.querySelector(".items");if(!el)return;
   const h=`<button class="item wide" data-x="ri:open"><span class="ico">🌾</span><span class="nm">Рисовое поле</span></button>`,zn=el.querySelector('[data-x="zn:open"]');
@@ -232,7 +259,7 @@ hook("tray",(tray,room)=>{if(room!=="courtyard"||(S.trayMode[room]||"play")!=="p
 hook("click",k=>{if(!k.startsWith("ri:"))return;if(k==="ri:open")riOpen();else if(k==="ri:mochi")riOpen(1);return true;});
 hook("hub",()=>{const R=riTick(),k=riKome();
   const more=R.st==="grow"?`Сорняки лезут каждые два-три дня: если не выполоть, рис растёт вдвое медленнее, но не гибнет.`:R.st==="ripe"?"К спелым колосьям слетаются воробьи — пугало их прогонит.":R.st==="dry"?"Снопы висят колосьями вниз — так зерно дозревает и сохнет.":"Залей три чека, посади рассаду и жди: рис растёт по настоящим дням, около трёх недель.";
-  return`<div class="hubc"><h4>🌾 Рисовое поле <i>棚田</i></h4><p>${riLine()}</p><p>${more}${R.h?` Урожаев: ${R.h}.`:""}${R.mo?` Моти толкли ${R.mo} ${R.mo%10===1&&R.mo%100!==11?"раз":R.mo%10>=2&&R.mo%10<=4&&(R.mo%100<12||R.mo%100>14)?"раза":"раз"}.`:""}</p><div class="row"><button class="btn${riDue()?" primary":""}" data-x="ri:open">На поле</button>${k>=3?`<button class="btn" data-x="ri:mochi">Толочь моти · ×${k}</button>`:""}</div></div>`;});
+  return`<div class="hubc"><h4>🌾 Рисовое поле <i>棚田</i></h4><p>${riLine()}</p><p>${more}${R.h?` Урожаев: ${R.h}.`:""}${R.c?" Из своего риса на кухне готовят онигири, тядзукэ и сэкихан.":""}${R.mo?` Моти толкли ${R.mo} ${R.mo%10===1&&R.mo%100!==11?"раз":R.mo%10>=2&&R.mo%10<=4&&(R.mo%100<12||R.mo%100>14)?"раза":"раз"}.`:""}</p><div class="row"><button class="btn${riDue()?" primary":""}" data-x="ri:open">На поле</button>${k>=3?`<button class="btn" data-x="ri:mochi">Толочь моти · ×${k}</button>`:""}</div></div>`;});
 hook("hubDot",()=>riDue());
 hook("tabDot",r=>{if(r!=="courtyard")return false;const R=riTick();return R.st==="grow"&&R.wd.length>0||R.st==="ripe"||R.st==="dry"&&riDryLeft()<=0;});
 hook("away",()=>{const R=riTick(),n=R.news;if(!n)return null;R.news=null;return{i:"🌾",t:n==="ripe"?"На террасах за домом созрел рис — пора жать":"На рисовом поле взошли сорняки"};});

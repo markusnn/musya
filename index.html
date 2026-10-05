@@ -3488,6 +3488,8 @@ document.head.insertAdjacentHTML("beforeend",`<style>
 .ret-find b{font-family:var(--display);font-size:22px;color:#2b1d14}
 .story-body .ret-find small{font-size:13.5px;color:#5e4a36;line-height:1.35;max-width:22em}
 .ret-card .ret-btn{margin-top:8px;padding:10px 26px;border-radius:999px;background:#2b2119;color:#f0e6d0;font-weight:700;border:0;box-shadow:0 3px 10px rgba(0,0,0,.35)}
+.ret-two{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}.ret-two>div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.ret-find .ret-two b{font-size:17px;line-height:1.15}.story-body .ret-find .ret-two small{font-size:12.5px}
 .ret-paw{position:absolute;right:16px;bottom:12px;font-size:18px;opacity:.35;transform:rotate(-12deg)}
 </style>`);
 
@@ -3562,15 +3564,24 @@ function pickFind(ms){
 function bigThumb(i,mw,mh){const a=IATL[i.at[0]],k=Math.min(mw/i.w,mh/i.h,1.5),f=v=>(v*k).toFixed(1);
   return`<span style="display:inline-block;width:${f(i.w)}px;height:${f(i.h)}px;background:url(assets/items/atlas_${i.at[0]}.webp) -${f(i.at[1])}px -${f(i.at[2])}px/${f(a[0])}px ${f(a[1])}px no-repeat"></span>`;}
 
-const R={pending:false,shown:false,find:null,rep:false};
+const R={pending:false,shown:false,find:null,find2:null,rep:false};
+// kamidana blessing «Находчивость» (X.kmd.luck, the day of the offering): a find for sure + one extra
+const retLuck=()=>!!(X.kmd&&X.kmd.luck)&&!petAway();
+function retGot(id){const rep=S.owned.has(id);RET.cnt[id]=(RET.cnt[id]||0)+1;if(!rep){S.owned.add(id);disc("find",id);}else S.needs.joy=clamp(S.needs.joy+10,0,100);return rep;}
+function retOne(id,rep,w,h){const f=FDW[id],sm=w<170?` style="width:${w+24}px;height:${h+20}px"`:"";
+  return`<span class="ret-pic ${f[6]?"rare":""}"${sm}>${bigThumb(IT[id],w,h)}</span><b>${f[1]}</b><small>${rep?`Такая у тебя уже есть, но Муся так гордится, что радости хватит на двоих.`:f[7]}</small>`;}
 function show(ms){
-  R.pending=false;R.shown=true;const t=today(),hn=hourNow();
-  const id=pickFind(ms),f=id&&FDW[id];let findHtml="";
-  if(f){const rep=S.owned.has(id);R.find=id;R.rep=rep;RET.cnt[id]=(RET.cnt[id]||0)+1;
-    if(!rep){S.owned.add(id);disc("find",id);}else S.needs.joy=clamp(S.needs.joy+10,0,100);
+  R.pending=false;R.shown=true;const t=today(),hn=hourNow(),luck=retLuck();
+  let id=pickFind(ms);if(luck&&!id)id=pickFind(2*36e5);
+  let id2=null;if(luck&&id)for(let i=0;i<8&&(!id2||id2===id);i++)id2=pickFind(2*36e5);if(id2===id)id2=null;
+  const f=id&&FDW[id];let findHtml="";R.find2=null;
+  if(f&&id2){const r1=retGot(id),r2=retGot(id2);R.find=id;R.find2=id2;R.rep=r1&&r2;
+    findHtml=`<div class="ret-hr"></div><div class="ret-find"><span class="ret-k rare">🍀 Находчивость: сразу две находки</span>
+      <div class="ret-two"><div>${retOne(id,r1,120,108)}</div><div>${retOne(id2,r2,120,108)}</div></div>
+      <button class="ret-btn" data-x="ret:take">${R.rep?"Погладить Мусю":"Забрать обе"}</button></div>`;}
+  else if(f){const rep=retGot(id);R.find=id;R.rep=rep;
     findHtml=`<div class="ret-hr"></div><div class="ret-find"><span class="ret-k ${f[6]?"rare":""}">${rep?"Муся снова кое-что принесла":f[6]?"✦ Редкая находка ✦":"Муся принесла находку"}</span>
-      <span class="ret-pic ${f[6]?"rare":""}">${bigThumb(IT[id],170,150)}</span><b>${f[1]}</b>
-      <small>${rep?`Такая у тебя уже есть, но Муся так гордится, что радости хватит на двоих.`:f[7]}</small>
+      ${retOne(id,rep,170,150)}
       <button class="ret-btn" data-x="ret:take">${rep?"Погладить Мусю":"Забрать"}</button></div>`;}
   const lines=news(ms);
   const html=`<div class="ret-card"><div class="ret-date">${t.getDate()} ${MON_G[t.getMonth()]} · ${PART_RU[partOf(hn)]}</div><div class="ret-seal">留守</div>
@@ -3587,9 +3598,9 @@ function tryShow(ms,t0){
 }
 function take(){
   const f=R.find&&FDW[R.find];closePanel();
-  if(f){toast(R.rep?"Муся мурлычет от гордости":"🐾 Находка лежит в 🧺 Вещах");chime([1046,1318,1568]);}
+  if(f){toast(R.rep?"Муся мурлычет от гордости":R.find2?"🐾 Обе находки — в 🧺 Вещах":"🐾 Находка лежит в 🧺 Вещах");chime([1046,1318,1568]);}
   if(!petAway()){react(f?"😸":"😺",2.2);S.needs.joy=clamp(S.needs.joy+5,0,100);if(f)burst(6);}
-  R.find=null;save();
+  R.find=R.find2=null;save();
 }
 hook("boot",()=>{const ms=saved.t?Date.now()-saved.t:0;if(ms>=RET_MIN)tryShow(ms,now());});
 // the page stayed open in the background (phones): the same card when the player comes back after 45 min
@@ -3597,7 +3608,7 @@ let hidAt=0;document.addEventListener("visibilitychange",()=>{if(document.hidden
   const ms=hidAt?Date.now()-hidAt:0;hidAt=0;if(ms>=RET_MIN&&!R.pending&&!panelIs("ret"))tryShow(ms,now());});
 hook("click",k=>{if(k==="ret:take"){take();return true;}if(k==="ret:ok"){closePanel();if(!petAway())react("😺",2);return true;}});
 hook("panelClose",id=>{if(id==="ret")R.find=null;});
-X.ret={show,awayText,pickFind,news,doing,R,FD};
+X.ret={luck:retLuck,show,awayText,pickFind,news,doing,R,FD};
 }
 // ── lanterns.js
 HBLK="lanterns";
@@ -7283,14 +7294,21 @@ HBLK="workshop";
 const WS_AW=1200,WS_AH=514;
 const WS_R={"bench":[0,0,420,250],"m_wara":[126,422,64,64],"m_ha":[192,422,64,64],"m_uroko":[258,422,64,64],"m_kai":[324,422,64,64],"m_eda":[390,422,64,64],"m_koke":[456,422,64,64],"m_donguri":[522,422,64,64],"m_hane":[588,422,64,64],"m_tsuchi":[654,422,64,64],"m_nuno":[720,422,64,64],"m_kami":[786,422,64,64],"m_ito":[852,422,64,64],"m_enogu":[918,422,64,64],
  "ws_chochin":[1090,0,96,168,"t"],"ws_kaeru":[0,422,124,92,"b"],"ws_teru":[512,252,92,150,"t"],"ws_uma":[606,252,164,150,"b"],"ws_wreath":[154,252,156,164,"t"],"ws_shells":[422,0,92,196,"t"],"ws_frame":[0,252,152,168,"t"],"ws_omamori":[312,252,72,152,"t"],"ws_kokeshi":[610,0,84,192,"b"],"ws_sensu":[772,252,196,132,"b"],"ws_kendama":[870,0,104,184,"b"],"ws_kinchaku":[970,252,112,132,"b"],"ws_furin":[516,0,92,196,"t"],"ws_mizuhiki":[386,252,124,152,"t"],"ws_hokora":[696,0,172,192,"b"],"ws_hotaru":[976,0,112,172,"b"]};
+// 3 more things from the links with other add-ons (rice straw, cats' gifts, clay): art/links_art.py → atlas_ws2.webp
+const WS_R2={"ws_tsugura":[0,0,200,170,"b"],"ws_maneki":[202,0,124,168,"b"],"ws_waraji":[328,0,168,112,"b"]},WS_A2=[500,170];
 // materials: [name, icon fallback, free]
 const WS_M={wara:["Солома","🌾"],ha:["Листья","🍁"],uroko:["Чешуя","🐟"],kai:["Ракушки","🐚"],eda:["Веточки","🌿"],koke:["Мох","🌱"],donguri:["Жёлуди","🌰"],hane:["Перья","🪶"],
   tsuchi:["Глина","🟤"],nuno:["Ткань","🧵"],kami:["Бумага васи","📜",1],ito:["Нитки","🧶",1],enogu:["Краски","🎨",1]};
 const WS_MK=Object.keys(WS_M);
+// where each material comes from (shown in the panel)
+const WS_SRC={wara:"урожай огорода, обмолот своего риса, иногда кухня",ha:"урожай огорода, сачок в кустах, подарок кота Сумими",uroko:"рыбалка в пруду",
+  kai:"рыбалка — и всякий хлам со дна",eda:"лес за тории, огород, сачок в кустах",koke:"прогулки в лес за тории",donguri:"прогулки в лес за тории",
+  hane:"редкие гости-ёкаи, лес, трофей кота Торы",tsuchi:"полив огорода, стена нурикабэ после отгадки",nuno:"гости у ворот, эма, ткацкий станок, подарки кошек"};
 // unlock milestones: key → [test, «откроется …»]
 const WS_U={start:[()=>true,""],harvest:[c=>c.f.harvest,"после первого урожая на огороде"],fish:[c=>c.f.fish,"после первой рыбалки"],
   forest:[c=>c.f.forest,"после первого шага в лес за тории"],guest:[c=>c.f.guest,"когда к воротам придёт гость"],water:[c=>c.f.water,"когда польёшь огород"],
-  feather:[c=>c.f.feather,"когда найдётся первое перо"],c3:[c=>c.n>=3,"после трёх поделок"],c5:[c=>c.n>=5,"после пяти поделок"],
+  feather:[c=>c.f.feather,"когда найдётся первое перо"],
+  rice:[c=>c.f.rice,"после первого обмолота своего риса"],nk:[c=>c.f.nk,"когда соседская кошка принесёт подарок"],c3:[c=>c.n>=3,"после трёх поделок"],c5:[c=>c.n>=5,"после пяти поделок"],
   c8:[c=>c.n>=8,"после восьми поделок"],c12:[c=>c.n>=12,"после двенадцати поделок"]};
 // recipes: id, name, materials, unlock, a short line
 const WS_RC=[
@@ -7309,14 +7327,17 @@ const WS_RC=[
  {id:"ws_kinchaku",n:"Мешочек-кинтяку",m:{nuno:3,ito:1},u:"c5",d:"Для сокровищ: пуговицы, сушёная рыбка, блестящий камушек."},
  {id:"ws_mizuhiki",n:"Узел мидзухики",m:{ito:1,kami:1,hane:1},u:"feather",d:"Узел аваҗи-мусуби на удачу, с пёрышком."},
  {id:"ws_hokora",n:"Маленький алтарь",m:{eda:4,koke:2,tsuchi:1,kami:1},u:"c8",d:"Крошечное святилище с мхом на крыше — для доброго ками дома."},
- {id:"ws_hotaru",n:"Светлячковый фонарь",m:{eda:3,uroko:2,kami:1},u:"c12",d:"Чешуйки внутри ловят свет и мерцают, как светлячки."}];
+ {id:"ws_hotaru",n:"Светлячковый фонарь",m:{eda:3,uroko:2,kami:1},u:"c12",d:"Чешуйки внутри ловят свет и мерцают, как светлячки."},
+ {id:"ws_waraji",n:"Соломенные варадзи",m:{wara:3,nuno:1},u:"rice",d:"Сандалии из соломы своего риса, ремешки — из лоскута. В таких ходили паломники."},
+ {id:"ws_tsugura",n:"Соломенный кошачий домик",m:{wara:6,nuno:1,ito:1},u:"rice",d:"Нэко-цугура: так плетут кошачьи домики в снежной Ниигате. Внутри — красная подушка."},
+ {id:"ws_maneki",n:"Глиняный манэки-нэко",m:{tsuchi:3,nuno:1,enogu:1},u:"nk",d:"Кошка-зазывала с поднятой лапкой: пусть соседские коты заглядывают почаще."}];
 WS_RC.find(r=>r.id==="ws_mizuhiki").d="Узел авадзи-мусуби на удачу, с пёрышком.";
 const WS_CAT="Сделано своими лапами";
-addItems(WS_RC.map(r=>{const a=WS_R[r.id];const it={id:r.id,n:r.n,c:WS_CAT,w:a[2],h:a[3],a:a[4],p:60,at:["ws",a[0],a[1]],src:"🛠 мастерская",hint:"Это делают в мастерской — 🛠 у верстака"};
-  if(r.id==="ws_chochin")it.glow=[48,94];if(r.id==="ws_hotaru")it.glow=[56,100];return it;}),{ws:[WS_AW,WS_AH]});
-STAMPS.push(["ws_first","工","Первая поделка","Сделай что-нибудь в мастерской"],["ws_eight","匠","Умелые лапки","Сделай 8 вещей в мастерской"],["ws_all","職","Мастер на все лапы","Сделай все 16 вещей мастерской"]);
+addItems(WS_RC.map(r=>{const a=WS_R[r.id]||WS_R2[r.id];const it={id:r.id,n:r.n,c:WS_CAT,w:a[2],h:a[3],a:a[4],p:60,at:[WS_R[r.id]?"ws":"ws2",a[0],a[1]],src:"🛠 мастерская",hint:"Это делают в мастерской — 🛠 у верстака"};
+  if(r.id==="ws_chochin")it.glow=[48,94];if(r.id==="ws_hotaru")it.glow=[56,100];return it;}),{ws:[WS_AW,WS_AH],ws2:WS_A2});
+STAMPS.push(["ws_first","工","Первая поделка","Сделай что-нибудь в мастерской"],["ws_eight","匠","Умелые лапки","Сделай 8 вещей в мастерской"],["ws_all","職","Мастер на все лапы",`Сделай все ${WS_RC.length} вещей мастерской`]);
 
-let WS_IM=null;ldImg("assets/items/atlas_ws.webp",im=>{WS_IM=im;});
+let WS_IM=null,WS_IM2=null;ldImg("assets/items/atlas_ws.webp",im=>{WS_IM=im;});ldImg("assets/items/atlas_ws2.webp",im=>{WS_IM2=im;});
 function wsS(){const c=S.ext.craft||(S.ext.craft={mat:{},made:{},n:0,kn:[],nw:[],f:{},seen:0,last:null});for(const k of ["mat","made","f"])c[k]=c[k]||{};c.kn=c.kn||[];c.nw=c.nw||[];return c;}
 const wsHave=k=>WS_M[k][2]?Infinity:(wsS().mat[k]||0);
 const wsOpenR=r=>!!WS_U[r.u][0](wsS());
@@ -7328,12 +7349,12 @@ const WS_WHERE={attic:"на чердаке",kura:"в куре, у бочек",ga
 const wsWaits=()=>{const c=wsS();return !c.seen||c.nw.length>0;};
 
 // ── notes: one short toast; while a full-screen game/panel is open they wait and come as one summary line ──
-let wsPG={},wsPB=[],wsAt=0;
-function wsGain(o){const c=wsS();for(const [k,n] of Object.entries(o)){if(!n)continue;c.mat[k]=(c.mat[k]||0)+n;wsPG[k]=(wsPG[k]||0)+n;if(k==="hane")c.f.feather=1;if(k==="tsuchi")c.f.water=1;}
+let wsPG={},wsPB=[],wsAt=0,wsPW=null,wsPN=0;
+function wsGain(o,why){const c=wsS();if(!Object.values(o).some(Boolean))return;wsPN++;wsPW=why||null;for(const [k,n] of Object.entries(o)){if(!n)continue;c.mat[k]=(c.mat[k]||0)+n;wsPG[k]=(wsPG[k]||0)+n;if(k==="hane")c.f.feather=1;if(k==="tsuchi")c.f.water=1;}
   wsUnlock();save();wsAt=Date.now()+2200;if(panelIs("ws"))wsRender();}
 function wsUnlock(){const c=wsS();for(const r of WS_RC)if(!c.kn.includes(r.id)&&wsOpenR(r)){c.kn.push(r.id);if(r.u!=="start"){c.nw.push(r.id);wsPB.push(r.n);}}}
-function wsFlush(){const c=wsS(),g=Object.entries(wsPG);wsPG={};const b=wsPB;wsPB=[];if(!c.seen)return;   // before the bench is found: quiet (the 家 dot tells)
-  let d=0;if(g.length){let s="🛠 "+g.map(([k,n])=>`${WS_M[k][0]} +${n}`).join(" · ");if(s.length>44)s="🛠 Материалы для мастерской: +"+g.reduce((a,[,n])=>a+n,0);toast(s);d=2200;}
+function wsFlush(){const c=wsS(),g=Object.entries(wsPG),why=wsPN===1?wsPW:null;wsPG={};wsPN=0;wsPW=null;const b=wsPB;wsPB=[];if(!c.seen)return;   // before the bench is found: quiet (the 家 dot tells)
+  let d=0;if(g.length){let s="🛠 "+(why?why+": ":"")+g.map(([k,n])=>`${WS_M[k][0]} +${n}`).join(" · ");if(s.length>44&&why)s="🛠 "+g.map(([k,n])=>`${WS_M[k][0]} +${n}`).join(" · ");if(s.length>44)s="🛠 Материалы для мастерской: +"+g.reduce((a,[,n])=>a+n,0);toast(s);d=2200;}
   if(b.length)setTimeout(()=>wsBpToast(b),d);}
 function wsBpToast(b){toast(b.length>1?`📐 Новые чертежи в мастерской: ${b.length}`:`📐 Новый чертёж: ${b[0]}`);chime([784,1046]);}
 
@@ -7343,21 +7364,37 @@ hook("ev",(ev,d)=>{const c=wsS();
   if(ev==="harvest"){c.f.harvest=1;wsGain({wara:2,ha:1+wsP(.5),eda:wsP(.3)});}
   else if(ev==="fish"){const f=FISHES.find(x=>x.id===(d&&d.id));c.f.fish=1;wsGain(f&&f.junk?{kai:2}:{uroko:1,kai:wsP(.45)});}
   else if(ev==="water"){const dk=dayKey();if(c.wd!==dk){c.wd=dk;c.wn=0;}if(c.wn<3){c.wn++;wsGain({tsuchi:1});}else{c.f.water=1;}}
-  else if(ev==="guest"){c.f.guest=1;wsGain({nuno:1,hane:wsP(.25)});}
+  else if(ev==="guest"){c.f.guest=1;const gst=!!(X.kmd&&X.kmd.bless&&X.kmd.bless()==="gst");   // kamidana blessing «Улыбка гостей»: a scrap and a feather more
+    wsGain(gst?{nuno:2,hane:1+wsP(.25)}:{nuno:1,hane:wsP(.25)},gst?"Улыбка гостей":null);}
   else if(ev==="cook"&&Math.random()<.25)wsGain({wara:1});});
 hook("disc",(kind,id)=>{if(kind==="ema")wsGain({nuno:1});else if(kind==="visitor"||kind==="rareguest")wsGain({hane:1});else if(kind==="forest"&&!/^fo_/.test(id))wsGain({hane:wsP(.5),koke:1});});
 function wsForest(){const f=S.ext.forest,c=wsS();if(!f)return;const n=f.n||0;if(c.fn==null){c.fn=n;return;}if(n<=c.fn)return;const d=Math.min(10,n-c.fn);c.fn=n;c.f.forest=1;
   const o={eda:0,koke:0,donguri:0,hane:0};for(let i=0;i<d;i++){o.eda++;o.koke+=wsP(.5);o.donguri+=wsP(.45);o.hane+=wsP(.12);}wsGain(o);}
-hook("sec",()=>{wsForest();if((Object.keys(wsPG).length||wsPB.length)&&Date.now()>=wsAt&&(!overlaysOpen()||panelIs("ws")))wsFlush();});
+// ── links with other add-ons: watch their saved counters (nothing is edited there). First sight = remember them,
+// and if the bench is already open, add a small catch-up silently (no toasts at load).
+const WS_NK={nk_feather:[{hane:3},"Трофей Торы"],nk_ribbon:[{nuno:2},"Бантик Кинако"],nk_yarn:[{nuno:1},"Подарок Юки"],nk_leaf:[{ha:3},"Подарок Сумими"],nk_omamori:[{nuno:1},"Подарок Микэ"]};
+const wsNkHas=()=>[...S.owned].some(id=>/^nk_/.test(id));
+function wsGive(o){const c=wsS();for(const [k,n] of Object.entries(o))if(n)c.mat[k]=(c.mat[k]||0)+n;}
+function wsLinks(){const c=wsS(),L=c.lk||(c.lk={}),R=S.ext.rice,lm=S.ext.loom,nu=S.ext.nurikabe,mu=S.ext.insects;
+  const dl=(k,v)=>{v=v||0;const o=L[k];L[k]=v;return o==null?null:Math.max(0,Math.min(5,v-o));};    // null = first sight
+  let d=dl("ri",R&&R.c);if(d===null){if(c.seen&&R&&R.c)wsGive({wara:5*Math.min(2,R.c)});}else if(d){c.f.rice=1;wsGain({wara:5*d},"Обмолот риса");}
+  d=dl("lm",lm&&lm.n);if(d===null){if(c.seen&&lm&&lm.n)wsGive({nuno:2*Math.min(3,lm.n)});}else if(d)wsGain({nuno:2*d},"Обрезки со станка");
+  d=dl("nu",nu&&nu.n);if(d===null){if(c.seen&&nu&&nu.n)wsGive({tsuchi:Math.min(4,nu.n)});}else if(d){let n=0;for(let i=0;i<d;i++)n+=wsP(.6)*2;if(n)wsGain({tsuchi:n},"Нурикабэ осыпался");}
+  d=dl("mu",mu?Object.values(mu.n||{}).reduce((a,b)=>a+b,0):0);if(d){const o={ha:0,eda:0};for(let i=0;i<d;i++)if(Math.random()<.35)o[Math.random()<.6?"ha":"eda"]++;wsGain(o,"Застряло в сачке");}
+  const first=!L.nk;if(first)L.nk=[];
+  for(const id in WS_NK){if(!S.owned.has(id)||L.nk.includes(id))continue;L.nk.push(id);c.f.nk=1;if(first){if(c.seen)wsGive(WS_NK[id][0]);}else wsGain(...WS_NK[id]);}
+  if(!c.f.nk&&wsNkHas()){c.f.nk=1;wsUnlock();}if(first)wsUnlock();}
+hook("sec",()=>{wsForest();wsLinks();if((Object.keys(wsPG).length||wsPB.length)&&Date.now()>=wsAt&&(!overlaysOpen()||panelIs("ws")))wsFlush();});
 hook("boot",()=>{const c=wsS();   // milestones the player already passed before the workshop existed
   if(ST.got.includes("garden1"))c.f.harvest=1;if(Object.keys(S.catch||{}).length)c.f.fish=1;if(S.ext.forest&&S.ext.forest.n)c.f.forest=1;if(Object.keys(S.friends||{}).length)c.f.guest=1;
+  if(S.ext.rice&&S.ext.rice.c)c.f.rice=1;if(wsNkHas())c.f.nk=1;
   if(c.fn==null&&S.ext.forest)c.fn=S.ext.forest.n||0;if(!c.seen)c.kn=[];wsUnlock();if(!c.seen)c.nw=[];});
 
 // ── the bench in the room (attic → kura → games room) ──
 const WS_POS={attic:[1180,1150],kura:[690,1150],games:[1440,1160]},WS_BW=370;
 function wsBench(){const r=wsRoom();if(S.room!==r||!WS_IM)return null;const p=WS_POS[r];return{x:visX(p[0],WS_BW/2+30),y:p[1]};}
 function wsQuad(b){const [x0,y0]=imgToStage(b.x-WS_BW/2,b.y,CAT_D),[x1]=imgToStage(b.x+WS_BW/2,b.y,CAT_D),w=x1-x0,h=w*250/420;return{x:x0,y:y0-h+h*.024,w,h};}
-function wsBlit(g,key,cx,by,hh,al=1,sc=1){const a=WS_R[key];if(!a||!WS_IM)return;const k=Math.min(hh/a[3],hh*1.25/a[2])*sc,w=a[2]*k,h=a[3]*k;g.globalAlpha=al;g.drawImage(WS_IM,a[0],a[1],a[2],a[3],cx-w/2,by-h,w,h);g.globalAlpha=1;}
+function wsBlit(g,key,cx,by,hh,al=1,sc=1){const a=WS_R[key]||WS_R2[key],im=WS_R[key]?WS_IM:WS_IM2;if(!a||!im)return;const k=Math.min(hh/a[3],hh*1.25/a[2])*sc,w=a[2]*k,h=a[3]*k;g.globalAlpha=al;g.drawImage(im,a[0],a[1],a[2],a[3],cx-w/2,by-h,w,h);g.globalAlpha=1;}
 hook("draw",(t,front)=>{if(scene.on)return;const b=wsBench();if(!b||front!==(b.y>catLineY()+6))return;const q=wsQuad(b),a=WS_R.bench;
   ctx.drawImage(WS_IM,a[0],a[1],a[2],a[3],q.x,q.y,q.w,q.h);const c=wsS(),k=q.w/420;
   if(c.last)wsBlit(ctx,c.last,q.x+212*k,q.y+108*k,78*k);
@@ -7383,11 +7420,12 @@ function wsCard(r){const c=wsS(),open=c.kn.includes(r.id),made=wsMade(r.id),can=
   return`<div class="ws-r${made?" done":""}"><span class="ws-th">${itemThumb(IT[r.id],56,60)}</span><div class="ws-tx"><b>${r.n}${wsFresh.includes(r.id)?'<span class="ws-new">новый чертёж</span>':""}</b><small>${r.d}</small>${made?"":`<div class="ws-cost">${cost}</div>`}</div>`+
     (made?`<span class="ws-ok">✓ сделано</span>`:`<button class="btn${can?" primary":""}" data-x="ws:make:${r.id}"${can&&!wsA?"":" disabled"}>Сделать</button>`)+`</div>`;}
 function wsRender(){const c=wsS(),R=WS_RC,ord=[...R.filter(r=>c.kn.includes(r.id)&&!wsMade(r.id)),...R.filter(r=>wsMade(r.id)),...R.filter(r=>!c.kn.includes(r.id))];
-  const mats=WS_MK.map(k=>{const n=wsHave(k);return`<span class="ws-m${n?"":" z"}">${wsIc(k,30)}<span>${WS_M[k][0]} <b>${n===Infinity?"∞":n}</b></span></span>`;}).join("");
+  const mats=WS_MK.filter(k=>!WS_M[k][2]).map(k=>{const n=wsHave(k);return`<div class="ws-m2${n?"":" z"}">${wsIc(k,30)}<div><b>${WS_M[k][0]} · ${n}</b><small>${WS_SRC[k]}</small></div></div>`;}).join("")+
+    `<div class="ws-m2 free">${WS_MK.filter(k=>WS_M[k][2]).map(k=>wsIc(k,28)).join("")}<div><b>Бумага васи, нитки, краски · ∞</b><small>не кончаются никогда</small></div></div>`;
   const lead=wsFirst?"Под верстаком нашёлся ящик с обрезками — на первые поделки хватит. Бумага, нитки и краски не кончаются никогда."
-    :`Сделано ${c.n} из ${R.length}. Материалы приносит сама жизнь в доме: урожай, рыбалка, полив, гости, прогулки в лес.`;
+    :`Сделано ${c.n} из ${R.length}. Материалы приносит сама жизнь в доме — под каждым написано, откуда он берётся.`;
   openPanel("🛠 Мастерская 工房",`<canvas id="wsCv" class="ws-cv" width="720" height="380"></canvas><p class="lead">${lead}</p>
-    <h3 class="bh">Материалы</h3><div class="ws-mats">${mats}</div><h3 class="bh">Чертежи</h3><div class="ws-list">${ord.map(wsCard).join("")}</div>`,"ws");wsKick();}
+    <h3 class="bh">Материалы и откуда они</h3><div class="ws-mats2">${mats}</div><h3 class="bh">Чертежи</h3><div class="ws-list">${ord.map(wsCard).join("")}</div>`,"ws");wsKick();}
 function wsOpen(){const c=wsS();wsFirst=!c.seen;
   if(!c.seen){c.seen=1;const f=c.f,o={eda:3+(f.forest?3:0),nuno:1+(f.guest?2:0),wara:1+(f.harvest?3:0),ha:2+(f.harvest?3:0),kai:f.fish?3:0,uroko:f.fish?1:0,koke:f.forest?1:0,donguri:f.forest?1:0};
     for(const [k,n] of Object.entries(o))if(n)c.mat[k]=(c.mat[k]||0)+n;c.kn=[];wsUnlock();c.nw=[];wsPG={};wsPB=[];}
@@ -7448,19 +7486,23 @@ hook("itemTap",(it,I,t)=>{const id=it.id;if(!/^ws_/.test(id))return;const away=p
   if(id==="ws_kaeru"){tone(180,.09,"square",.03);setTimeout(()=>tone(150,.12,"square",.03),130);if(!away)react("🐸",1.4);return true;}
   if(/furin|shells|mizuhiki/.test(id)){const b=pick([1568,1760,2093]);[0,1,2].forEach(i=>setTimeout(()=>tone(b*pick([1,1.26,1.5]),1.4,"sine",.02),i*160));fxAt(it,["🎐","✨"],2);return true;}
   if(id==="ws_teru"){if(!away)react(weather.on?"🌧":"☀️",1.6);fxAt(it,["☀️"],1);return true;}
-  if(/kendama|uma|kinchaku/.test(id)&&!away){walkTo(it,"poke","😸");return true;}
+  if(/kendama|uma|kinchaku|waraji/.test(id)&&!away){walkTo(it,"poke","😸");return true;}
+  if(id==="ws_tsugura"&&!away){walkTo(it,"knead","😻");return true;}
+  if(id==="ws_maneki"){chime([1318,1568]);fxAt(it,["🐾","✨"],2);if(!away)react("😺",1.4);return true;}
   if(id==="ws_hokora"){chime([659,880]);if(!away)react("🙏",1.4);fxAt(it,["✨"],2);return true;}
   fxAt(it,["✨"],2);tone(700,.12,"sine",.03);if(!away)react("😺",1.2);return true;});
 
 document.head.insertAdjacentHTML("beforeend",`<style>.ws-cv{width:100%;height:auto;aspect-ratio:720/380;display:block;border-radius:12px;margin:2px 0 10px;background:#0d0a08;box-shadow:0 0 0 1px var(--line)}
 .ws-mats{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px}.ws-m{display:inline-flex;align-items:center;gap:4px;padding:2px 10px 2px 3px;border-radius:999px;border:1px solid var(--line);font-size:13px;color:var(--muted)}.ws-m b{color:var(--paper)}.ws-m.z{opacity:.42}
+.ws-mats2{display:grid;grid-template-columns:repeat(auto-fill,minmax(182px,1fr));gap:6px;margin:4px 0 14px}.ws-m2{display:flex;align-items:center;gap:7px;padding:4px 9px 4px 4px;border-radius:10px;border:1px solid var(--line);background:var(--ink-2)}
+.ws-m2>div{min-width:0}.ws-m2 b{display:block;font-size:13px;font-weight:600;color:var(--paper)}.ws-m2 small{display:block;font-size:11px;line-height:1.25;color:var(--muted)}.ws-m2.z{opacity:.55}.ws-m2.free{grid-column:1/-1}
 .ws-ic{display:inline-block;background:url(assets/items/atlas_ws.webp) no-repeat;flex:none}
 .ws-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}.ws-r{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--ink-2)}
 .ws-th{width:58px;height:62px;display:grid;place-items:center;flex:none}.ws-r.lock .ws-th>*{filter:brightness(0);opacity:.5}.ws-r.lock{opacity:.75}.ws-r.done{opacity:.8}
 .ws-tx{flex:1;min-width:0}.ws-tx b{display:block;font-size:15px;color:var(--paper)}.ws-tx small{display:block;font-size:12px;color:var(--muted);margin:1px 0 5px;line-height:1.3}
 .ws-cost{display:flex;flex-wrap:wrap;gap:4px}.ws-c{display:inline-flex;align-items:center;gap:2px;font-size:12px;padding:1px 7px 1px 1px;border-radius:999px;border:1px solid var(--line);color:var(--paper)}.ws-c.no{border-color:rgba(194,106,90,.75);color:#e09a8a}
 .ws-r .btn{flex:none}.ws-new{display:inline-block;color:var(--sakura);font-size:11px;font-weight:600;margin-left:6px}.ws-ok{flex:none;color:var(--sakura);font-size:13px}</style>`);
-X.ws={S:wsS,gain:wsGain,make:wsMake,open:wsOpen,room:wsRoom,ready:wsReady,flush:wsFlush,
+X.ws={S:wsS,gain:wsGain,make:wsMake,links:wsLinks,open:wsOpen,room:wsRoom,ready:wsReady,flush:wsFlush,
   tap(){const b=wsBench();if(!b)return false;const q=wsQuad(b);return !!hk("hit",q.x+q.w/2,q.y+q.h*.7);}};
 }
 // ── cranes.js
@@ -12222,7 +12264,9 @@ function muStep(t,dt){const R=MU_RM[S.room];if(!R)return;
     b.x+=vx;b.y+=vy;if(Math.abs(vx)>.05)b.face=vx>0?1:-1;
     if(s.dfly)b.rot=Math.atan2(vy,vx)+Math.PI/2;else b.rot=clamp(vx/Math.max(stp,.01)*.18,-.3,.3);}
 }
-function muPool(room){const out=[];for(const s of muNowSp(room)){let w=s.w;if(weather.on){if(s.k==="fly")continue;w*=.4;}if(muB.some(b=>b.id===s.id))continue;out.push([s.id,w]);}return out;}
+// kamidana blessing «Находчивость» (X.kmd.luck, today only): rare insects come twice as often
+const muLuck=()=>!!(X.kmd&&X.kmd.luck);
+function muPool(room){const out=[];for(const s of muNowSp(room)){let w=s.w;if(weather.on){if(s.k==="fly")continue;w*=.4;}if(s.rare&&muLuck())w*=2;if(muB.some(b=>b.id===s.id))continue;out.push([s.id,w]);}return out;}
 function muTry(max){if(muB.filter(b=>b.st!=="out").length>=max)return null;const P=muPool(S.room);let tot=P.reduce((a,p)=>a+p[1],0),r=Math.random()*tot;for(const [id,w] of P){r-=w;if(r<=0)return muSpawn(id);}return null;}
 hook("sec",()=>{const M=muS();if(M.day!==dayKey()){M.day=dayKey();M.td=[];}
   if(!MU_OUT.includes(S.room)||scene.on||overlaysOpen())return;
@@ -12312,14 +12356,14 @@ function muPanel(id){const s=id&&MU_ID[id],M=muS();
   const det=s?`<div class="hubc mu-det">${muThumb(id+"0",120,96)}<div><h4>${s.n}</h4><p class="mu-n">${s.jp}</p><p>${s.line}</p><p class="mu-n">Поймано раз: ${M.n[id]||0} · ${s.hint}</p></div></div>`:"";
   openPanel("Насекомые",`${det}<p class="lead">${muStatus()}</p>${muLead()}${muGrid(1)}`,"mu");if(s){try{$("xpBody").scrollTop=0;}catch(e){}if(s.song)muSong(id,.8);}}
 hook("hub",()=>{const n=muSeenN(),M=muS(),td=(M.day===dayKey()?M.td:[]);
-  return`<div class="hubc"><h4>🥅 Сачок и насекомые <i>虫</i></h4><p>${muStatus()}</p><p>В альбоме ${n} из ${MU_SP.length}.${td.length?` Сегодня поймали: ${muList(td.map(i=>MU_ID[i].sn))}.`:""}${muRareNow()?" Сейчас можно встретить редкость!":""}</p>
+  return`<div class="hubc"><h4>🥅 Сачок и насекомые <i>虫</i></h4><p>${muStatus()}</p><p>В альбоме ${n} из ${MU_SP.length}.${td.length?` Сегодня поймали: ${muList(td.map(i=>MU_ID[i].sn))}.`:""}${muRareNow()?" Сейчас можно встретить редкость!":""}${muLuck()?" 🍀 Сегодня «Находчивость»: редкие насекомые попадаются вдвое чаще.":""}</p>
   <div class="row"><button class="btn primary" data-x="mu:go">🥅 Ловить</button><button class="btn" data-x="mu:album">Альбом насекомых</button></div></div>`;});
 hook("hubDot",()=>muRareNow());
 hook("album",el=>{el.insertAdjacentHTML("beforeend",`<h3 class="bh">Насекомые</h3>${muLead()}${muGrid()}`);});
 document.head.insertAdjacentHTML("beforeend","<style>#tray .item.wide.mu-on{box-shadow:inset 0 0 0 2px rgba(200,230,150,.55)}.mu-det{display:flex;gap:12px;align-items:flex-start}.mu-det>span{margin-top:6px}:is(.story-body,.card,#xpanel) .mu-det p.mu-n{font-size:12px;opacity:.75}</style>");
 hook("boot",()=>{muS();if(MU_OUT.includes(S.room)){muLoad();muNext=now()+rand(3,7);}});
 // test handles
-X.insects={st:muS,list:muB,sp:MU_SP,spawn:muSpawn,card:muCard,record:muRecord,status:muStatus,nowSp:muNowSp,song:muSong,net:muNetToggle,panel:muPanel,
+X.insects={luck:muLuck,pool:muPool,st:muS,list:muB,sp:MU_SP,spawn:muSpawn,card:muCard,record:muRecord,status:muStatus,nowSp:muNowSp,song:muSong,net:muNetToggle,panel:muPanel,
   dbg(v=1){muDbg=v;},reset(){muNext=now()+999;muB.length=0;},
   settle(){for(const b of muB){if(b.st==="in"){b.st="sit";b.a=1;b.x=b.x0;b.y=b.y0;}if(b.st==="fly"&&!b.leaving){const F=MU_RM[S.room].F;b.x=(F[0]+F[1])/2+rand(-120,120);b.y=(F[2]+F[3])/2;b.until=now()+999;}b.until=now()+999;}},
   pos(i=0){const b=muB[i];return b?[Math.round(b.sx),Math.round(b.sy),Math.round(b.r),b.id,b.st]:null;},
@@ -13587,9 +13631,9 @@ const KMD_BL=[
  {id:"gar",i:"🌱",n:"Удача в огороде",t:"Грядки во дворике сегодня растут на четверть быстрее."},
  {id:"syt",i:"🍙",n:"Сытость держится дольше",t:"Сегодня Муся проголодается почти на треть медленнее."},
  {id:"joy",i:"💗",n:"Радость Муси",t:"Радости сразу прибавилось, а у камиданы весь день тёплый свет."},
- {id:"gst",i:"⛩",n:"Улыбка гостей",t:"Гость у ворот, которого ты сегодня угостишь, оставит ещё и сладость."},
+ {id:"gst",i:"⛩",n:"Улыбка гостей",t:"Гость у ворот, которого ты сегодня угостишь, оставит ещё и сладость, а для мастерской — лоскут и пёрышко."},
  {id:"tih",i:"🌙",n:"Тихий дом",t:"В доме спокойно: Муся спит крепче, и силы возвращаются быстрее."},
- {id:"nah",i:"🍀",n:"Находчивость",t:"Удача на стороне Муси: сегодня она что-нибудь найдёт."}];
+ {id:"nah",i:"🍀",n:"Находчивость",t:"Удача на стороне Муси: сегодня она что-нибудь найдёт, редкие насекомые попадаются вдвое чаще, а пока тебя нет, Муся отыщет сразу две находки."}];
 const KMD_P={x:1125},KMD_S=1.25;   // the shelf on the kitchen wall (d .5) above the shelf with bowls; max sprite scale (y: kmLay)
 const KMD_SEQ=["b","b","c","c","b"];
 
@@ -14712,7 +14756,7 @@ function riCut(q,i,t){const R=riS(),h=RI_H[i];R.cut[i]=1;const n=riCnt(R.cut),sl
   save();}
 function riThresh(q,k,t){const R=riS(),[x,y]=RI_SL[k];R.th[k]=1;q.fx.push({k:"grain",x,y:y+60,t,d:1});tone(rand(900,1200),.05,"triangle",.03);q.look={x,y,t};
   if(riCnt(R.th)>=RI_SLOTS){const n=5+Math.min(2,R.sc)+(R.lz?0:1);give("v_ri_kome",n);give("i_rice",n);R.st="fallow";R.c++;R.fl=[0,0,0];q.joy=t;sfx("coin");chime([784,988,1318]);
-    S.needs.joy=clamp(S.needs.joy+8,0,100);riMsg(q,`Свой рис: +${n} мешочков в кладовую!`,t);}save();}
+    S.needs.joy=clamp(S.needs.joy+8,0,100);riMsg(q,X.ws?`Свой рис: +${n} в кладовую, солома — в мастерскую`:`Свой рис: +${n} мешочков в кладовую!`,t);}save();}
 function riTouch(G,x,y,t,drag){const q=G.st,R=riS(),sx=(x-q.ox)/q.k,sy=(y-q.oy)/q.k;
   if(q.mode==="mochi"){if(!drag)riMochiTap(G,t);return;}
   if(R.st==="fallow"||R.st==="flood"){if(drag)return;for(let p=2;p>=0;p--)if(riIn(p,sx,sy)){riFlood(q,p,t);return;}return;}
@@ -14762,6 +14806,33 @@ const RI_GAME={id:"ri_field",hidden:true,n:"Рисовое поле",tag:"棚田
  after(){ui();}};
 GAMES.push(RI_GAME);
 
+// ── own rice in the kitchen: three recipes that need «Свой рис» (more joy than the usual dishes).
+// Pictures: onigiri and sekihan reuse the core/birthday dish pictures (aliased rects), chazuke → art/links_art.py → atlas_ri2.webp
+FATL.ri2={w:140,h:98,r:{ds_ri_chazuke:[0,2,140,96]}};
+const RI_ALIAS=[["ds_ri_onigiri","ds_onigiri"],["ds_ri_sekihan","ds_bd_sekihan","ds_onigiri"]];
+function riAlias(){for(const [id,...src] of RI_ALIAS){if(fAtlas(id))continue;for(const s of src){const A=fAtlas(s);if(A){A[1].r[id]=A[1].r[s];break;}}}}
+riAlias();
+Object.assign(FOOD,{ds_ri_onigiri:{n:"Онигири из своего риса",k:"dish",food:32,joy:22},ds_ri_chazuke:{n:"Тядзукэ из своего риса",k:"dish",food:26,joy:18},
+  ds_ri_sekihan:{n:"Сэкихан из своего риса",k:"dish",food:34,joy:26}});
+const RI_RC=[
+ {id:"ri_onigiri",dish:"ds_ri_onigiri",n:"Онигири из своего риса",jp:"新米のおにぎり",after:"onigiri",
+  lore:"Рис нового урожая с собственных террас — Муся видела, как он рос. Такие онигири пахнут полем и солнцем, и радости от них почти втрое больше, чем от обычных.",
+  need:["v_ri_kome","i_nori"],steps:[{k:"add",it:["v_ri_kome"]},{k:"shape",n:3,pic:"ds_ri_onigiri"},{k:"add",it:["i_nori"]}]},
+ {id:"ri_chazuke",dish:"ds_ri_chazuke",n:"Тядзукэ из своего риса",jp:"お茶漬け",after:"ri_onigiri",
+  lore:"Миску своего риса заливают горячим зелёным чаем, сверху — полоски нори и кислая слива умэбоси. Так ужинают поздним вечером, когда хочется тепла.",
+  need:["v_ri_kome","i_nori"],steps:[{k:"add",it:["v_ri_kome"]},{k:"add",it:["i_nori"]},{k:"stir",n:2}]},
+ {id:"ri_sekihan",dish:"ds_ri_sekihan",n:"Сэкихан из своего риса",jp:"赤飯",after:"bd_sekihan",
+  lore:"Свой рис, сваренный с бобами адзуки, к празднику становится розово-красным. Сэкихан из риса нового урожая варят, чтобы поблагодарить поле.",
+  need:["v_ri_kome","i_azuki"],steps:[{k:"add",it:["i_azuki"]},{k:"heat",n:2,lb:"Отвари бобы"},{k:"add",it:["v_ri_kome"]},{k:"stir",n:2},{k:"shape",n:2,pic:"ds_ri_sekihan"}]}];
+for(const r of RI_RC){if(RECIPES.some(x=>x.id===r.id))continue;const i=RECIPES.findIndex(x=>x.id===r.after);RECIPES.splice(i<0?RECIPES.length:i+1,0,r);}
+const RI_WHERE="Свой рис растят на террасах за домом: «Дворик» → 🌾 Рисовое поле. После обмолота мешочки риса появятся в кладовой.";
+// the recipe card names the missing ingredient's source; the core text says «grows in the garden» for every veg → fix it for own rice
+function riCookFix(){const R=cook.R,el=$("gResult");if(G.id!=="cook"||!R||!el||el.hidden||!R.need.includes("v_ri_kome")||!el.querySelector("#gGo"))return;
+  const m=el.querySelector("p.miss");if(m&&!have("v_ri_kome"))m.textContent=RI_WHERE;
+  const tg=el.querySelector("p.tag");if(tg&&!tg.dataset.ri){tg.dataset.ri=1;tg.textContent=`${R.jp} · 🌾 свой рис`;}}
+hook("boot",()=>{riAlias();const el=$("gResult");if(el)new MutationObserver(riCookFix).observe(el,{childList:true});});
+hook("ev",(e,d)=>{if(e==="eat"&&/^ds_ri_/.test(d)&&!petAway())setTimeout(()=>{burst(6);react("😻",1.8);},1500);});
+
 // ── courtyard tray, hub card, dots, postcard
 hook("tray",(tray,room)=>{if(room!=="courtyard"||(S.trayMode[room]||"play")!=="play")return;const el=tray.querySelector(".items");if(!el)return;
   const h=`<button class="item wide" data-x="ri:open"><span class="ico">🌾</span><span class="nm">Рисовое поле</span></button>`,zn=el.querySelector('[data-x="zn:open"]');
@@ -14769,7 +14840,7 @@ hook("tray",(tray,room)=>{if(room!=="courtyard"||(S.trayMode[room]||"play")!=="p
 hook("click",k=>{if(!k.startsWith("ri:"))return;if(k==="ri:open")riOpen();else if(k==="ri:mochi")riOpen(1);return true;});
 hook("hub",()=>{const R=riTick(),k=riKome();
   const more=R.st==="grow"?`Сорняки лезут каждые два-три дня: если не выполоть, рис растёт вдвое медленнее, но не гибнет.`:R.st==="ripe"?"К спелым колосьям слетаются воробьи — пугало их прогонит.":R.st==="dry"?"Снопы висят колосьями вниз — так зерно дозревает и сохнет.":"Залей три чека, посади рассаду и жди: рис растёт по настоящим дням, около трёх недель.";
-  return`<div class="hubc"><h4>🌾 Рисовое поле <i>棚田</i></h4><p>${riLine()}</p><p>${more}${R.h?` Урожаев: ${R.h}.`:""}${R.mo?` Моти толкли ${R.mo} ${R.mo%10===1&&R.mo%100!==11?"раз":R.mo%10>=2&&R.mo%10<=4&&(R.mo%100<12||R.mo%100>14)?"раза":"раз"}.`:""}</p><div class="row"><button class="btn${riDue()?" primary":""}" data-x="ri:open">На поле</button>${k>=3?`<button class="btn" data-x="ri:mochi">Толочь моти · ×${k}</button>`:""}</div></div>`;});
+  return`<div class="hubc"><h4>🌾 Рисовое поле <i>棚田</i></h4><p>${riLine()}</p><p>${more}${R.h?` Урожаев: ${R.h}.`:""}${R.c?" Из своего риса на кухне готовят онигири, тядзукэ и сэкихан.":""}${R.mo?` Моти толкли ${R.mo} ${R.mo%10===1&&R.mo%100!==11?"раз":R.mo%10>=2&&R.mo%10<=4&&(R.mo%100<12||R.mo%100>14)?"раза":"раз"}.`:""}</p><div class="row"><button class="btn${riDue()?" primary":""}" data-x="ri:open">На поле</button>${k>=3?`<button class="btn" data-x="ri:mochi">Толочь моти · ×${k}</button>`:""}</div></div>`;});
 hook("hubDot",()=>riDue());
 hook("tabDot",r=>{if(r!=="courtyard")return false;const R=riTick();return R.st==="grow"&&R.wd.length>0||R.st==="ripe"||R.st==="dry"&&riDryLeft()<=0;});
 hook("away",()=>{const R=riTick(),n=R.news;if(!n)return null;R.news=null;return{i:"🌾",t:n==="ripe"?"На террасах за домом созрел рис — пора жать":"На рисовом поле взошли сорняки"};});

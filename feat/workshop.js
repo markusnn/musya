@@ -7,14 +7,21 @@
 const WS_AW=1200,WS_AH=514;
 const WS_R={"bench":[0,0,420,250],"m_wara":[126,422,64,64],"m_ha":[192,422,64,64],"m_uroko":[258,422,64,64],"m_kai":[324,422,64,64],"m_eda":[390,422,64,64],"m_koke":[456,422,64,64],"m_donguri":[522,422,64,64],"m_hane":[588,422,64,64],"m_tsuchi":[654,422,64,64],"m_nuno":[720,422,64,64],"m_kami":[786,422,64,64],"m_ito":[852,422,64,64],"m_enogu":[918,422,64,64],
  "ws_chochin":[1090,0,96,168,"t"],"ws_kaeru":[0,422,124,92,"b"],"ws_teru":[512,252,92,150,"t"],"ws_uma":[606,252,164,150,"b"],"ws_wreath":[154,252,156,164,"t"],"ws_shells":[422,0,92,196,"t"],"ws_frame":[0,252,152,168,"t"],"ws_omamori":[312,252,72,152,"t"],"ws_kokeshi":[610,0,84,192,"b"],"ws_sensu":[772,252,196,132,"b"],"ws_kendama":[870,0,104,184,"b"],"ws_kinchaku":[970,252,112,132,"b"],"ws_furin":[516,0,92,196,"t"],"ws_mizuhiki":[386,252,124,152,"t"],"ws_hokora":[696,0,172,192,"b"],"ws_hotaru":[976,0,112,172,"b"]};
+// 3 more things from the links with other add-ons (rice straw, cats' gifts, clay): art/links_art.py → atlas_ws2.webp
+const WS_R2={"ws_tsugura":[0,0,200,170,"b"],"ws_maneki":[202,0,124,168,"b"],"ws_waraji":[328,0,168,112,"b"]},WS_A2=[500,170];
 // materials: [name, icon fallback, free]
 const WS_M={wara:["Солома","🌾"],ha:["Листья","🍁"],uroko:["Чешуя","🐟"],kai:["Ракушки","🐚"],eda:["Веточки","🌿"],koke:["Мох","🌱"],donguri:["Жёлуди","🌰"],hane:["Перья","🪶"],
   tsuchi:["Глина","🟤"],nuno:["Ткань","🧵"],kami:["Бумага васи","📜",1],ito:["Нитки","🧶",1],enogu:["Краски","🎨",1]};
 const WS_MK=Object.keys(WS_M);
+// where each material comes from (shown in the panel)
+const WS_SRC={wara:"урожай огорода, обмолот своего риса, иногда кухня",ha:"урожай огорода, сачок в кустах, подарок кота Сумими",uroko:"рыбалка в пруду",
+  kai:"рыбалка — и всякий хлам со дна",eda:"лес за тории, огород, сачок в кустах",koke:"прогулки в лес за тории",donguri:"прогулки в лес за тории",
+  hane:"редкие гости-ёкаи, лес, трофей кота Торы",tsuchi:"полив огорода, стена нурикабэ после отгадки",nuno:"гости у ворот, эма, ткацкий станок, подарки кошек"};
 // unlock milestones: key → [test, «откроется …»]
 const WS_U={start:[()=>true,""],harvest:[c=>c.f.harvest,"после первого урожая на огороде"],fish:[c=>c.f.fish,"после первой рыбалки"],
   forest:[c=>c.f.forest,"после первого шага в лес за тории"],guest:[c=>c.f.guest,"когда к воротам придёт гость"],water:[c=>c.f.water,"когда польёшь огород"],
-  feather:[c=>c.f.feather,"когда найдётся первое перо"],c3:[c=>c.n>=3,"после трёх поделок"],c5:[c=>c.n>=5,"после пяти поделок"],
+  feather:[c=>c.f.feather,"когда найдётся первое перо"],
+  rice:[c=>c.f.rice,"после первого обмолота своего риса"],nk:[c=>c.f.nk,"когда соседская кошка принесёт подарок"],c3:[c=>c.n>=3,"после трёх поделок"],c5:[c=>c.n>=5,"после пяти поделок"],
   c8:[c=>c.n>=8,"после восьми поделок"],c12:[c=>c.n>=12,"после двенадцати поделок"]};
 // recipes: id, name, materials, unlock, a short line
 const WS_RC=[
@@ -33,14 +40,17 @@ const WS_RC=[
  {id:"ws_kinchaku",n:"Мешочек-кинтяку",m:{nuno:3,ito:1},u:"c5",d:"Для сокровищ: пуговицы, сушёная рыбка, блестящий камушек."},
  {id:"ws_mizuhiki",n:"Узел мидзухики",m:{ito:1,kami:1,hane:1},u:"feather",d:"Узел аваҗи-мусуби на удачу, с пёрышком."},
  {id:"ws_hokora",n:"Маленький алтарь",m:{eda:4,koke:2,tsuchi:1,kami:1},u:"c8",d:"Крошечное святилище с мхом на крыше — для доброго ками дома."},
- {id:"ws_hotaru",n:"Светлячковый фонарь",m:{eda:3,uroko:2,kami:1},u:"c12",d:"Чешуйки внутри ловят свет и мерцают, как светлячки."}];
+ {id:"ws_hotaru",n:"Светлячковый фонарь",m:{eda:3,uroko:2,kami:1},u:"c12",d:"Чешуйки внутри ловят свет и мерцают, как светлячки."},
+ {id:"ws_waraji",n:"Соломенные варадзи",m:{wara:3,nuno:1},u:"rice",d:"Сандалии из соломы своего риса, ремешки — из лоскута. В таких ходили паломники."},
+ {id:"ws_tsugura",n:"Соломенный кошачий домик",m:{wara:6,nuno:1,ito:1},u:"rice",d:"Нэко-цугура: так плетут кошачьи домики в снежной Ниигате. Внутри — красная подушка."},
+ {id:"ws_maneki",n:"Глиняный манэки-нэко",m:{tsuchi:3,nuno:1,enogu:1},u:"nk",d:"Кошка-зазывала с поднятой лапкой: пусть соседские коты заглядывают почаще."}];
 WS_RC.find(r=>r.id==="ws_mizuhiki").d="Узел авадзи-мусуби на удачу, с пёрышком.";
 const WS_CAT="Сделано своими лапами";
-addItems(WS_RC.map(r=>{const a=WS_R[r.id];const it={id:r.id,n:r.n,c:WS_CAT,w:a[2],h:a[3],a:a[4],p:60,at:["ws",a[0],a[1]],src:"🛠 мастерская",hint:"Это делают в мастерской — 🛠 у верстака"};
-  if(r.id==="ws_chochin")it.glow=[48,94];if(r.id==="ws_hotaru")it.glow=[56,100];return it;}),{ws:[WS_AW,WS_AH]});
-STAMPS.push(["ws_first","工","Первая поделка","Сделай что-нибудь в мастерской"],["ws_eight","匠","Умелые лапки","Сделай 8 вещей в мастерской"],["ws_all","職","Мастер на все лапы","Сделай все 16 вещей мастерской"]);
+addItems(WS_RC.map(r=>{const a=WS_R[r.id]||WS_R2[r.id];const it={id:r.id,n:r.n,c:WS_CAT,w:a[2],h:a[3],a:a[4],p:60,at:[WS_R[r.id]?"ws":"ws2",a[0],a[1]],src:"🛠 мастерская",hint:"Это делают в мастерской — 🛠 у верстака"};
+  if(r.id==="ws_chochin")it.glow=[48,94];if(r.id==="ws_hotaru")it.glow=[56,100];return it;}),{ws:[WS_AW,WS_AH],ws2:WS_A2});
+STAMPS.push(["ws_first","工","Первая поделка","Сделай что-нибудь в мастерской"],["ws_eight","匠","Умелые лапки","Сделай 8 вещей в мастерской"],["ws_all","職","Мастер на все лапы",`Сделай все ${WS_RC.length} вещей мастерской`]);
 
-let WS_IM=null;ldImg("assets/items/atlas_ws.webp",im=>{WS_IM=im;});
+let WS_IM=null,WS_IM2=null;ldImg("assets/items/atlas_ws.webp",im=>{WS_IM=im;});ldImg("assets/items/atlas_ws2.webp",im=>{WS_IM2=im;});
 function wsS(){const c=S.ext.craft||(S.ext.craft={mat:{},made:{},n:0,kn:[],nw:[],f:{},seen:0,last:null});for(const k of ["mat","made","f"])c[k]=c[k]||{};c.kn=c.kn||[];c.nw=c.nw||[];return c;}
 const wsHave=k=>WS_M[k][2]?Infinity:(wsS().mat[k]||0);
 const wsOpenR=r=>!!WS_U[r.u][0](wsS());
@@ -52,12 +62,12 @@ const WS_WHERE={attic:"на чердаке",kura:"в куре, у бочек",ga
 const wsWaits=()=>{const c=wsS();return !c.seen||c.nw.length>0;};
 
 // ── notes: one short toast; while a full-screen game/panel is open they wait and come as one summary line ──
-let wsPG={},wsPB=[],wsAt=0;
-function wsGain(o){const c=wsS();for(const [k,n] of Object.entries(o)){if(!n)continue;c.mat[k]=(c.mat[k]||0)+n;wsPG[k]=(wsPG[k]||0)+n;if(k==="hane")c.f.feather=1;if(k==="tsuchi")c.f.water=1;}
+let wsPG={},wsPB=[],wsAt=0,wsPW=null,wsPN=0;
+function wsGain(o,why){const c=wsS();if(!Object.values(o).some(Boolean))return;wsPN++;wsPW=why||null;for(const [k,n] of Object.entries(o)){if(!n)continue;c.mat[k]=(c.mat[k]||0)+n;wsPG[k]=(wsPG[k]||0)+n;if(k==="hane")c.f.feather=1;if(k==="tsuchi")c.f.water=1;}
   wsUnlock();save();wsAt=Date.now()+2200;if(panelIs("ws"))wsRender();}
 function wsUnlock(){const c=wsS();for(const r of WS_RC)if(!c.kn.includes(r.id)&&wsOpenR(r)){c.kn.push(r.id);if(r.u!=="start"){c.nw.push(r.id);wsPB.push(r.n);}}}
-function wsFlush(){const c=wsS(),g=Object.entries(wsPG);wsPG={};const b=wsPB;wsPB=[];if(!c.seen)return;   // before the bench is found: quiet (the 家 dot tells)
-  let d=0;if(g.length){let s="🛠 "+g.map(([k,n])=>`${WS_M[k][0]} +${n}`).join(" · ");if(s.length>44)s="🛠 Материалы для мастерской: +"+g.reduce((a,[,n])=>a+n,0);toast(s);d=2200;}
+function wsFlush(){const c=wsS(),g=Object.entries(wsPG),why=wsPN===1?wsPW:null;wsPG={};wsPN=0;wsPW=null;const b=wsPB;wsPB=[];if(!c.seen)return;   // before the bench is found: quiet (the 家 dot tells)
+  let d=0;if(g.length){let s="🛠 "+(why?why+": ":"")+g.map(([k,n])=>`${WS_M[k][0]} +${n}`).join(" · ");if(s.length>44&&why)s="🛠 "+g.map(([k,n])=>`${WS_M[k][0]} +${n}`).join(" · ");if(s.length>44)s="🛠 Материалы для мастерской: +"+g.reduce((a,[,n])=>a+n,0);toast(s);d=2200;}
   if(b.length)setTimeout(()=>wsBpToast(b),d);}
 function wsBpToast(b){toast(b.length>1?`📐 Новые чертежи в мастерской: ${b.length}`:`📐 Новый чертёж: ${b[0]}`);chime([784,1046]);}
 
@@ -67,21 +77,37 @@ hook("ev",(ev,d)=>{const c=wsS();
   if(ev==="harvest"){c.f.harvest=1;wsGain({wara:2,ha:1+wsP(.5),eda:wsP(.3)});}
   else if(ev==="fish"){const f=FISHES.find(x=>x.id===(d&&d.id));c.f.fish=1;wsGain(f&&f.junk?{kai:2}:{uroko:1,kai:wsP(.45)});}
   else if(ev==="water"){const dk=dayKey();if(c.wd!==dk){c.wd=dk;c.wn=0;}if(c.wn<3){c.wn++;wsGain({tsuchi:1});}else{c.f.water=1;}}
-  else if(ev==="guest"){c.f.guest=1;wsGain({nuno:1,hane:wsP(.25)});}
+  else if(ev==="guest"){c.f.guest=1;const gst=!!(X.kmd&&X.kmd.bless&&X.kmd.bless()==="gst");   // kamidana blessing «Улыбка гостей»: a scrap and a feather more
+    wsGain(gst?{nuno:2,hane:1+wsP(.25)}:{nuno:1,hane:wsP(.25)},gst?"Улыбка гостей":null);}
   else if(ev==="cook"&&Math.random()<.25)wsGain({wara:1});});
 hook("disc",(kind,id)=>{if(kind==="ema")wsGain({nuno:1});else if(kind==="visitor"||kind==="rareguest")wsGain({hane:1});else if(kind==="forest"&&!/^fo_/.test(id))wsGain({hane:wsP(.5),koke:1});});
 function wsForest(){const f=S.ext.forest,c=wsS();if(!f)return;const n=f.n||0;if(c.fn==null){c.fn=n;return;}if(n<=c.fn)return;const d=Math.min(10,n-c.fn);c.fn=n;c.f.forest=1;
   const o={eda:0,koke:0,donguri:0,hane:0};for(let i=0;i<d;i++){o.eda++;o.koke+=wsP(.5);o.donguri+=wsP(.45);o.hane+=wsP(.12);}wsGain(o);}
-hook("sec",()=>{wsForest();if((Object.keys(wsPG).length||wsPB.length)&&Date.now()>=wsAt&&(!overlaysOpen()||panelIs("ws")))wsFlush();});
+// ── links with other add-ons: watch their saved counters (nothing is edited there). First sight = remember them,
+// and if the bench is already open, add a small catch-up silently (no toasts at load).
+const WS_NK={nk_feather:[{hane:3},"Трофей Торы"],nk_ribbon:[{nuno:2},"Бантик Кинако"],nk_yarn:[{nuno:1},"Подарок Юки"],nk_leaf:[{ha:3},"Подарок Сумими"],nk_omamori:[{nuno:1},"Подарок Микэ"]};
+const wsNkHas=()=>[...S.owned].some(id=>/^nk_/.test(id));
+function wsGive(o){const c=wsS();for(const [k,n] of Object.entries(o))if(n)c.mat[k]=(c.mat[k]||0)+n;}
+function wsLinks(){const c=wsS(),L=c.lk||(c.lk={}),R=S.ext.rice,lm=S.ext.loom,nu=S.ext.nurikabe,mu=S.ext.insects;
+  const dl=(k,v)=>{v=v||0;const o=L[k];L[k]=v;return o==null?null:Math.max(0,Math.min(5,v-o));};    // null = first sight
+  let d=dl("ri",R&&R.c);if(d===null){if(c.seen&&R&&R.c)wsGive({wara:5*Math.min(2,R.c)});}else if(d){c.f.rice=1;wsGain({wara:5*d},"Обмолот риса");}
+  d=dl("lm",lm&&lm.n);if(d===null){if(c.seen&&lm&&lm.n)wsGive({nuno:2*Math.min(3,lm.n)});}else if(d)wsGain({nuno:2*d},"Обрезки со станка");
+  d=dl("nu",nu&&nu.n);if(d===null){if(c.seen&&nu&&nu.n)wsGive({tsuchi:Math.min(4,nu.n)});}else if(d){let n=0;for(let i=0;i<d;i++)n+=wsP(.6)*2;if(n)wsGain({tsuchi:n},"Нурикабэ осыпался");}
+  d=dl("mu",mu?Object.values(mu.n||{}).reduce((a,b)=>a+b,0):0);if(d){const o={ha:0,eda:0};for(let i=0;i<d;i++)if(Math.random()<.35)o[Math.random()<.6?"ha":"eda"]++;wsGain(o,"Застряло в сачке");}
+  const first=!L.nk;if(first)L.nk=[];
+  for(const id in WS_NK){if(!S.owned.has(id)||L.nk.includes(id))continue;L.nk.push(id);c.f.nk=1;if(first){if(c.seen)wsGive(WS_NK[id][0]);}else wsGain(...WS_NK[id]);}
+  if(!c.f.nk&&wsNkHas()){c.f.nk=1;wsUnlock();}if(first)wsUnlock();}
+hook("sec",()=>{wsForest();wsLinks();if((Object.keys(wsPG).length||wsPB.length)&&Date.now()>=wsAt&&(!overlaysOpen()||panelIs("ws")))wsFlush();});
 hook("boot",()=>{const c=wsS();   // milestones the player already passed before the workshop existed
   if(ST.got.includes("garden1"))c.f.harvest=1;if(Object.keys(S.catch||{}).length)c.f.fish=1;if(S.ext.forest&&S.ext.forest.n)c.f.forest=1;if(Object.keys(S.friends||{}).length)c.f.guest=1;
+  if(S.ext.rice&&S.ext.rice.c)c.f.rice=1;if(wsNkHas())c.f.nk=1;
   if(c.fn==null&&S.ext.forest)c.fn=S.ext.forest.n||0;if(!c.seen)c.kn=[];wsUnlock();if(!c.seen)c.nw=[];});
 
 // ── the bench in the room (attic → kura → games room) ──
 const WS_POS={attic:[1180,1150],kura:[690,1150],games:[1440,1160]},WS_BW=370;
 function wsBench(){const r=wsRoom();if(S.room!==r||!WS_IM)return null;const p=WS_POS[r];return{x:visX(p[0],WS_BW/2+30),y:p[1]};}
 function wsQuad(b){const [x0,y0]=imgToStage(b.x-WS_BW/2,b.y,CAT_D),[x1]=imgToStage(b.x+WS_BW/2,b.y,CAT_D),w=x1-x0,h=w*250/420;return{x:x0,y:y0-h+h*.024,w,h};}
-function wsBlit(g,key,cx,by,hh,al=1,sc=1){const a=WS_R[key];if(!a||!WS_IM)return;const k=Math.min(hh/a[3],hh*1.25/a[2])*sc,w=a[2]*k,h=a[3]*k;g.globalAlpha=al;g.drawImage(WS_IM,a[0],a[1],a[2],a[3],cx-w/2,by-h,w,h);g.globalAlpha=1;}
+function wsBlit(g,key,cx,by,hh,al=1,sc=1){const a=WS_R[key]||WS_R2[key],im=WS_R[key]?WS_IM:WS_IM2;if(!a||!im)return;const k=Math.min(hh/a[3],hh*1.25/a[2])*sc,w=a[2]*k,h=a[3]*k;g.globalAlpha=al;g.drawImage(im,a[0],a[1],a[2],a[3],cx-w/2,by-h,w,h);g.globalAlpha=1;}
 hook("draw",(t,front)=>{if(scene.on)return;const b=wsBench();if(!b||front!==(b.y>catLineY()+6))return;const q=wsQuad(b),a=WS_R.bench;
   ctx.drawImage(WS_IM,a[0],a[1],a[2],a[3],q.x,q.y,q.w,q.h);const c=wsS(),k=q.w/420;
   if(c.last)wsBlit(ctx,c.last,q.x+212*k,q.y+108*k,78*k);
@@ -107,11 +133,12 @@ function wsCard(r){const c=wsS(),open=c.kn.includes(r.id),made=wsMade(r.id),can=
   return`<div class="ws-r${made?" done":""}"><span class="ws-th">${itemThumb(IT[r.id],56,60)}</span><div class="ws-tx"><b>${r.n}${wsFresh.includes(r.id)?'<span class="ws-new">новый чертёж</span>':""}</b><small>${r.d}</small>${made?"":`<div class="ws-cost">${cost}</div>`}</div>`+
     (made?`<span class="ws-ok">✓ сделано</span>`:`<button class="btn${can?" primary":""}" data-x="ws:make:${r.id}"${can&&!wsA?"":" disabled"}>Сделать</button>`)+`</div>`;}
 function wsRender(){const c=wsS(),R=WS_RC,ord=[...R.filter(r=>c.kn.includes(r.id)&&!wsMade(r.id)),...R.filter(r=>wsMade(r.id)),...R.filter(r=>!c.kn.includes(r.id))];
-  const mats=WS_MK.map(k=>{const n=wsHave(k);return`<span class="ws-m${n?"":" z"}">${wsIc(k,30)}<span>${WS_M[k][0]} <b>${n===Infinity?"∞":n}</b></span></span>`;}).join("");
+  const mats=WS_MK.filter(k=>!WS_M[k][2]).map(k=>{const n=wsHave(k);return`<div class="ws-m2${n?"":" z"}">${wsIc(k,30)}<div><b>${WS_M[k][0]} · ${n}</b><small>${WS_SRC[k]}</small></div></div>`;}).join("")+
+    `<div class="ws-m2 free">${WS_MK.filter(k=>WS_M[k][2]).map(k=>wsIc(k,28)).join("")}<div><b>Бумага васи, нитки, краски · ∞</b><small>не кончаются никогда</small></div></div>`;
   const lead=wsFirst?"Под верстаком нашёлся ящик с обрезками — на первые поделки хватит. Бумага, нитки и краски не кончаются никогда."
-    :`Сделано ${c.n} из ${R.length}. Материалы приносит сама жизнь в доме: урожай, рыбалка, полив, гости, прогулки в лес.`;
+    :`Сделано ${c.n} из ${R.length}. Материалы приносит сама жизнь в доме — под каждым написано, откуда он берётся.`;
   openPanel("🛠 Мастерская 工房",`<canvas id="wsCv" class="ws-cv" width="720" height="380"></canvas><p class="lead">${lead}</p>
-    <h3 class="bh">Материалы</h3><div class="ws-mats">${mats}</div><h3 class="bh">Чертежи</h3><div class="ws-list">${ord.map(wsCard).join("")}</div>`,"ws");wsKick();}
+    <h3 class="bh">Материалы и откуда они</h3><div class="ws-mats2">${mats}</div><h3 class="bh">Чертежи</h3><div class="ws-list">${ord.map(wsCard).join("")}</div>`,"ws");wsKick();}
 function wsOpen(){const c=wsS();wsFirst=!c.seen;
   if(!c.seen){c.seen=1;const f=c.f,o={eda:3+(f.forest?3:0),nuno:1+(f.guest?2:0),wara:1+(f.harvest?3:0),ha:2+(f.harvest?3:0),kai:f.fish?3:0,uroko:f.fish?1:0,koke:f.forest?1:0,donguri:f.forest?1:0};
     for(const [k,n] of Object.entries(o))if(n)c.mat[k]=(c.mat[k]||0)+n;c.kn=[];wsUnlock();c.nw=[];wsPG={};wsPB=[];}
@@ -172,18 +199,22 @@ hook("itemTap",(it,I,t)=>{const id=it.id;if(!/^ws_/.test(id))return;const away=p
   if(id==="ws_kaeru"){tone(180,.09,"square",.03);setTimeout(()=>tone(150,.12,"square",.03),130);if(!away)react("🐸",1.4);return true;}
   if(/furin|shells|mizuhiki/.test(id)){const b=pick([1568,1760,2093]);[0,1,2].forEach(i=>setTimeout(()=>tone(b*pick([1,1.26,1.5]),1.4,"sine",.02),i*160));fxAt(it,["🎐","✨"],2);return true;}
   if(id==="ws_teru"){if(!away)react(weather.on?"🌧":"☀️",1.6);fxAt(it,["☀️"],1);return true;}
-  if(/kendama|uma|kinchaku/.test(id)&&!away){walkTo(it,"poke","😸");return true;}
+  if(/kendama|uma|kinchaku|waraji/.test(id)&&!away){walkTo(it,"poke","😸");return true;}
+  if(id==="ws_tsugura"&&!away){walkTo(it,"knead","😻");return true;}
+  if(id==="ws_maneki"){chime([1318,1568]);fxAt(it,["🐾","✨"],2);if(!away)react("😺",1.4);return true;}
   if(id==="ws_hokora"){chime([659,880]);if(!away)react("🙏",1.4);fxAt(it,["✨"],2);return true;}
   fxAt(it,["✨"],2);tone(700,.12,"sine",.03);if(!away)react("😺",1.2);return true;});
 
 document.head.insertAdjacentHTML("beforeend",`<style>.ws-cv{width:100%;height:auto;aspect-ratio:720/380;display:block;border-radius:12px;margin:2px 0 10px;background:#0d0a08;box-shadow:0 0 0 1px var(--line)}
 .ws-mats{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px}.ws-m{display:inline-flex;align-items:center;gap:4px;padding:2px 10px 2px 3px;border-radius:999px;border:1px solid var(--line);font-size:13px;color:var(--muted)}.ws-m b{color:var(--paper)}.ws-m.z{opacity:.42}
+.ws-mats2{display:grid;grid-template-columns:repeat(auto-fill,minmax(182px,1fr));gap:6px;margin:4px 0 14px}.ws-m2{display:flex;align-items:center;gap:7px;padding:4px 9px 4px 4px;border-radius:10px;border:1px solid var(--line);background:var(--ink-2)}
+.ws-m2>div{min-width:0}.ws-m2 b{display:block;font-size:13px;font-weight:600;color:var(--paper)}.ws-m2 small{display:block;font-size:11px;line-height:1.25;color:var(--muted)}.ws-m2.z{opacity:.55}.ws-m2.free{grid-column:1/-1}
 .ws-ic{display:inline-block;background:url(assets/items/atlas_ws.webp) no-repeat;flex:none}
 .ws-list{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}.ws-r{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:var(--ink-2)}
 .ws-th{width:58px;height:62px;display:grid;place-items:center;flex:none}.ws-r.lock .ws-th>*{filter:brightness(0);opacity:.5}.ws-r.lock{opacity:.75}.ws-r.done{opacity:.8}
 .ws-tx{flex:1;min-width:0}.ws-tx b{display:block;font-size:15px;color:var(--paper)}.ws-tx small{display:block;font-size:12px;color:var(--muted);margin:1px 0 5px;line-height:1.3}
 .ws-cost{display:flex;flex-wrap:wrap;gap:4px}.ws-c{display:inline-flex;align-items:center;gap:2px;font-size:12px;padding:1px 7px 1px 1px;border-radius:999px;border:1px solid var(--line);color:var(--paper)}.ws-c.no{border-color:rgba(194,106,90,.75);color:#e09a8a}
 .ws-r .btn{flex:none}.ws-new{display:inline-block;color:var(--sakura);font-size:11px;font-weight:600;margin-left:6px}.ws-ok{flex:none;color:var(--sakura);font-size:13px}</style>`);
-X.ws={S:wsS,gain:wsGain,make:wsMake,open:wsOpen,room:wsRoom,ready:wsReady,flush:wsFlush,
+X.ws={S:wsS,gain:wsGain,make:wsMake,links:wsLinks,open:wsOpen,room:wsRoom,ready:wsReady,flush:wsFlush,
   tap(){const b=wsBench();if(!b)return false;const q=wsQuad(b);return !!hk("hit",q.x+q.w/2,q.y+q.h*.7);}};
 }

@@ -132,7 +132,9 @@ function muStep(t,dt){const R=MU_RM[S.room];if(!R)return;
     b.x+=vx;b.y+=vy;if(Math.abs(vx)>.05)b.face=vx>0?1:-1;
     if(s.dfly)b.rot=Math.atan2(vy,vx)+Math.PI/2;else b.rot=clamp(vx/Math.max(stp,.01)*.18,-.3,.3);}
 }
-function muPool(room){const out=[];for(const s of muNowSp(room)){let w=s.w;if(weather.on){if(s.k==="fly")continue;w*=.4;}if(muB.some(b=>b.id===s.id))continue;out.push([s.id,w]);}return out;}
+// kamidana blessing «Находчивость» (X.kmd.luck, today only): rare insects come twice as often
+const muLuck=()=>!!(X.kmd&&X.kmd.luck);
+function muPool(room){const out=[];for(const s of muNowSp(room)){let w=s.w;if(weather.on){if(s.k==="fly")continue;w*=.4;}if(s.rare&&muLuck())w*=2;if(muB.some(b=>b.id===s.id))continue;out.push([s.id,w]);}return out;}
 function muTry(max){if(muB.filter(b=>b.st!=="out").length>=max)return null;const P=muPool(S.room);let tot=P.reduce((a,p)=>a+p[1],0),r=Math.random()*tot;for(const [id,w] of P){r-=w;if(r<=0)return muSpawn(id);}return null;}
 hook("sec",()=>{const M=muS();if(M.day!==dayKey()){M.day=dayKey();M.td=[];}
   if(!MU_OUT.includes(S.room)||scene.on||overlaysOpen())return;
@@ -222,14 +224,14 @@ function muPanel(id){const s=id&&MU_ID[id],M=muS();
   const det=s?`<div class="hubc mu-det">${muThumb(id+"0",120,96)}<div><h4>${s.n}</h4><p class="mu-n">${s.jp}</p><p>${s.line}</p><p class="mu-n">Поймано раз: ${M.n[id]||0} · ${s.hint}</p></div></div>`:"";
   openPanel("Насекомые",`${det}<p class="lead">${muStatus()}</p>${muLead()}${muGrid(1)}`,"mu");if(s){try{$("xpBody").scrollTop=0;}catch(e){}if(s.song)muSong(id,.8);}}
 hook("hub",()=>{const n=muSeenN(),M=muS(),td=(M.day===dayKey()?M.td:[]);
-  return`<div class="hubc"><h4>🥅 Сачок и насекомые <i>虫</i></h4><p>${muStatus()}</p><p>В альбоме ${n} из ${MU_SP.length}.${td.length?` Сегодня поймали: ${muList(td.map(i=>MU_ID[i].sn))}.`:""}${muRareNow()?" Сейчас можно встретить редкость!":""}</p>
+  return`<div class="hubc"><h4>🥅 Сачок и насекомые <i>虫</i></h4><p>${muStatus()}</p><p>В альбоме ${n} из ${MU_SP.length}.${td.length?` Сегодня поймали: ${muList(td.map(i=>MU_ID[i].sn))}.`:""}${muRareNow()?" Сейчас можно встретить редкость!":""}${muLuck()?" 🍀 Сегодня «Находчивость»: редкие насекомые попадаются вдвое чаще.":""}</p>
   <div class="row"><button class="btn primary" data-x="mu:go">🥅 Ловить</button><button class="btn" data-x="mu:album">Альбом насекомых</button></div></div>`;});
 hook("hubDot",()=>muRareNow());
 hook("album",el=>{el.insertAdjacentHTML("beforeend",`<h3 class="bh">Насекомые</h3>${muLead()}${muGrid()}`);});
 document.head.insertAdjacentHTML("beforeend","<style>#tray .item.wide.mu-on{box-shadow:inset 0 0 0 2px rgba(200,230,150,.55)}.mu-det{display:flex;gap:12px;align-items:flex-start}.mu-det>span{margin-top:6px}:is(.story-body,.card,#xpanel) .mu-det p.mu-n{font-size:12px;opacity:.75}</style>");
 hook("boot",()=>{muS();if(MU_OUT.includes(S.room)){muLoad();muNext=now()+rand(3,7);}});
 // test handles
-X.insects={st:muS,list:muB,sp:MU_SP,spawn:muSpawn,card:muCard,record:muRecord,status:muStatus,nowSp:muNowSp,song:muSong,net:muNetToggle,panel:muPanel,
+X.insects={luck:muLuck,pool:muPool,st:muS,list:muB,sp:MU_SP,spawn:muSpawn,card:muCard,record:muRecord,status:muStatus,nowSp:muNowSp,song:muSong,net:muNetToggle,panel:muPanel,
   dbg(v=1){muDbg=v;},reset(){muNext=now()+999;muB.length=0;},
   settle(){for(const b of muB){if(b.st==="in"){b.st="sit";b.a=1;b.x=b.x0;b.y=b.y0;}if(b.st==="fly"&&!b.leaving){const F=MU_RM[S.room].F;b.x=(F[0]+F[1])/2+rand(-120,120);b.y=(F[2]+F[3])/2;b.until=now()+999;}b.until=now()+999;}},
   pos(i=0){const b=muB[i];return b?[Math.round(b.sx),Math.round(b.sy),Math.round(b.r),b.id,b.st]:null;},
