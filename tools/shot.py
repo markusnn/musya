@@ -43,7 +43,14 @@ a = ap.parse_args()
 
 html = open(os.path.join(ROOT, 'index.html'), encoding='utf-8').read()
 assert html.count(BOOT) == 1 and html.count(LOADED) == 1
-blocks = ''.join('\n// ── block: %s\n%s\n' % (b, open(b, encoding='utf-8').read()) for b in a.blocks)
+# a block that is already built into index.html (feat/READY) is REPLACED in place by the given file (same name),
+# so you can test edits of built add-ons; new blocks are appended right before «Boot»
+blocks = ''
+for b in a.blocks:
+    nm, code = os.path.basename(b), open(b, encoding='utf-8').read()
+    pat = re.compile(r'// ── ' + re.escape(nm) + r'\nHBLK=.*?(?=\n// ── [a-z0-9_]+\.js\nHBLK=|\nHBLK="core";)', re.S)
+    if pat.search(html): html = pat.sub(lambda m: '// ── %s\nHBLK="%s";\n%s' % (nm, nm[:-3], code), html, count=1)
+    else: blocks += '\n// ── block: %s\nHBLK="%s";\n%s\nHBLK="core";\n' % (b, nm[:-3], code)
 html = html.replace(BOOT, blocks + BOOT)
 seen = '' if (a.fresh or a.state) else '{const F=festNow();if(F)festProg(F).seen=1;}'   # the seeded player has already seen today's festival
 html = html.replace(LOADED, LOADED + 'window.__ev=c=>eval(c);window.__ready=1;' + seen + a.pre + ';')
