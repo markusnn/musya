@@ -49,8 +49,16 @@ function rkTrack(){const quiet=!RK.init,L=(X.cd&&X.cd.st&&X.cd.st.log)||[],cdT={
 
 // ── events → milestones → scenes ──
 const RK_SKIP={chronicle:1,news:1};
-const RK_MAJ={room:10,q:9,chapter2:9,fe:8,holiday:8,birthday:9,rareguest:8,capsule:7,bloom:7,trust:6,season:6,snow:7,parade:7};
-const RK_FIRST1={haunt:6,postcard:6,dream:5,visitor:5,rumor:5,chest:5,kimo:5,forest:5,nurikabe:5};
+// the second and third story books (their chapters: X.story2.CH, X.story3.CH)
+const RK_BOOK={chapter2:["Кошачья гора",()=>(X.story2&&X.story2.CH)||[]],chapter3:["Шпилька Бэни",()=>(X.story3&&X.story3.CH)||[]]};
+const RK_MAJ={room:10,q:9,chapter2:9,chapter3:9,fe:8,holiday:8,birthday:9,rareguest:8,capsule:7,bloom:7,trust:6,season:6,snow:7,parade:7};
+const RK_FIRST1={haunt:6,postcard:6,dream:5,visitor:5,rumor:5,chest:6,kimo:5,forest:5,nurikabe:5,
+  cat:6,insect:5,sumo:6,kite:5,rice:6,loom:6,haiku:5,mystery:6,music:4,hide:4,kamidana:5};
+// every next one of these small collections still gets a line in its day's scene
+const RK_EACH={cat:3,sumo:3,chest:3,mystery:3,music:2,kite:2,loom:2,rice:3};
+// special milestones: a scene of their own
+const rkSpec=e=>{const {kind,id,n}=e;return kind==="cat"&&n===8?7:kind==="sumo"&&id==="yokozuna"?8:kind==="chest"&&id==="w12"?8:kind==="chest"&&id==="w6"?6:
+  kind==="kamidana"&&id==="d30"?7:kind==="kamidana"&&id==="d7"?5:kind==="music"&&n===7?6:kind==="mystery"&&n===8?7:kind==="kite"&&n===9?6:kind==="nurikabe"&&n===20?6:0;};
 const RK_RND=[10,25,50,100,200,500],RK_TOT=[50,100,200,300,500,1000];
 function rkStart(E){const B=S.ext.bd||{};let s=B.start&&/^\d{4}-\d\d-\d\d$/.test(B.start)?Date.parse(B.start+"T09:00:00"):0;
   if(!s)s=(RK.init||Date.now())+DATE_SHIFT;for(const e of E)if(e.g&&e.g<=s)s=e.g-60000;return s;}
@@ -71,7 +79,9 @@ function rkCls(e){const {kind,id,n}=e;let w=-1,m=0;
   else if(kind==="friend"){if(/_5$/.test(id)){w=7;m=1;}else if(n===1)w=4;}
   else if(RK_MAJ[kind]){w=RK_MAJ[kind];m=1;}
   else if(RK_FIRST1[kind]&&n===1){w=RK_FIRST1[kind];m=1;}
+  else if(rkSpec(e)){w=rkSpec(e);m=1;e.sp=1;}
   else if(n===1)w=4;
+  else if(RK_EACH[kind])w=RK_EACH[kind];
   else if(RK_RND.includes(n)&&RK_RN[kind]){w=n>=50?4:3;e.r=1;}
   if(e.tot&&w<5)w=5;e.w=w;e.m=m;}
 function rkBuild(){const E=rkEvents(),sc=[],day={},dk=e=>e.u?"u":dayKey(new Date(e.g)),D=k=>day[k]||(day[k]={maj:null,sm:null,more:0,last:null});
@@ -90,9 +100,10 @@ const rkNewN=()=>rkScenes().filter(s=>s.gm>RK.seen).length;
 const rkYear=()=>{const sc=rkScenes();return sc.length&&Date.now()+DATE_SHIFT-sc[0].g>=365*864e5;};
 
 // ── words ──
-function rkName(kind,id){try{
+const rkNK=(kind,id)=>{try{return X.sb&&X.sb.nk?X.sb.nk(kind,id):null;}catch(x){return null;}};
+function rkName(kind,id){try{const q=rkNK(kind,id);if(q&&q.n)return q.n;
   if(kind==="q")return(STORY[+id]||{}).title||"";if(kind==="k")return(KAIDAN[+id]||{}).t||"";
-  if(kind==="chapter2"){const C=X.story2&&X.story2.CH;const c=C&&C[+id];if(c&&c.title)return c.title;}
+  if(RK_BOOK[kind]){const C=RK_BOOK[kind][1]();const c=C&&C[+id];if(c&&c.title)return c.title;}
   if(kind==="fe"||kind==="holiday"){const f=kind==="fe"?String(id).replace(/-\d{4}$/,""):id;return(FEST.find(F=>F.id===f)||{}).n||"";}
   if(kind==="c")return(CROPS.find(c=>c.id===id)||{}).n||"";if(kind==="f")return(FOOD[id]||{}).n||"";if(kind==="r")return(RECIPES.find(r=>r.id===id)||{}).n||"";
   if(kind==="room")return(ROOMS.find(r=>r.id===id)||{}).ru||"";if(kind==="pet")return(S.ext.pet2||{}).name||"";
@@ -126,14 +137,40 @@ const RK_F={find:n=>`Муся впервые принесла в дом нахо
 const RK_SEA={winter:"пришла зима: на веранде и тории лежит снег",spring:"пришла весна: на ветках набухли почки",summer:"пришло лето: в саду звенят цикады",autumn:"пришла осень: клёны у ворот покраснели"};
 function rkBd(id){id=String(id);let m;if(/^w/.test(id))return"неделя вместе";if(id==="d100")return"сто дней вместе";if(id==="h")return"полгода вместе";
   if((m=id.match(/^m(\d+)$/)))return+m[1]===1?"месяц вместе":`${m[1]} ${rkPl(+m[1],"месяц","месяца","месяцев")} вместе`;if((m=id.match(/^y(\d+)$/)))return+m[1]===1?"год вместе — день рождения Муси":`${m[1]} ${rkPl(+m[1],"год","года","лет")} вместе — день рождения Муси`;return"праздник Муси";}
+Object.assign(RK_RN,{nurikabe:N=>`у ворот разгадано уже ${N} ${rkPl(N,"загадка","загадки","загадок")} нурикабэ`,haiku:N=>`в тетради уже ${N} хайку`,
+  hide:N=>`Мусю нашли уже в ${N} ${rkPl(N,"укромном месте","укромных местах","укромных местах")}`,kamidana:N=>`у камиданы получено уже ${N} ${rkPl(N,"благословение","благословения","благословений")}`});
+// the newer add-ons: the first one, every next one and the special ones (names and grammar from the newspaper's table)
+function rkSayNK(e){const {kind,id}=e,q=rkNK(kind,id),first=e.n===1;if(!q)return null;const n=q.n||"";
+  switch(kind){
+   case"cat":return e.sp?`теперь Муся знакома со всеми восемью соседскими кошками — последн${q.f?"ей":"им"} ${q.f?"пришла":"пришёл"} ${n}`:
+     first?`Муся познакомилась с ${q.f?"первой соседкой":"первым соседом"} — ${n}, ${q.whoI}`:`новое знакомство на заборе: ${n}, ${q.who}`;
+   case"insect":return first?`в сачок попалась первая добыча — ${rkLc(n)}`:null;
+   case"sumo":return q.yk?`Муся одолела на басё самого ${q.acc} — кубок императора теперь стоит дома`:first?`первая победа на ночном басё у реки — над ${q.ins}`:`победа на басё над ${q.ins}`;
+   case"nurikabe":return e.sp?"у ворот разгадано двадцать загадок нурикабэ — стена зовёт Мусю умной кошкой":first?`у ворот выросла стена-нурикабэ и загадала загадку: «${n}» Муся ответила верно, и стена ушла в землю`:null;
+   case"kite":return e.sp?"в небе побывали все девять воздушных змеев":first?`в небо над крышами поднялся первый воздушный змей${n?` — ${n}`:""}`:`взлетел новый змей${n?` — ${n}`:""}`;
+   case"rice":return first?"собран первый урожай риса с террас на холме: снопы сохнут на хасагакэ":`собран ${q.n}`;
+   case"loom":return first?`на станке в куре соткан первый отрез — узор «${n}»${q.kim?", и из него сшито первое своё кимоно Муси":""}`:`соткан новый узор — «${n}»`;
+   case"chest":return id==="w12"?"сундук прабабушки опустел: история Хару прочитана до последней строчки":first?`в сундуке прабабушки нашлась первая вещь — «${n}», ${q.y} год`:
+     `сундук прабабушки отдал ещё одну вещь — «${n}», ${q.y} год`;
+   case"haiku":return first?(q.x?`на веранде повешено первое хайку: «${q.x.join(" / ")}»`:"на веранде повешено первое хайку"):null;
+   case"mystery":return e.sp?"раскрыты все восемь дел о пропажах в доме":first?`раскрыто первое дело о пропаже — «${n}»: вещь брал${q.f?"а":""} ${q.cul}`:`раскрыто «${n}»`;
+   case"music":return e.sp?"в доме собраны все семь старинных мелодий":first?`в доме впервые зазвучала музыка — мелодия «${n}»`:`граммофон выучил мелодию «${n}»`;
+   case"hide":return first?`Муся впервые сыграла в прятки и спряталась ${n||"где-то в доме"}`:null;
+   case"kamidana":return id==="d30"?"месяц утренних подношений у камиданы подряд":id==="d7"?"неделя утренних подношений у камиданы подряд":
+     first?`на кухонной камидане сделано первое утреннее подношение — ками послали «${n}»`:null;
+   case"kimo":return first?`первая ночная прогулка смелости — кимодамэси; звание — «${n}»`:null;
+   case"snow":return q.km?"во дворе игр построена камакура — снежный домик со свечой внутри":`во дворе игр слеплен ${first?"первый ":""}снеговик`;}
+  return null;}
 function rkSay(e){const {kind,id}=e,n=rkName(kind,id);let s;
   if(e.r)s=RK_RN[kind](e.n);
+  else if((s=rkSayNK(e))){}
   else switch(kind){
    case"start":s="Муся пришла в дом. В пустых комнатах снова зажглись фонари";break;
    case"room":s=`открылась ${n?`комната «${n}»`:"новая комната"}. Муся первой обнюхала все углы`;break;
    case"q":{const t=String(n).match(/^(Глава \d+|Пролог|Эпилог)\.\s*(.+)$/),p=t?`${t[1].startsWith("Глава")?"пройдена":"пройден"} ${rkLc(t[1])} — «${t[2]}»`:`пройдена глава «${n}»`;
      s=+id===0?`началась история дома: ${p}`:+id===STORY.length-1?`история дома дописана: ${p}`:p;break;}
-   case"chapter2":s=`новая глава второй истории${n?` — «${n}»`:""}`;break;
+   case"chapter2":case"chapter3":{const B=RK_BOOK[kind],t=String(n).match(/^(Глава \d+|Пролог|Эпилог)\.\s*(.+)$/);
+     s=t?`${t[1].startsWith("Глава")?"пройдена":"пройден"} ${rkLc(t[1])} истории «${B[0]}» — «${t[2]}»`:`новая глава истории «${B[0]}»${n?` — «${n}»`:""}`;break;}
    case"fe":case"holiday":s=`в доме праздновали ${n?`«${n}»`:"праздник"}: фонари, сладости и гости`;break;
    case"birthday":s=`праздник в доме: ${rkBd(id)}`;break;
    case"rareguest":s=`к дому заглянул редкий гость${n?` — ${n}`:""}`;break;
@@ -154,11 +191,18 @@ function rkText(s){const m=s.main,ex=s.ev.filter(e=>e!==m).sort((a,b)=>b.w-a.w);
 const rkWhen=s=>s.u?"В первые дни в доме":rkDate(s.g);
 
 // ── pictures: monsters, things, food, Musya's own frames, the kitten; plus a painted motif ──
-function rkPic(e){const {kind,id}=e,M=m=>m&&MIMG[m]?m:null;
+// the newer add-ons: their picture (from the newspaper's table) + Musya's frame + a motif
+const RK_NKP={cat:[["rest",2],"moon",.24],insect:[["gaze9",3],"sea",.13],mystery:[["gaze9",2],"moon"],sumo:[["highfive",3],"torii"],nurikabe:[null,"torii"],kite:[["gaze9",0],"moon"],
+  rice:[["treat",1],"br_autumn"],loom:[["stretch",2],"house"],chest:[["gift",2],"house"],haiku:[["gaze10",1],"scroll"],kimo:[["hide",2],"lantern"],snow:[["stretch",2],"br_winter"],
+  hide:[["box",3],"house"],music:[["purr",2],"moon"],kamidana:[["rest",2],"torii"]};
+const rkSeaMot=g=>{const m=new Date(g).getMonth()+1;return"br_"+(m===12||m<3?"winter":m<6?"spring":m<9?"summer":"autumn");};
+function rkPicNK(e){const P=RK_NKP[e.kind];if(!P)return null;const q=rkNK(e.kind,e.id);if(!q||!q.p)return null;const p=q.p,o={mot:P[1]==="sea"?rkSeaMot(e.g):P[1]};
+  if(p.mon&&!P[0])o.mon=p.mon;else if(p.mon)o.mon2=p.mon;if(p.it&&IT[p.it])o.it=p.it;if(p.atl){o.atl=p.atl;o.ah=P[2]||.2;}if(p.cv)o.cv=p.cv;if(P[0])o.cat=P[0];else if(p.cat)o.cat=p.cat;return o;}
+function rkPic(e){const {kind,id}=e,M=m=>m&&MIMG[m]?m:null;const nk=rkPicNK(e);if(nk)return nk;
   switch(kind){
    case"start":return{cat:["rest",2],mot:"house"};case"room":return{cat:["moveLeft",3],mot:"house"};
    case"q":{const C=STORY[+id]||{},ch=((C.intro||{}).chars||[])[0],m=ch&&typeof ch.id==="string"&&M(ch.id);return m?{mon:m,mot:"scroll"}:{cat:["gaze9",0],it:C.reward&&IT[C.reward]?C.reward:null,mot:"scroll"};}
-   case"chapter2":return{cat:["gaze10",0],mot:"scroll"};case"fe":case"holiday":return{cat:["highfive",3],mot:"lantern"};
+   case"chapter2":case"chapter3":return{cat:["gaze10",0],mot:"scroll"};case"fe":case"holiday":return{cat:["highfive",3],mot:"lantern"};
    case"birthday":return{cat:["treat",2],mot:"lantern"};case"season":return{cat:["butterfly",2],mot:"br_"+String(id).split("-")[0]};
    case"snow":return{cat:["stretch",2],mot:"br_winter"};case"bloom":return{cat:["butterfly",4],mot:"br_spring"};
    case"pet":return{kit:1,cat:["rest",0],mot:"house"};case"crane":return{cat:["play",1],mot:"crane"};case"trust":return{cat:["purr",2],mot:"moon"};
@@ -175,8 +219,12 @@ function rkSrc(p,what){try{
   if(what==="it"){const c=DIMG[p.it];if(c&&c.width)return{im:c,sx:0,sy:0,sw:c.width,sh:c.height};loadItem(p.it);rkPend=1;return null;}
   if(what==="food"){const A=fAtlas(p.food);if(!A)return null;const im=FIMG[A[0]];if(!im){fLoad(A[0]);rkPend=1;return null;}const r=A[1].r[p.food];return{im,sx:r[0],sy:r[1],sw:r[2],sh:r[3]};}
   if(what==="cat"){const im=IMG[p.cat[0]];if(!im){rkPend=1;return null;}return{im,sx:p.cat[1]*384,sy:0,sw:384,sh:416};}
-  if(what==="kit"){const im=MIMG.m_pt_atlas;return im?{im,sx:0,sy:0,sw:280,sh:250}:null;}}catch(x){}return null;}
-function rkPicHtml(e){const p=rkPic(e);try{if(p.mon)return`<img src="assets/mon/${p.mon}.webp" alt="" style="max-height:56px;max-width:62px">`;
+  if(what==="kit"){const im=MIMG.m_pt_atlas;return im?{im,sx:0,sy:0,sw:280,sh:250}:null;}
+  if(what==="mon2"){const im=MIMG[p.mon2];return im&&im.width?{im,sx:0,sy:0,sw:im.width,sh:im.height}:null;}
+  if(what==="atl"){const [k,r]=p.atl;let im=null;atlasImg(k,x=>{im=x;});if(!im){rkPend=1;return null;}return{im,sx:r[0],sy:r[1],sw:r[2],sh:r[3]};}
+  if(what==="cv"){const c=p.cv;return c&&c.width?{im:c,sx:0,sy:0,sw:c.width,sh:c.height}:null;}}catch(x){}return null;}
+function rkPicHtml(e){const p=rkPic(e);try{if(p.mon||p.mon2)return`<img src="assets/mon/${p.mon||p.mon2}.webp" alt="" style="max-height:56px;max-width:62px">`;
+  if((p.atl||p.cv)&&X.sb&&X.sb.pic){const h=X.sb.pic(p.atl?{atl:p.atl}:{cv:p.cv},52);if(h)return h;}
   if(p.it&&IT[p.it])return itemThumb(IT[p.it],56,56);if(p.food){const h=fThumb(p.food,56,56);if(h)return h;}}catch(x){}
   const c=p.cat||["rest",0];return`<span class="rk-cat" style="background-image:url(assets/${c[0]}@2x.webp);background-position:-${c[1]*52}px 0"></span>`;}
 
@@ -250,15 +298,17 @@ function rkRender(s,newest){const {SW:W,PH:H,dpr}=rkV,c=rkMk(W*dpr,H*dpr),g=c.ge
   rkMot(g,p.mot||"moon",cx,yF,Math.min(1,aw/230),r);
   const put=(src,hh,x,y,maxw,a)=>{if(!src)return 0;let w=src.sw*hh/src.sh;if(maxw&&w>maxw){hh*=maxw/w;w=maxw;}rkPaint(g,src,x-w/2,y-hh,w,hh,dpr,a);return w;};
   if(p.mon)put(rkSrc(p,"mon"),H*.4,cx,yF+6,aw*.98);
-  else{const two=(p.it||p.food||p.kit)&&p.cat,cw=two?aw*.55:aw*.95;
+  else{const two=(p.it||p.food||p.kit||p.atl||p.cv||p.mon2)&&p.cat,cw=two?aw*.55:aw*.95;
     if(p.cat)put(rkSrc(p,"cat"),H*(two?.27:.34),two?cx+aw*.2:cx,yF+H*.035,cw);
     if(p.kit)put(rkSrc(p,"kit"),H*.2,cx-aw*.26,yF+8,aw*.5);
     if(p.it)put(rkSrc(p,"it"),Math.min(H*.2,DIMG[p.it]&&DIMG[p.it].height||H*.2),cx-aw*.22,yF+4,aw*.48);
-    if(p.food)put(rkSrc(p,"food"),H*.11,cx-aw*.22,yF+6,aw*.4);}
+    if(p.food)put(rkSrc(p,"food"),H*.11,cx-aw*.22,yF+6,aw*.4);
+    if(p.mon2)put(rkSrc(p,"mon2"),H*.3,cx-aw*.24,yF+6,aw*.52);if(p.atl)put(rkSrc(p,"atl"),H*(p.ah||.2),cx-aw*.22,yF+(p.ah<.15?-H*.06:4),aw*.46);
+    if(p.cv)put(rkSrc(p,"cv"),H*.22,cx-aw*.22,yF+4,aw*.48);}
   // the other events of that day: small pictures in front
   let j=0;for(const e of s.ev){if(e===s.main||j>=3)continue;const q2=rkPic(e),sz=H*.1;let src=null;
-    if(q2.mon)src=rkSrc(q2,"mon");else if(q2.it)src=rkSrc(q2,"it");else if(q2.food)src=rkSrc(q2,"food");if(!src)continue;
-    put(src,q2.mon?sz*1.35:sz,ax+16+j*(aw-30)/2.4,yF+H*.12,sz*1.3,.95);j++;}
+    if(q2.mon)src=rkSrc(q2,"mon");else if(q2.mon2)src=rkSrc(q2,"mon2");else if(q2.atl)src=rkSrc(q2,"atl");else if(q2.it)src=rkSrc(q2,"it");else if(q2.food)src=rkSrc(q2,"food");if(!src)continue;
+    put(src,q2.mon||q2.mon2?sz*1.35:sz,ax+16+j*(aw-30)/2.4,yF+H*.12,sz*1.3,.95);j++;}
   if(ink)g.drawImage(ink,0,0,W,H);return{c,ink,pend:rkPend,at:performance.now()};}
 function rkEndR(){const {TW:W,PH:H,dpr}=rkV,c=rkMk(W*dpr,H*dpr),g=c.getContext("2d");g.scale(dpr,dpr);rkWall(g,H,0,0);
   const bx=32;g.fillStyle="#1e2a3e";g.fillRect(bx,0,W-bx,H);g.fillStyle="rgba(212,176,96,.5)";for(let y=8,k=0;y<H;y+=17,k++)for(let x=bx+10+(k%2)*8.5;x<W;x+=17){g.beginPath();g.moveTo(x,y-4);g.lineTo(x+4,y);g.lineTo(x,y+4);g.lineTo(x-4,y);g.fill();}
@@ -354,7 +404,7 @@ hook("disc",kind=>{if(kind!=="chronicle")rkMemo=null;});
 hook("boot",()=>{rkTrack();if(!RK.seen){const E=rkEvents();RK.seen=E.length?E[E.length-1].g:0;}save();});
 let rkTk=0;
 hook("sec",()=>{if(++rkTk%5)return;rkTrack();const n=rkScenes().length;for(const m of [10,25,50])if(n>=m)disc("chronicle","len"+m);if(n>=25)award("rk_25");if(RK.n&&rkYear())award("rk_year");});
-X.rk={st:RK,scenes:rkScenes,events:rkEvents,text:rkText,when:rkWhen,open:rkOpen,V:rkV,track:rkTrack,status:rkStatus,
+X.rk={st:RK,scenes:rkScenes,events:rkEvents,text:rkText,say:rkSay,when:rkWhen,open:rkOpen,V:rkV,track:rkTrack,status:rkStatus,
   reset(){rkMemo=null;},go(i){rkV.tgt=null;rkV.vel=0;rkV.off=i==="start"?rkV.mx:i==="end"?rkAt(rkV.sc.length-1):i==="edge"?rkV.mn:rkAt(i);},
   // test: drag the paper by dx px through the real pointer handlers
   drag(dx){const cv=$("rkCv");if(!cv)return;const r=cv.getBoundingClientRect(),y=r.top+r.height/2,x=r.left+r.width/2;

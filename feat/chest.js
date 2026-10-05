@@ -1,10 +1,9 @@
 {
 // ───────────────────────── «Сундук прабабушки»: a kiri chest that gives one old thing a week ─────────────────────────
-// An old paulownia nagamochi stands in the attic (in the kura while the attic is boarded up). Once per ISO week (the
-// first one at once) it gives a thing wrapped in furoshiki + a page of the family story: great-grandmother Haru and
+// An old paulownia nagamochi stands in the attic. Once a week, from Thursday (the first one at once) it gives a thing wrapped in furoshiki + a page of the family story: great-grandmother Haru and
 // her people through the 20th century, 12 weeks, 12 things — slowly explaining why the zashiki-warashi girl of the
 // first story lives in the house. Pictures: art/chest_art.py → assets/items/atlas_ob.webp (chest ×3, furoshiki ×3, 12 things).
-const OB=S.ext.chest||(S.ext.chest={n:0,wk:"",aw:""});   // n things given; wk = ISO week of the last one; aw = week already told on the postcard
+const OB=S.ext.chest||(S.ext.chest={n:0,wk:"",aw:""});   // n things given; wk = chest week of the last one (its Thursday); aw = week already told on the postcard
 const OB_AT={"closed":[700,289,320,160],"ajar":[536,0,320,215],"open":[0,0,320,287],"f0":[94,289,200,170],"f1":[296,289,200,170],"f2":[498,289,200,170],"ob_kanzashi":[182,621,200,120],"ob_koma":[232,469,130,140],"ob_notebook":[364,469,180,140],"ob_sakazuki":[0,621,180,130],"ob_letter":[546,469,190,140],"ob_fan":[0,469,230,150],"ob_photo":[858,0,150,196],"ob_kokeshi":[0,289,92,178],"ob_furin":[322,0,100,270],"ob_drawing":[738,469,180,140],"ob_chochin":[424,0,110,250],"ob_last":[920,469,170,140]};
 const OB_CAT="Сундук прабабушки",OB_N=12;
 // the twelve weeks: thing, year, brush kanji, Musya's face, the chapter and a short line for the tap in the room
@@ -70,15 +69,23 @@ const OB_W=[
   "«Не бойтесь её. Она не призрак. Она — то, чем дом помнит детей, которые в нём смеялись. Я обещала ей, что фонарь у ворот будет гореть. Если он погас — значит, я не вернулась. Пожалуйста, зажгите его снова. Оставляйте ей рис. И заведите кошку: она любит их с тех пор, как у нас жила Тора. Хару».",
   "Всё это в доме уже есть. Фонарь у тории зажгли в самом начале, ещё не зная, для кого. Рис в миске для духа к утру исчезает. А кошка лежит на письме и мурлычет. На лестнице чердака кто-то сидит, болтает босыми ногами и улыбается. В волосах у неё — шпилька с красной бусиной. Точно такая же, как первая."]}];
 addItems(OB_W.map(W=>{const a=OB_AT[W.id];return{id:W.id,n:W.n,c:OB_CAT,w:a[2],h:a[3],a:/furin|chochin/.test(W.id)?"t":"b",p:0,at:["ob",a[0],a[1]],
-  src:"🧰 сундук прабабушки",hint:"🧰 Сундук прабабушки на чердаке отдаёт одну вещь в неделю"};}),{ob:[1100,751]});
+  src:"🧰 сундук прабабушки",hint:"🧰 Сундук на чердаке отдаёт по вещи каждый четверг"};}),{ob:[1100,751]});
 STAMPS.push(["ob_first","簪","Сундук прабабушки","Получи первую вещь из сундука на чердаке"],["ob_six","扇","Полсундука","Шесть вещей из сундука прабабушки"],["ob_all","春","История Хару","Прочитай все 12 глав сундука прабабушки"]);
 
-// ── the week rhythm: one thing per ISO week (Monday to Sunday), the first one at once ──
-function obWeek(d=today()){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),wd=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-wd);
-  const y=t.getUTCFullYear();return y+"-W"+String(Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7)).padStart(2,"0");}
+// ── the week rhythm: a «shifted week» Thursday → Wednesday, key = its Thursday ("2026-10-08"); the first thing at once ──
+// (Monday is the newspaper's day, Wednesday the detective's — one weekly event per day)
+function obWeek(d=today()){return dayKey(new Date(d.getFullYear(),d.getMonth(),d.getDate()-(d.getDay()+3)%7));}
+// migration from ISO weeks: the thing of ISO week W counts for the chest week that starts on W's Thursday — a thing taken on
+// Monday 5 Oct 2026 (W41) → "2026-10-08", so the next one waits until Thursday 15 Oct: none given twice, none skipped
+function obIsoThu(k){const m=/^(\d{4})-W(\d\d)$/.exec(k||"");if(!m)return k;const j=new Date(+m[1],0,4);return dayKey(new Date(+m[1],0,4-(j.getDay()+6)%7+(m[2]-1)*7+3));}
+OB.wk=obIsoThu(OB.wk);OB.aw=obIsoThu(OB.aw);
+const OB_MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+// the Thursday of the next thing = a week after the last one's Thursday (a migrated W41 save → 15 Oct, not 8 Oct)
+function obNext(){const [y,m,d]=(OB.wk||obWeek()).split("-").map(Number),x=new Date(y,m-1,d+7),t=today(),dd=Math.round((x-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/864e5);
+  return`${dd===1?"завтра, в четверг":"в четверг"}, ${x.getDate()} ${OB_MON[x.getMonth()]}`;}
 const obOpenR=id=>!!ROOMX[id]&&!(X.ro&&X.ro.locked&&X.ro.locked(id));
 function obRoom(){return obOpenR("attic")?"attic":null;}   // the kura is full (workshop, loom): the chest waits in the attic only
-function obWaits(){return OB.n<OB_N&&OB.wk!==obWeek();}
+function obWaits(){return OB.n<OB_N&&!(OB.wk>=obWeek());}
 function obNew(){return obWaits()&&!!obRoom();}
 const OB_KJ=["一","二","三","四","五","六","七","八","九","十","十一","十二"],obWk=k=>"第"+OB_KJ[k]+"週";
 // the brush font (Yuji Syuku) under its own name, only the glyphs used here
@@ -105,7 +112,7 @@ hook("draw",(t,front)=>{if(scene.on)return;const b=obSpot();if(!b||front!==(b.y>
   drawEmoji(ctx,"✨",gx+60*q.k*Math.sin(t*.9),gy-40*q.k-10*Math.sin(t*1.7),16*view.s,.35+.35*Math.sin(t*2.6));});
 function obHitBox(){const b=obSpot();if(!b)return null;const q=obQuad(b,"ajar");return{x:q.x+8*q.k,y:q.y+60*q.k,w:q.w-16*q.k,h:q.h-60*q.k};}
 hook("hit",(x,y)=>{if(scene.on)return;const z=obHitBox();if(!z||x<z.x||x>z.x+z.w||y<z.y||y>z.y+z.h)return;audioInit();obTap();return true;});
-function obTap(){const b=obSpot();if(!obWaits()){tone(150,.25,"sawtooth",.02);toast(OB.n>=OB_N?"Сундук пуст: история Хару прочитана":"🔒 Сундук закрыт до понедельника");
+function obTap(){const b=obSpot();if(!obWaits()){tone(150,.25,"sawtooth",.02);toast(OB.n>=OB_N?"Сундук пуст: история Хару прочитана":`🔒 Следующая вещь — ${obNext().replace("завтра, в четверг","завтра")}`);
     if(!petAway()&&b)walkTo({x:b.x+150},"peek","😼");return;}
   tone(140,.35,"sawtooth",.025);if(!petAway()&&b)walkTo({x:b.x+170},"peek","🧐");const k=obGive();if(k>=0)setTimeout(()=>obScene(k),650);}
 
@@ -152,14 +159,14 @@ function obDraw(){const cv=$("obCv"),q=obQ;if(!cv||!q)return;const g=cv.getConte
   // the week in brush kanji, the hint for the knot
   g.save();g.font=`48px ${OB_FONT}`;g.textAlign="left";g.textBaseline="top";g.fillStyle="rgba(236,224,196,.85)";g.fillText(obWk(q.k),28,22);g.restore();
   if(q.st===1&&e>2.2&&t-q.tt>1.2)drawEmoji(g,"👆",BX+84,BB-170+8*Math.sin(t*4),44,.85);}
-X.ob={OB,week:obWeek,room:obRoom,waits:obWaits,give:obGive,scene:obScene,tap:obDown,hit:obHitBox,
+X.ob={OB,W:OB_W,name:id=>((OB_W[+String(id).slice(1)-1])||{}).n||"",iso:obIsoThu,next:obNext,week:obWeek,room:obRoom,waits:obWaits,give:obGive,scene:obScene,tap:obDown,hit:obHitBox,
   at(e){if(obQ)obQ.t0=now()-e;},atf(e){if(obQ){obQ.ft=now()-e;obQ.tt=now()-9;}},q:()=>obQ,font:()=>obFontS+" "+document.fonts.check("40px ObBrush","第"),
   tapRoom(){const z=obHitBox();return z?hk("hit",z.x+z.w/2,z.y+z.h/2):"no box";},reset(){OB.n=0;OB.wk="";OB.aw="";obQ=null;}};
 
 // ── reading: the whole book, one page, the album ──
 function obBook(){obFontLoad();const rows=OB_W.map((W,k)=>k<OB.n?`<button class="ob-ch" data-x="ob:read:${k}"><span class="ob-th">${itemThumb(IT[W.id],60,50)}</span><span class="ob-tx"><b>Неделя ${k+1}. ${W.t}</b><small>${W.n} · ${W.y}</small></span></button>`
   :`<div class="ob-ch off"><span class="ob-th ob-q">?</span><span class="ob-tx"><b>Неделя ${k+1}</b><small>${k===OB.n&&obWaits()?"ждёт в сундуке":"откроется позже"}</small></span></div>`).join("");
-  openPanel(OB_CAT,`<p class="lead">История семьи, которая жила в доме до вас: прабабушка Хару и её родные. Раз в неделю — одна вещь и одна глава. Прочитано ${OB.n} из ${OB_N}.</p><div class="ob-list">${rows}</div>`,"obb");$("xpBody").scrollTop=0;}
+  openPanel(OB_CAT,`<p class="lead">История семьи, которая жила в доме до вас: прабабушка Хару и её родные. Каждый четверг — одна вещь и одна глава. Прочитано ${OB.n} из ${OB_N}.</p><div class="ob-list">${rows}</div>`,"obb");$("xpBody").scrollTop=0;}
 function obRead(k){if(k<0||k>=OB.n)return;obFontLoad();openPanel(OB_CAT,`<div class="ob-pg">${obPage(k)}${obBtns(k)}</div>`,"obr");$("xpBody").scrollTop=0;}
 hook("click",(key)=>{if(!key.startsWith("ob:"))return;const [,a,v]=key.split(":"),k=+v;
   if(a==="book")obBook();else if(a==="read")obRead(k);
@@ -172,14 +179,14 @@ hook("itemTap",(it)=>{const k=OB_W.findIndex(W=>W.id===it.id);if(k<0)return;cons
   if(!petAway()&&pet.action!=="sleep")walkTo(it,"peek",W.r);
   dlg({head:`${W.n} · ${W.y}`,text:W.s,img:itemThumb(IT[W.id],90,72),ok:"Читать главу",no:"Закрыть",onOk:()=>obRead(k)});return true;});
 hook("album",el=>{for(const h of [...el.querySelectorAll("h4.ch")])if(h.textContent===OB_CAT){const n=h.nextElementSibling;if(n&&n.classList.contains("coll"))n.remove();h.remove();}
-  el.insertAdjacentHTML("beforeend",`<h3 class="bh">${OB_CAT}</h3><p class="lead">${OB.n?`Прочитано глав: ${OB.n} из ${OB_N}. Нажми на вещь, чтобы перечитать её историю.`:"Старый сундук на чердаке: раз в неделю — одна вещь и одна глава истории дома."}</p>
+  el.insertAdjacentHTML("beforeend",`<h3 class="bh">${OB_CAT}</h3><p class="lead">${OB.n?`Прочитано глав: ${OB.n} из ${OB_N}. Нажми на вещь, чтобы перечитать её историю.`:"Старый сундук на чердаке: каждый четверг — одна вещь и одна глава истории дома."}</p>
   <div class="coll">${OB_W.map((W,k)=>k<OB.n?`<button class="ci on ob-ci" data-x="ob:read:${k}">${itemThumb(IT[W.id],70,52)}<small>${W.n}<br><i>${W.y}</i></small></button>`:`<div class="ci">${itemThumb(IT[W.id],70,52)}<small>???<br><i>неделя ${k+1}</i></small></div>`).join("")}</div>`);});
 
 // ── the hub card, dots, the tray, the postcard ──
 hook("hub",()=>{const r=obRoom(),w8=obWaits();
-  const st=!r?"Сундук стоит на чердаке — сначала открой чердак":OB.n>=OB_N?`Вся история прочитана: ${OB_N} вещей из ${OB_N}`:w8?`В сундуке новая вещь — неделя ${OB.n+1} из ${OB_N}`:"Следующая вещь — в понедельник";
+  const st=!r?"Сундук стоит на чердаке — сначала открой чердак":OB.n>=OB_N?`Вся история прочитана: ${OB_N} вещей из ${OB_N}`:w8?`В сундуке новая вещь — неделя ${OB.n+1} из ${OB_N}`:`Следующая вещь — ${obNext()}`;
   const where=r==="kura"?"Пока чердак заколочен, сундук ждёт в куре, у бочек.":"Он стоит на чердаке, у старого нагамоти.";
-  const body=`Старый сундук из павловнии с железными уголками. ${r?where+" ":""}Раз в неделю он отдаёт одну вещь, завёрнутую в фуросики, и страницу истории семьи, что жила в доме до вас.`;
+  const body=`Старый сундук из павловнии с железными уголками. ${r?where+" ":""}Каждый четверг он отдаёт одну вещь, завёрнутую в фуросики, и страницу истории семьи, что жила в доме до вас.`;
   const b=[r&&(w8||OB.n<OB_N)?`<button class="btn${w8?" primary":""}" data-x="ob:go">${w8?"Открыть сундук":"К сундуку"}</button>`:"",OB.n?`<button class="btn" data-x="ob:book">Читать историю</button>`:""].join("");
   return`<div class="hubc"><h4>🧰 ${OB_CAT} <i>桐の長持</i></h4><p>${st}</p><p class="ob-s">${body}${OB.n?` Прочитано глав: ${OB.n} из ${OB_N}.`:""}</p>${b?`<div class="row">${b}</div>`:""}</div>`;});
 hook("hubDot",obNew);

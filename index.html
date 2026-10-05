@@ -11922,7 +11922,7 @@ X.cats={st:nkS,rt:nkRT,box:nkBox,force(id,on=true,arr=false){if(on)nkForce[id]=1
 // ── mystery.js
 HBLK="mystery";
 // ───────────────────────── «Пропажа в доме» (prefix dt): a small weekly detective ─────────────────────────
-// Once a week (Monday from 6:00, or the first visit of the week) a thing vanishes from the house: one of the
+// Once a week (Wednesday from 6:00, or the first visit on/after it) a thing vanishes from the house: one of the
 // player's placed things, else a decor piece (the veranda furin…), else a core prop. Nothing is deleted for good:
 // the original record lives in S.ext.mystery.c.thing and is ALWAYS put back — on solve, at the week's end, or at
 // boot if anything looks wrong. Three clues lie in three rooms (fresh ones = the culprit, an old one = a red
@@ -12011,8 +12011,18 @@ const DT_HOUSE=Object.keys(DT_SPOT),DT_SKIP=/^(mp_|dm_|bn_|dt_)/;
 const rt={im:null,box:{},sc:null,lyK:"",ly:0};
 const dt=()=>{const m=S.ext.mystery||(S.ext.mystery={});m.n=m.n||0;m.hist=m.hist||[];return m;};
 const dtYmd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-const dtWk=()=>{const d=today();return dtYmd(new Date(d.getFullYear(),d.getMonth(),d.getDate()-(d.getDay()+6)%7));};
-const dtDow=()=>(today().getDay()+6)%7;
+// the «shifted week»: a case week runs Wednesday 6:00 → next Wednesday 6:00; its key is that Wednesday's date
+// (the week of the newspaper stays Monday, the chest's is Thursday — one weekly event per day, no crowd on Monday)
+const DT_WD=3,dtDay=()=>{const d=today(),h=hourNow()<6?1:0;return new Date(d.getFullYear(),d.getMonth(),d.getDate()-h);};
+const dtWk=()=>{const d=dtDay();return dtYmd(new Date(d.getFullYear(),d.getMonth(),d.getDate()-(d.getDay()-DT_WD+7)%7));};
+const dtDow=()=>(dtDay().getDay()-DT_WD+7)%7;   // 0 = Wednesday (from 6:00) … 6 = Tuesday
+const dtAdd=(k,n)=>{const [y,m,d]=k.split("-").map(Number);return dtYmd(new Date(y,m-1,d+n));};
+const DT_MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const dtEnd=c=>{const [y,m,d]=dtAdd(c.wk,7).split("-").map(Number);return`${d} ${DT_MON[m-1]}`;};   // the case closes by itself that Wednesday morning
+// migration of saves from the Monday rhythm: a Monday key K → the Wednesday K+2 (the case opened on Monday 5 Oct 2026 lives
+// on until Wednesday 14 Oct 6:00 and no second case opens on 7 Oct); keys only grow, so «<» compares weeks
+function dtMig(){const m=dt();if(m.v===2)return;const f=k=>{if(typeof k!=="string"||!/^\d{4}-\d\d-\d\d$/.test(k))return k;const [y,mo,d]=k.split("-").map(Number);return new Date(y,mo-1,d).getDay()===1?dtAdd(k,2):k;};
+  m.wk=f(m.wk);if(m.c)m.c.wk=f(m.c.wk);for(const h of m.hist)h.wk=f(h.wk);m.v=2;save();}
 const dtShuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 const dtG=s=>{const w=s.toLowerCase().replace(/[«»"]/g,"").split(/[\s]+/)[0]||"";
   if(/(ый|ий|ой)$/.test(w))return"m";if(/(ая|яя)$/.test(w))return"f";if(/(ое|ее)$/.test(w))return"n";if(/(ые|ие)$/.test(w))return"p";
@@ -12044,7 +12054,7 @@ function dtRestore(c){const th=c&&c.thing;if(!th||th.back)return;
   th.back=1;save();try{ui();}catch(e){}}
 // boot: re-hide a prop (runtime only) or notice the player has put the thing back by hand; anything odd → restore
 function dtCheck(){const m=dt(),c=m.c;if(!c)return;
-  const ok=c.thing&&c.thing.id&&DT_TPL[c.id]&&Array.isArray(c.clues)&&Array.isArray(c.sus)&&Array.isArray(c.wrong)&&c.wk&&c.wk<=dtWk();
+  const ok=c.thing&&c.thing.id&&DT_TPL[c.id]&&Array.isArray(c.clues)&&Array.isArray(c.sus)&&Array.isArray(c.wrong)&&c.wk&&c.wk<=dtAdd(dtWk(),7);
   if(!ok){dtRestore(c);m.c=null;save();return;}
   const th=c.thing;if(th.back)return;
   if(th.k==="placed"&&S.placed[th.id])th.back=1;
@@ -12073,9 +12083,10 @@ function dtSelf(c){const m=dt(),Y=dtGuest(DT_TPL[c.id].cul);dtRestore(c);
   m.hist.unshift({id:c.id,no:c.no,n:c.thing.n,how:"self",wk:c.wk});m.hist.length=Math.min(m.hist.length,12);
   m.msg=`Прошлое дело закрылось само: пропажа вернулась на место с запиской «Простите, это был${DT_YK[Y.id]&&DT_YK[Y.id].f?"а":""} я». Подпись — ${Y.n}.`;m.c=null;save();}
 function dtRoll(){const m=dt(),wk=dtWk();
-  if(m.c&&m.c.wk!==wk&&!m.c.solved)dtSelf(m.c);
-  if(m.c&&m.c.solved&&m.c.wk!==wk)m.c=null;
-  if(m.wk!==wk&&!(dtDow()===0&&hourNow()<6)){m.wk=wk;if(!dtOpen())save();}}
+  if(m.c&&m.c.wk<wk&&!m.c.solved)dtSelf(m.c);
+  if(m.c&&m.c.solved&&m.c.wk<wk)m.c=null;
+  if(!m.wk&&!m.cases&&dtDow()>=5){m.wk=wk;save();return;}   // a brand-new detective on Monday/Tuesday waits for Wednesday
+  if(!(m.wk>=wk)){m.wk=wk;if(!dtOpen())save();}}
 
 // ── in the room: small painted tells on the floor, softly glinting; tap one to take it into the notebook
 const dtOn=()=>{const c=dt().c;return c&&!c.solved;};
@@ -12124,11 +12135,11 @@ document.head.insertAdjacentHTML("beforeend",`<style>
 function dtThumb(p,mw,mh){const r=DT_AT[p];if(!r)return"";const f=Math.min(mw/r[2],mh/r[3],1),q=v=>Math.round(v*f);
   return`<span style="display:inline-block;width:${q(r[2])}px;height:${q(r[3])}px;background:url(assets/items/atlas_dt.webp) -${q(r[0])}px -${q(r[1])}px/${q(1024)}px ${q(350)}px no-repeat"></span>`;}
 const dtMonImg=(id,h)=>`<img src="assets/mon/${dtGuest(id).mon}.webp" alt="" style="height:${h}px">`;
-function dtNb(){const m=dt(),c=m.c;if(!c){openPanel("Тетрадь сыщика",`<p class="lead">${m.msg||"Тихая неделя: в доме всё на месте."} Следующее дело — в понедельник.</p>`+dtCases(),"dt");return;}
+function dtNb(){const m=dt(),c=m.c;if(!c){openPanel("Тетрадь сыщика",`<p class="lead">${m.msg||"Тихая неделя: в доме всё на месте."} Новое дело — в среду.</p>`+dtCases(),"dt");return;}
   c.seen=1;c.clues.forEach(q=>{if(q.f)q.seen=1;});save();hubDot();tabDots();
   const T=DT_TPL[c.id],th=c.thing,f=dtFound(c),n=dtNeed(c),can=!c.solved&&f>=n,thumb=th.k==="placed"&&IT[th.id]?`<div style="float:right;margin:0 0 6px 8px">${itemThumb(IT[th.id],64,56)}</div>`:"";
   let h=`<p class="lead">${thumb}Дело № ${c.no}. ${dtCap(DT_IN[th.room]||"")} ${dtVerb(th.g)} ${dtLow(th.n)}. Найди улики, расспроси подозреваемых и назови виновного.</p>`+
-    `<p class="dt-tip">Свежие улики виновный оставил этой ночью. Старые — давний след кого-то другого. Если не раскрыть дело до воскресенья, пропажа вернётся сама.</p>`;
+    `<p class="dt-tip">Свежие улики виновный оставил этой ночью. Старые — давний след кого-то другого. Если не раскрыть дело до утра среды, ${dtEnd(c)}, пропажа вернётся сама.</p>`;
   if(m.say&&!c.solved)h+=`<div class="dt-say">${dtMonImg(m.say.id,64)}<div><b>${dtGuest(m.say.id).n}</b><p class="dt-t">«${m.say.t}»</p><p class="dt-t" style="opacity:.8">Улика: появилась ещё одна — ${DT_IN[m.say.room]||""}.</p></div></div>`;
   h+=`<h4 class="bh">Улики · ${f} из ${n}</h4>`+c.clues.map(q=>q.f?`<div class="dt-c"><div class="dt-th">${dtThumb(q.p,76,50)}</div><div><b>${DT_CL[q.p][0]}</b> <span style="opacity:.65">· ${dtRm(q.room)}</span><p class="dt-t">${q.again?"Ещё одна такая же. ":""}${DT_CL[q.p][1]} <i>${DT_CL[q.p][q.cul?2:3]}</i></p></div></div>`
     :`<div class="dt-c off"><div class="dt-th"><span class="dt-q">?</span></div><div><b>Улика ещё не найдена</b><p class="dt-t">Ищи ${DT_IN[q.room]} — Муся чует её носом.</p><div class="row"><button class="btn" data-x="dt:go:${q.room}">Пойти туда</button></div></div></div>`).join("");
@@ -12160,9 +12171,9 @@ function dtSolve(){const m=dt(),c=m.c,T=DT_TPL[c.id],Y=dtGuest(T.cul),th=c.thing
 // ── hub, dots, tray, clicks, album, «while you were away»
 hook("hub",()=>{dtRoll();const m=dt(),c=m.c;let st,more;
   if(c&&!c.solved){const f=dtFound(c),n=dtNeed(c),th=c.thing;
-    st=`🔍 Дело недели: ${dtVerb(th.g)} ${dtLow(th.n)} ${DT_FROM[th.room]||""} — ${f>=n?"улики собраны, пора назвать виновного":"найдено улик "+f+" из "+n}`;
-    more=`Подозреваемые: ${c.sus.map(id=>dtGuest(id).n).join(", ")}. Не раскроешь до воскресенья — пропажа вернётся сама.`;}
-  else{st=dtDow()===0&&hourNow()<6&&m.wk!==dtWk()?"Тихо… Утром в доме что-то пропадёт":"Тихая неделя — следующее дело в понедельник";
+    st=`🔍 ${dtCap(dtVerb(th.g))} ${dtLow(th.n)} ${DT_FROM[th.room]||""} · ${f>=n?"пора назвать виновного":"улики "+f+" из "+n}`;   // the folded card shows ~50 chars
+    more=`Дело недели. Подозреваемые: ${c.sus.map(id=>dtGuest(id).n).join(", ")}. Не раскроешь до утра среды, ${dtEnd(c)}, — пропажа вернётся сама.`;}
+  else{const w=today().getDay()===DT_WD&&hourNow()<6;st=w?"Тихо… Утром в доме что-то пропадёт":c&&c.solved?"Дело недели раскрыто — новое в среду":"Тихо… Новое дело — в среду";
     more=(m.msg?m.msg+" ":"")+`Раскрыто дел: ${m.n}. Награды — в «🧺 Вещи» → ${DT_CAT}.`;}
   return`<div class="hubc"><h4>🔍 Пропажа в доме <i>探偵</i></h4><p>${st}</p><p style="opacity:.75;margin:6px 0 0">${more}</p><div class="row"><button class="btn${c&&!c.solved?" primary":""}" data-x="dt:nb">Тетрадь сыщика</button></div></div>`;});
 hook("hubDot",()=>{const c=dt().c;return !!c&&!c.solved&&(!c.seen||c.clues.some(q=>q.f&&!q.seen));});
@@ -12179,10 +12190,10 @@ hook("sec",()=>{dtRoll();const c=dt().c;if(!c||c.toast||c.solved||scene.on||over
   const th=c.thing,s=`🔍 ${dtCap(DT_FROM[th.room]||"")} ${dtVerb(th.g)} ${dtLow(th.n)}!`;toast(s.length<=46?s:`🔍 Пропажа ${DT_IN[th.room]||"в доме"}!`);c.toast=1;save();});
 hook("away",()=>{const c=dt().c;if(!c||c.solved||!saved.t||c.t<saved.t)return null;return{i:"🔍",t:`${dtCap(DT_FROM[c.thing.room]||"")} ${dtVerb(c.thing.g)} ${dtLow(c.thing.n)}. Кто-то оставил следы…`};});
 hook("album",el=>{const got=(S.ext.disc||{}).mystery||{};el.insertAdjacentHTML("beforeend",`<h3 class="bh">🔍 Дела сыщика · ${Object.keys(got).length} из ${DT_IDS.length}</h3><p class="lead">${DT_IDS.map(id=>got[id]?DT_TPL[id].t:"Дело ???").join(" · ")}</p>`);});
-hook("boot",()=>{atlasImg("dt",im=>rt.im=im);dtCheck();dtRoll();});
+hook("boot",()=>{atlasImg("dt",im=>rt.im=im);dtMig();dtCheck();dtRoll();});
 
 // test handles
-X.mystery={st:dt,rt,wk:dtWk,tpl:DT_TPL,roll:dtRoll,nb:dtNb,accuse:dtAccuse,restore:()=>dtRestore(dt().c),
+X.mystery={st:dt,rt,wk:dtWk,tpl:DT_TPL,yk:DT_YK,name:id=>(DT_TPL[id]||{}).t||"",mig:dtMig,dow:dtDow,roll:dtRoll,nb:dtNb,accuse:dtAccuse,restore:()=>dtRestore(dt().c),
   force(id){const m=dt();if(m.c&&!m.c.solved)dtRestore(m.c);m.c=null;m.wk="";m.last="";return dtOpen(id);},
   find(i){dtFind(i);},
   here(){const c=dt().c;if(!c)return;const q=c.clues.find(q=>!q.f);if(q)goRoom(q.room);return q&&q.room;},
@@ -12455,8 +12466,60 @@ hook("ev",(ev,d)=>{const w=sbW(),inc=(o,k)=>{o[k]=(o[k]||0)+1;};
   if(ev==="food"&&d)inc(w.fd,d);else if(ev==="guest"&&d&&d.id)inc(w.gs,d.id);else if(ev==="act"&&d)inc(w.act,d);
   else if(["game","fish","cook","bath","harvest","kaidan"].includes(ev))inc(w.c,ev);});
 const sbTop=o=>{let b=null;for(const k in o||{})if(!b||o[k]>b[1])b=[k,o[k]];return b;};
-// ── names and pictures of what happened ──
-function sbName(kind,id){try{const h=X[kind];if(h&&typeof h.name==="function"){const n=h.name(id);if(n)return n;}}catch(e){}
+// ── the newer add-ons: names, grammar and a picture for each discovery (shared with the chronicle: X.sb.nk) ──
+// picture p: {mon} assets/mon · {it} an item · {atl:[atlas,[x,y,w,h],[AW,AH]]} a cut from an item atlas · {cv} a canvas · {cat:[strip,frame]} Musya
+const SB_NKC=[["daifuku","Дайфуку",0,"кот булочника Окады","котом булочника Окады"],["mike","Микэ",1,"храмовая кошка с холма","храмовой кошкой с холма"],
+ ["sumimi","Сумими",0,"кот старого каллиграфа","котом старого каллиграфа"],["yuki","Юки",1,"кошка бабушки Ханы","кошкой бабушки Ханы"],
+ ["tora","Тора",0,"ничейный кот от рыбной лавки","ничейным котом от рыбной лавки"],["kinako","Кинако",1,"сиамская кошка из парикмахерской","сиамской кошкой из парикмахерской"],
+ ["pochi","Почи",0,"дворовый кот с почты","дворовым котом с почты"],["maru","Мару",0,"котёнок почтальона Кэнты","котёнком почтальона Кэнты"]];   // sit frame: atlas nk [0,152·i,120,150]
+const SB_MU={ageha:[606,264,132,112],monshiro:[82,390,104,88],tento:[396,496,60,60],kabuto:[472,0,84,128],kuwagata:[644,0,80,124],minmin:[874,264,80,104],hotaru:[778,390,52,66],
+ shiokara:[860,0,132,124],akatombo:[726,0,132,124],suzumushi:[832,390,112,66],matsumushi:[0,496,112,66],batta:[490,390,142,70],kamakiri:[350,264,126,120],fuyu:[294,390,96,84]};
+const SB_SM={kappa:["Каппа","Каппу","Каппой","m_kappa"],tanuki:["Тануки","Тануки","Тануки","m_tanuki"],nekomata:["Нэкомата","Нэкомату","Нэкоматой","m_nekomata"],
+ tengu:["Тэнгу","Тэнгу","Тэнгу","m_rm_tengu"],yokozuna:["старый каппа-ёкодзуна","старого каппу-ёкодзуну","старым каппой-ёкодзуной","m_kappa"]};
+const SB_TUNE={sakura:"Сакура, сакура",takeda:"Колыбельная Такэда",hotaru:"Хотару-кои",kagome:"Кагомэ-кагомэ",toryanse:"Торянсэ",edo:"Эдо-комориута",kojo:"Кодзё-но цуки"};
+const SB_LOOM={asanoha:"Асаноха",seigaiha:"Сэйгайха",ichimatsu:"Итимацу",yagasuri:"Ягасури",kikko:"Кикко",shippo:"Сиппо",kasuri:"Касури",shima:"Сима"};
+const SB_TA={ta_kaze:"«Ветер»",ta_koto:"«Долголетие»",ta_koi:"змей-карп",ta_yakko:"якко-дако",ta_tsuru:"змей с журавлём",ta_kitsune:"«Маска лисы»",ta_ryu:"«Дракон»",ta_musha:"змей с воином",ta_tengu:"боевой змей тэнгу"};
+const SB_KIMO={coward:"Трусишка",brave:"Храбрая кошка",fearless:"Без страха"};
+const SB_KMD={gar:"Удача в огороде",syt:"Сытость держится дольше",joy:"Радость Муси",gst:"Улыбка гостей",tih:"Тихий дом",nah:"Находчивость"};
+function sbNK(kind,id){id=String(id);try{switch(kind){
+  case"cat":{const i=SB_NKC.findIndex(c=>c[0]===id);if(i<0)return null;const c=SB_NKC[i];return{n:c[1],f:c[2],who:c[3],whoI:c[4],p:{atl:["nk",[0,152*i,120,150],[806,1216]]}};}
+  case"insect":{const s=((X.insects&&X.insects.sp)||[]).find(q=>q.id===id);return{n:s?s.n:"",p:SB_MU[id]?{atl:["mu",SB_MU[id],[1024,562]]}:{cat:["gaze9",3]}};}
+  case"mystery":{const T=X.mystery&&X.mystery.tpl&&X.mystery.tpl[id];if(!T)return null;const g=GUESTS.find(q=>q.id===T.cul)||{},Y=(X.mystery.yk||{})[T.cul]||{};return{n:T.t,cul:g.n||"",f:Y.f?1:0,p:g.mon?{mon:g.mon}:{it:"dt_loupe"}};}
+  case"sumo":{const o=SB_SM[id];return o?{n:o[0],acc:o[1],ins:o[2],yk:id==="yokozuna",p:{mon:o[3]}}:null;}
+  case"nurikabe":{const R=((X.nu&&X.nu.R)||[]).find(r=>"r"+r[0]===id);return{n:R?R[1]:"",a:R?R[2][0]:"",p:{mon:"m_nu_wall"}};}
+  case"kite":return{n:SB_TA[id]||sbLc((IT[id]||{}).n||""),p:IT[id]?{it:id}:{cat:["gaze9",0]}};
+  case"rice":{const N=+(id.match(/\d+$/)||[1])[0];return{n:`${SB_ORD[N]||N+"-й"} урожай риса`,o:SB_ORD[N]||N+"-й",N,p:{it:"ri_kakeho"}};}
+  case"loom":{const z=(X.loom&&X.loom.S&&X.loom.S())||{},k=(z.k||[]).find(q=>q.p===id);let cv=null;if(k)try{cv=X.loom.cell(k);}catch(e){}return{n:SB_LOOM[id]||id,kim:!!k,p:cv&&cv.width?{cv}:{cat:["stretch",2]}};}
+  case"chest":{const W=((X.ob&&X.ob.W)||[])[+id.slice(1)-1];return W?{n:W.n,y:W.y,N:+id.slice(1),p:{it:W.id}}:null;}
+  case"haiku":{const h=X.hi&&X.hi.S&&X.hi.S().l.find(q=>q.w===id&&q.c);return h?{n:h.x.join(" / "),x:h.x,p:{it:"hi_kake"}}:{n:"",p:{it:"hi_kake"}};}
+  case"kimo":return{n:SB_KIMO[id]||"",p:{it:"km_lantern"}};
+  case"snow":{const km=id.startsWith("kamakura");return{n:km?"камакура":"снеговик",km,p:{it:km?"yk_lantern":"yk_bucket"}};}
+  case"hide":{const s=((X.kb&&X.kb.spots)||[]).find(q=>"spot_"+q.id===id);return{n:s?s.n:"",p:{cat:["box",3]}};}
+  case"music":return{n:SB_TUNE[id]||"",p:{it:"og_gramo"}};
+  case"holiday":return{n:(FEST.find(F=>F.id===id)||{}).n||"",p:{cat:["highfive",3]}};
+  case"kamidana":{if(id.startsWith("b_"))return{n:SB_KMD[id.slice(2)]||"",p:{it:"kmd_sakaki"}};const N=+id.slice(1)||0;return{n:`${N} ${sbPl(N,"день","дня","дней")} подряд`,N,p:{it:N>=30?"kmd_shime":"kmd_ofuda"}};}}}catch(e){}return null;}
+// html for a picture descriptor
+function sbPicP(p,s){if(!p)return"";try{
+  if(p.mon)return`<img src="assets/mon/${p.mon}.webp" alt="">`;if(p.it&&IT[p.it])return itemThumb(IT[p.it],s,s);
+  if(p.atl){const [k,r,A]=p.atl,f=Math.min(s/r[2],s/r[3],1.2),q=v=>Math.round(v*f);return`<span style="display:inline-block;width:${q(r[2])}px;height:${q(r[3])}px;background:url(assets/items/atlas_${k}.webp) -${q(r[0])}px -${q(r[1])}px/${q(A[0])}px ${q(A[1])}px no-repeat"></span>`;}
+  if(p.cv)return`<img src="${p.cv.toDataURL()}" alt="" style="max-width:${s}px;max-height:${s}px">`;
+  if(p.cat)return`<span class="sb-cat sm" style="background-image:url(assets/${p.cat[0]}@2x.webp);background-position:-${p.cat[1]*42}px 0;background-size:336px 45px"></span>`;}catch(e){}return"";}
+// chapters of one story read during the week → one item: «пролог и главы 1–3»
+const SB_BOOK={q:["Дом, где погас фонарь",()=>STORY],chapter2:["Кошачья гора",()=>(X.story2&&X.story2.CH)||[]],
+  chapter3:["Шпилька Бэни",()=>(X.story3&&X.story3.CH)||[]]};
+const SB_ORD=["","первый","второй","третий","четвёртый","пятый"];
+const SB_NUMW=["ноль","одну","две","три","четыре","пять","шесть","семь","восемь","девять","десять"];
+function sbGroup(E){const o=[],G={};for(const e of E){if(SB_BOOK[e.kind]){const g=G[e.kind];if(g){if(!g.ids.includes(+e.id))g.ids.push(+e.id);g.t=Math.max(g.t,e.t);continue;}
+  const n=Object.assign({},e,{ids:[+e.id],grp:1});G[e.kind]=n;o.push(n);}else o.push(e);}return o;}
+function sbChap(e){const [book,get]=SB_BOOK[e.kind],C=get()||[],last=C.length-1,ids=(e.ids||[+e.id]).slice().sort((a,b)=>a-b),N=ids.length;
+  const mid=ids.filter(i=>i>0&&i<last),rs=[];for(const i of mid){const r=rs[rs.length-1];if(r&&i===r[1]+1)r[1]=i;else rs.push([i,i]);}
+  const epi=last>0&&ids.includes(last),it=rs.flatMap(([a,b])=>a===b?[`${a}`]:b===a+1?[`${a}`,`${b}`]:[`${a}–${b}`]),P=[],
+    rt=it.length>1&&!epi?it.slice(0,-1).join(", ")+" и "+it[it.length-1]:it.join(", ");   // «главы 1, 3 и 4», but «главы 6, 7 и эпилог»
+  if(ids.includes(0))P.push("пролог");if(mid.length)P.push(`${mid.length>1?"главы":"глава"} ${rt}`);if(last>0&&ids.includes(last))P.push("эпилог");
+  const L_=P[P.length-1]||"",parts=P.length>1?(L_.includes(" и ")?P.join(", "):P.slice(0,-1).join(", ")+" и "+L_):P[0]||"новая глава",t=N===1?String((C[ids[0]]||{}).title||"").replace(/^(Глава \d+|Пролог|Эпилог)\.\s*/,""):"";
+  const run=P.length===1&&rs.length===1&&rs[0][1]>rs[0][0]+1?`с ${rs[0][0]}-й по ${rs[0][1]}-ю`:"";   // «главы 1–4» → «с 1-й по 4-ю»
+  return{book,N,parts,run,t,fem:N===1&&mid.length===1,end:last>0&&ids.includes(last)};}
+function sbName(kind,id){const q=sbNK(kind,id);if(q&&q.n)return q.n;try{const h=X[kind];if(h&&typeof h.name==="function"){const n=h.name(id);if(n)return n;}}catch(e){}
   if(kind==="q")return(STORY[+id]||{}).title||"";if(kind==="k")return(KAIDAN[+id]||{}).t||"";if(kind==="fe")return(FEST.find(F=>F.id===id)||{}).n||"";
   if(kind==="c")return(CROPS.find(c=>c.id===id)||{}).n||"";if(kind==="r")return(RECIPES.find(r=>r.id===id)||{}).n||"";
   if(kind==="friend"){const g=GUESTS.find(q=>q.id===id.split("_")[0]);if(g)return g.n;}
@@ -12465,7 +12528,7 @@ const sbBest=id=>BESTIARY.find(b=>b[0]===id||b[0]==="rg_"+id||b[0]==="vs_"+id);
 function sbLabel(e){try{if(X.cd&&X.cd.label)return X.cd.label((e.d?"d:":"")+e.kind+":"+e.id);}catch(x){}return sbName(e.kind,e.id)||"Новая находка";}
 const sbFoodN=id=>(FOOD[id]&&FOOD[id].n)||(FOODS.find(f=>f.id===id)||{}).n||(FAIRFOOD.find(f=>f.id===id)||{}).n||"угощение";
 function sbFoodPic(id,s){const f=FOODS.find(q=>q.id===id)||FAIRFOOD.find(q=>q.id===id);if(f)return`<span class="sb-emo" style="font-size:${s*.7}px">${f.i}</span>`;try{return fThumb(id,s,s)||"";}catch(e){return"";}}
-function sbPic(e,s){const {kind,id}=e;try{
+function sbPic(e,s){const {kind,id}=e;try{const q=sbNK(kind,id),h=q&&sbPicP(q.p,s);if(h)return h;
   const gid=kind==="friend"?id.split("_")[0]:id,g=GUESTS.find(q=>q.id===gid);if(g&&(kind==="g"||kind==="friend"||kind==="rareguest"))return`<img src="assets/mon/${g.mon}.webp" alt="">`;
   const b=sbBest(id);if(b&&b[1]&&/^(b|rareguest|visitor|haunt|parade|rumor)$/.test(kind))return`<img src="assets/mon/${b[1].replace(/_open$/,"")}.webp" alt="">`;
   if(IT[id])return itemThumb(IT[id],s,s);
@@ -12478,17 +12541,46 @@ function sbEv(a,b){const o=[],D=S.ext.disc||{};
   for(const kind in D){if(kind==="news")continue;for(const id in D[kind]){const t0=D[kind][id];if(typeof t0!=="number")continue;const t=t0+DATE_SHIFT;if(t>=a&&t<b)o.push({kind,id,t,d:1});}}
   const L=(X.cd&&X.cd.st&&X.cd.st.log)||[];for(const [key,t0] of L){if(!t0||typeof key!=="string"||key.startsWith("d:"))continue;const t=t0+DATE_SHIFT,i=key.indexOf(":");if(t>=a&&t<b&&i>0)o.push({kind:key.slice(0,i),id:key.slice(i+1),t});}
   return o.sort((x,y)=>x.t-y.t);}
-const SB_WT={room:10,q:9,chapter2:9,rareguest:9,pet:9,birthday:8,parade:8,fe:8,holiday:8,capsule:7,bloom:7,g:6,b:6,trust:6,haunt:6,visitor:6,rumor:6,friend:5,crane:5,
-  dream:5,postcard:5,souvenir:5,star:5,season:5,daruma:4,ikebana:4,bonsai:4,tea:4,ryokan:4,koi:4,bird:4,shadow:4,paint:4,r:3,c:3,f:3,k:3,find:3};
-const sbWt=e=>e.kind==="crane"?(e.id==="m100"||e.id==="m1000"?10:5):e.kind==="friend"&&/_5$/.test(e.id)?8:SB_WT[e.kind]||3;
-const SB_MOT={room:"house",q:"scroll",chapter2:"scroll",k:"scroll",fe:"lantern",holiday:"lantern",parade:"lantern",birthday:"lantern",crane:"crane",bloom:"flower",
+const SB_WT={room:10,q:9,chapter2:9,chapter3:9,rareguest:9,pet:9,birthday:8,parade:8,fe:8,holiday:8,capsule:7,bloom:7,g:6,b:6,trust:6,haunt:6,visitor:6,rumor:6,friend:5,crane:5,
+  dream:5,postcard:5,souvenir:5,star:5,season:5,daruma:4,ikebana:4,bonsai:4,tea:4,ryokan:4,koi:4,bird:4,shadow:4,paint:4,r:3,c:3,f:3,k:3,find:3,
+  mystery:7,rice:6,chest:6,cat:6,sumo:6,kimo:6,snow:6,kite:5,loom:5,haiku:5,nurikabe:4,kamidana:3,insect:3,hide:3,music:3};
+const sbWt=e=>e.kind==="crane"?(e.id==="m100"||e.id==="m1000"?10:5):e.kind==="friend"&&/_5$/.test(e.id)?8:e.kind==="sumo"&&e.id==="yokozuna"?9:e.kind==="chest"&&e.id==="w12"?9:
+  e.kind==="kamidana"&&/^d/.test(e.id)?(e.id==="d30"?7:5):e.grp&&e.ids.length>1?10:SB_WT[e.kind]||3;
+const SB_MOT={room:"house",q:"scroll",chapter2:"scroll",chapter3:"scroll",k:"scroll",fe:"lantern",holiday:"lantern",parade:"lantern",birthday:"lantern",crane:"crane",bloom:"flower",
   season:"flower",star:"moon",koi:"wave",f:"wave",capsule:"house",trust:"moon",dream:"moon"};
+const sbCap=s=>s?s.charAt(0).toUpperCase()+s.slice(1):s,sbLc=s=>s?s.charAt(0).toLowerCase()+s.slice(1):s;
+const sbV=(e,a)=>a[sbHash(e.kind+":"+e.id+":"+(e.ids||[]).join(","))%a.length];   // a stable variant per event
 // ── the headline: the most notable thing of the week ──
-function sbHead(e,cr){const n=sbName(e.kind,e.id),L=sbLabel(e);
+function sbHead(e,cr){const n=sbName(e.kind,e.id),L=sbLabel(e),q=sbNK(e.kind,e.id)||{};
+  if(e.grp){const c=sbChap(e);
+    if(c.end)return[`История «${c.book}» дописана!`,`Последняя страница перевёрнута: за неделю ${c.N>1?"прочитаны":"прочитан"} ${c.parts}. Что было дальше, редакция не расскажет — пусть каждый узнает сам. Ёкаи у ворот до сих пор вытирают глаза рукавами.`];
+    if(c.N>1)return[`${sbCap(SB_NUMW[c.N]||String(c.N))} ${c.N<5?"новые главы":"новых глав"} истории «${c.book}»`,
+      `За одну неделю история продвинулась сразу на ${SB_NUMW[c.N]||c.N} ${sbPl(c.N,"главу","главы","глав")}${c.run?` — ${c.run}`:`: ${c.parts}`}. Подробностей редакция не раскрывает, чтобы не портить удовольствие, но намекает: без Муси здесь не обошлось.`];
+    return[`Новая глава истории «${c.book}»`,`Дописан${c.fem?"а":""} ${c.parts}${c.t?` — «${c.t}»`:""}. Подробностей редакция не раскрывает, чтобы не портить удовольствие, но намекает: без Муси здесь не обошлось.`];}
+  switch(e.kind){
+  case"cat":return[`${q.f?"Новая соседка":"Новый сосед"}: ${q.n||"кошка с забора"}`,`${sbCap(q.who||"соседская кошка")} по имени ${q.n} ${q.f?"пришла":"пришёл"} знакомиться. Обнюхались через забор, помолчали, посмотрели друг на друга — по кошачьим меркам это крепкая дружба. Редакция желает соседям мира и рыбы.`];
+  case"insect":return[`Улов сачка: ${sbLc(q.n)||"новое насекомое"}`,`Муся долго сидела в засаде, шевелила усами и прыгнула ровно тогда, когда надо. В коллекции прибавилось: ${sbLc(q.n)||"новая находка"}. Насекомое, говорят, ничуть не обиделось.`];
+  case"mystery":return[`Муся раскрыла «${q.n||"Дело недели"}»`,`Улики собраны, подозреваемые опрошены, виновный назван: ${q.cul?`это был${q.f?"а":""} ${q.cul}`:"признание получено"}. Пропажа вернулась на место. Редакция напоминает: в доме, где живёт кошка-сыщица, ничего не пропадает надолго.`];
+  case"sumo":return q.yk?[`Муся одолела ёкодзуну!`,`На ночном дохё у реки Муся вытолкнула за круг самого ${q.acc}. Старик поклонился, вода из блюдца на макушке разлилась, а кубок императора отправился в дом Муси. Река шумит до сих пор.`]:
+    [`Победа на дохё: Муся против ${q.acc}`,`Ночное басё у реки закончилось победой Муси над ${q.ins}. Соперник упирался, топал и пыхтел, но вылетел за круг. Говорят, всё решил вежливый поклон перед схваткой.`];
+  case"nurikabe":return[`Загадка у ворот разгадана`,`Ночью дорогу в тории преградила стена-нурикабэ и спросила: «${q.n}» Муся ответила${q.a?` — «${q.a}»`:""}, и стена, сладко зевнув, ушла в землю. Прохожих просят не стучать по ней палкой: она этого не любит.`];
+  case"kite":return[`Змей над домом!`,`Ветер дул как надо: новый воздушный змей${q.n?` — ${q.n} —`:""} взлетел выше сосен. Вороны возмущались, тэнгу завидовал, а Муся следила за ниткой, не мигая.`];
+  case"rice":return[q.N>1?`${sbCap(q.n)}`:`Первый рис с холма!`,`Вода, рассада, прополка — и вот золотые снопы сушатся на хасагакэ. Скоро в доме будут моти. Воробьи уже записались в гости.`];
+  case"loom":return[`Новый узор с ткацкого станка`,`Челнок бегал туда-сюда, бёрдо стучало до ночи — и вот готов отрез с узором «${q.n||"без имени"}». ${q.kim?"Из него уже сшито кимоно — модницы округи в смятении.":"Говорят, из него выйдет кимоно на зависть всем модницам округи."}`];
+  case"chest":return e.id==="w12"?[`История Хару прочитана до конца`,`Сундук прабабушки отдал последнюю вещь — письмо Хару «Тому, кто будет жить после». Редакция читала его молча и просит сегодня никого не беспокоить.`]:
+    [`Из сундука прабабушки: «${q.n||"старая вещь"}»`,`В сундуке на чердаке нашлась ещё одна вещь семьи Хару${q.y?` — ${q.y} год`:""}. К ней приложена страница семейной истории. Редакция прочитала её и долго смотрела в окно.`];
+  case"haiku":return[`Хайку недели`,q.x?`На правом столбе веранды висит новое хайку:<br><i>${q.x.map(esc).join("<br>")}</i><br>Ёкаи читают его вслух и спорят, сколько в нём слогов.`:`На веранде вывешено новое хайку. Ёкаи читают его вслух и спорят, сколько в нём слогов.`];
+  case"kimo":return[`Муся прошла кимодамэси`,`С бумажным фонариком — через тёмный коридор, сад и до маленького святилища. Ёкаи старались как могли: моргали, шептались, хлопали сёдзи. Итог — звание «${q.n||"Храбрая кошка"}».`];
+  case"snow":return q.km?[`Камакура готова!`,`Во дворе вырос снежный домик со свечой внутри. Муся проверила: тепло, тихо и пахнет снегом. Юки-онна заглянула в окошко и одобрительно кивнула.`]:
+    [`Снеговик во дворе!`,`Два снежных шара, глаза-угольки, ведёрко на голове. Снеговик стоит на посту у тории и ничего не пропускает. Кроме Муси.`];
+  case"hide":return[`Муся найдена${q.n?` ${q.n}`:""}!`,`Игра в прятки закончилась: Мусю обнаружили${q.n?` ${q.n}`:""}. Сама она уверяет, что пряталась совсем не там, и требует реванша.`];
+  case"music":return[`Новая мелодия: «${q.n||"без названия"}»`,`В доме впервые прозвучала старинная мелодия. Граммофон выучил её с первого раза, а Муся слушала, прикрыв глаза и шевеля ухом в такт.`];
+  case"kamidana":return/^d/.test(e.id)?[`${q.N>=30?"Месяц":"Неделя"} у камиданы`,`Каждое утро — рис, вода и соль на полке у ками, два поклона, два хлопка, поклон. Уже ${q.n}. Ками, по слухам, довольны и передают привет.`]:
+    [`Ками благословили дом`,`Утреннее подношение у камиданы на кухне принято: ками послали «${q.n||"удачу"}». Редакция советует не спорить с ками и радоваться.`];}
   switch(e.kind){
   case"room":return[`В доме открылась новая комната!`,`Двери, что так долго стояли запертыми, наконец поддались: теперь в доме есть ${n?`комната «${n}»`:"ещё одна комната"}. Первой внутрь, разумеется, вошла Муся — обнюхала все углы, посидела посередине и осталась довольна.`];
   case"rareguest":return[`Редкий гость: ${n||"кто-то из старых духов"}`,`Такие гости заходят раз в сто лет — а к Мусе вот заглянули. Очевидцы клянутся, что видели всё своими глазами, и требуют, чтобы редакция им поверила. Редакция верит.`];
-  case"q":case"chapter2":return[`Новая глава${n?`: «${n}»`:" истории дома"}`,`История дома продолжается. Подробностей редакция не раскрывает, чтобы не портить удовольствие, но намекает: без Муси здесь не обошлось.`];
+  case"q":case"chapter2":case"chapter3":return[`Новая глава${n?`: «${n}»`:" истории дома"}`,`История дома продолжается. Подробностей редакция не раскрывает, чтобы не портить удовольствие, но намекает: без Муси здесь не обошлось.`];
   case"pet":return[`В доме — пополнение!`,`Маленький котёнок обрёл дом и имя. Муся делает вид, что ей всё равно, но уже трижды проверила, как устроился новенький.`];
   case"crane":{const m=+String(e.id).slice(1)||cr;return m>=100?[`Сложен ${m}-й журавлик!`,`Нить бумажных птиц выросла до ${m}. Старики говорят: тысяча журавликов исполняет желание. Ёкаи уже спорят, о чём попросит Муся.`]:
     [`Журавликов уже ${m}`,`Бумажная стая растёт: на нитях висит ${m} ${sbPl(m,"журавлик","журавлика","журавликов")}. Сквозняк качает их по ночам, и кажется, что они вот-вот полетят.`];}
@@ -12505,14 +12597,39 @@ function sbHead(e,cr){const n=sbName(e.kind,e.id),L=sbLabel(e);
   case"trust":return[`Муся доверяет всё больше`,`Свидетели сообщают: Муся всё чаще подходит сама, щурится и подставляет лоб. У кошек это значит больше, чем любые слова.`];}
   return[`Новость недели: ${L.charAt(0).toLowerCase()+L.slice(1)}`,`Весть облетела все крыши ещё до рассвета. Ёкаи обсуждают её у ворот, а Муся делает вид, что ничего особенного не случилось.`];}
 // ── short news («Происшествия») ──
-function sbLine(e){const n=sbName(e.kind,e.id),L=sbLabel(e);
+function sbLine(e){const n=sbName(e.kind,e.id),L=sbLabel(e),q=sbNK(e.kind,e.id)||{},V=a=>sbV(e,a);
+  if(e.grp){const c=sbChap(e),bk=`истории «${c.book}»`;
+    if(c.end&&c.N===1)return`Дописан эпилог ${bk}${c.t?` — «${c.t}»`:""}. История окончена, ёкаи у ворот аплодируют.`;
+    if(c.end)return V([`История «${c.book}» дописана до конца: ${c.parts}. Ёкаи у ворот аплодируют.`,`Перевёрнута последняя страница ${bk}: ${c.parts}. Тушь ещё не высохла.`]);
+    if(c.N>1)return V([`Дописаны ${c.parts} ${bk}. Продолжение следует.`,`История «${c.book}» прибавила сразу ${SB_NUMW[c.N]||c.N} ${sbPl(c.N,"главу","главы","глав")}${c.run?` — ${c.run}`:`: ${c.parts}`}. Летописцы не успевают точить кисти.`,
+      `За неделю в ${bk} прочитаны ${c.parts}. Подробности — у Муси, но она молчит.`]);
+    const t=c.t?` — «${c.t}»`:"",d=c.fem?"Дописана":"Дописан";
+    return V([`${d} ${c.parts} ${bk}${t}. Продолжение следует.`,`В истории «${c.book}» перевёрнута ещё одна страница: ${c.parts}${t}.`,`${d} ${c.parts} ${bk}${t}. Чем всё кончится, летописцы пока молчат.`]);}
+  switch(e.kind){
+  case"cat":return V([`${q.n}, ${q.who}, ${q.f?"познакомилась":"познакомился"} с Мусей. Обнюхались через забор — вежливо, по-соседски.`,
+    `Новое знакомство: ${q.n}, ${q.who}. Муся сделала вид, что не заметила, и тут же побежала здороваться.`]);
+  case"insect":return V([`Новая запись в коллекции насекомых: ${sbLc(q.n)}.`,`Сачок не подвёл: в коллекции прибавилось — ${sbLc(q.n)}.`]);
+  case"mystery":return`Раскрыто «${q.n}»: ${q.cul||"виновный"} ${q.f?"призналась":"признался"} и ${q.f?"вернула":"вернул"} пропажу.`;
+  case"sumo":return q.yk?`Муся победила на басё самого ${q.acc}. Кубок императора — в доме.`:V([`Победа на ночном басё: Муся вытолкнула за круг ${q.acc}.`,`На дохё у реки Муся одолела ${q.acc}. Соперник кланяется и потирает бока.`]);
+  case"nurikabe":return V([`Стена-нурикабэ у ворот спросила: «${q.n}» Муся ответила верно, и стена ушла в землю.`,`Загадка нурикабэ разгадана: «${q.n}» Ответ — «${q.a}».`]);
+  case"kite":return`Над крышами поднялся новый воздушный змей${q.n?` — ${q.n}`:""}.`;
+  case"rice":return q.N>1?`Собран ${q.n}. Снопы сохнут на хасагакэ, воробьи облизываются.`:"Рисовое поле на холме принесло первый урожай: снопы сохнут на хасагакэ.";
+  case"loom":return`На станке в куре соткан новый узор — «${q.n}».${q.kim?" Из отреза уже сшито кимоно.":""}`;
+  case"chest":return e.id==="w12"?"Сундук прабабушки опустел: история Хару прочитана до последней строчки.":`Сундук прабабушки отдал новую вещь: «${q.n}»${q.y?`, ${q.y} год`:""}.`;
+  case"haiku":return q.x?`На веранде вывешено хайку: «${q.x.map(esc).join(" / ")}».`:"На веранде вывешено новое хайку.";
+  case"kimo":return`Кимодамэси пройдено: Муся дошла до святилища и вернулась. Звание — «${q.n}».`;
+  case"snow":return q.km?"Построена камакура — снежный домик со свечой. Муся проверила: внутри тепло.":"Во дворе вырос снеговик. Ведёрко на голове ему очень идёт.";
+  case"hide":return V([`В прятках Муся спряталась${q.n?` ${q.n}`:""} — и её всё-таки нашли.`,`Новое укромное место Муси раскрыто: ${q.n||"где-то в доме"}.`]);
+  case"music":return`В доме впервые прозвучала мелодия «${q.n}». Граммофон выучил её наизусть.`;
+  case"kamidana":return/^d/.test(e.id)?`Подношения у камиданы — уже ${q.n}. Ками довольны.`:`Утреннее подношение у камиданы принято: ками послали «${q.n}».`;
+  case"holiday":return`Отгремел праздник${q.n?` «${q.n}»`:""}: фонари, сладости, суматоха.`;}
   switch(e.kind){
   case"find":return`Муся принесла в дом находку${n?` — «${n}»`:""}. Откуда — не признаётся.`;
   case"rareguest":return`К дому заглянул редкий гость${n?` — ${n}`:""}. Свидетели до сих пор не верят глазам.`;
   case"visitor":return`${n||"Ёкай"} пришёл на огонёк: его выманили вещи, расставленные в доме.`;
   case"rumor":return`Слух подтвердился${n?`: «${n}»`:""}. Редакция приносит извинения скептикам.`;
   case"room":return`Открыта новая комната${n?` — «${n}»`:""}. Муся первой обнюхала все углы.`;
-  case"q":case"chapter2":return`Дописана глава${n?` «${n}»`:" истории"}. Продолжение следует.`;
+  case"q":case"chapter2":case"chapter3":return`Дописана глава${n?` «${n}»`:" истории"}. Продолжение следует.`;
   case"k":return`При свете андона прочитан кайдан${n?` «${n}»`:""}. Свидетели спали с огнём.`;
   case"b":return`Замечен ёкай${n?`: ${n}`:""}. Просим соблюдать вежливость при встрече.`;
   case"g":return`${n||"Гость"} теперь друг дома: первое сердечко дружбы получено у ворот.`;
@@ -12529,7 +12646,7 @@ function sbLine(e){const n=sbName(e.kind,e.id),L=sbLabel(e);
   case"trust":return`Муся доверяет всё больше${n?`: теперь она «${n.toLowerCase()}»`:""}.`;
   case"season":{const sn=SB_SN[String(e.id).split("-")[0]];return sn?`Пришла ${sn}. Дом переоделся по сезону.`:"Сменилась пора года.";}
   case"dream":return`Мусе приснился сон${n?` — «${n}»`:""}. Баку его не съел.`;}
-  return L+".";}
+  return !n&&/^Новая находка$/.test(L)?"":L+".";}   // an unnamed discovery of an unknown kind: no line
 const SB_SN={winter:"зима",spring:"весна",tsuyu:"пора дождей",summer:"лето",autumn:"осень"};
 const SB_QUIET={winter:["Ночью выпал снег. На веранде нашли следы маленьких лап — подозревается Муся.","Сосулька над тории выросла на целый палец. Рост продолжается.","Снеговик у ворот стоит на посту третий день. Нарушений не обнаружено."],
   spring:["Во дворике распустились первые цветы. Пчела проверила каждый.","Ласточки вернулись под крышу ворот и заняли прошлогоднее гнездо.","Тёплый дождь вымыл камни во дворике. Камни довольны."],
@@ -12549,6 +12666,28 @@ const SB_ADS=[["Тануки","Меняю дубликаты на данго. Л
  ["Аканамэ","Вылижу баню до блеска. Ночью, без свидетелей."],["Бакэ-дзори","Старые сандалии ищут ноги. Не выбрасывайте обувь — она всё помнит."],["Мокумокурэн","Присмотрю за домом. Глаз много, все внимательные."],
  ["Лиса-невеста","Нужен дождь при солнце на субботу. Облака, откликнитесь!"],["Дзасики-вараси","Прячусь в домах, приношу удачу. Не ищите меня. Ну поищите немножко."],
  ["Камаитати","Стрижём траву и сквозняки. Быстро, втроём, без следов."],["Ёсудзумэ","Пою по ночам. Принимаю заказы на колыбельные."],["Нэкомата","Учу кошачьим танцам при полной луне. Хвосты свои."]];
+SB_GOS.push(["Нурикабэ","бормочет у ворот, что загадки у неё кончаются быстрее, чем умные кошки. Обещает придумать новые к следующему вечеру."],
+ ["Старый каппа-ёкодзуна","вспоминает, что в молодости побеждал самого тэнгу. Тэнгу этого не помнит."],["Тэнгу","жалуется, что вороны опять путаются в нитках воздушных змеев."],
+ ["Юки-онна","спрашивает, не нужен ли кому-нибудь снег пораньше. Пока никто не ответил."],["Мокумокурэн","видел всеми глазами, кто в доме ворует сушёную рыбку. Молчит, пока не спросят."]);
+SB_ADS.push(["Старый каппа-ёкодзуна","Ищу соперника для басё. Пятница — воскресенье, ночь, берег реки. Поклон обязателен."],["Нурикабэ","Перегораживаю дороги. Пропускаю умных. Загадки бесплатно."],
+ ["Булочник Окада","Кто кормит Дайфуку рыбой? Он перестал есть булки. Просьба прекратить. Или делиться."],["Почтальон Кэнта","Котёнок Мару опять сбежал смотреть на чужую кошку. Нашедшему — одно данго."],
+ ["Тэнгу","Учу запускать воздушных змеев. Вороны не прилагаются. Гора Курама, спросить длинный нос."],["Бабушка Хана","Юки греется на стене у вашей веранды. Будить не надо: она всё равно не услышит."]);
+// gossip about this week's discoveries of the newer add-ons (only when they happened)
+function sbGos(E){const o=[],has=k=>E.find(e=>e.kind===k),Q=e=>sbNK(e.kind,e.id)||{};let e;
+  if((e=has("cat"))){const q=Q(e);o.push(["Нэкомата",`ворчит, что ${q.n} теперь ходит к Мусе чаще, чем к ней. «Обычные кошки, а важничают», — фыркает она.`]);}
+  if((e=has("sumo"))){const q=Q(e);o.push(["Каппа",q.n==="Каппа"?"потирает бока: «У этой малышки на дохё лапа тяжёлая. Я поддался. Почти».":`рассказывает всей реке, как Муся вытолкнула за круг ${q.acc}. «Я сразу знал, что так будет!»`]);}
+  if(has("nurikabe"))o.push(["Тётин-обакэ","шепчет, что стена у ворот после разгаданной загадки до утра храпела под землёй."]);
+  if(has("mystery"))o.push(["Мокумокурэн","знал виновного с самого начала, но молчал до конца расследования: «Сыщице мешать нельзя»."]);
+  if(has("chest"))o.push(["Дзасики-вараси","хихикает с лестницы чердака: «А я знаю, что в сундуке дальше. Не скажу!»"]);
+  if(has("haiku"))o.push(["Ёсудзумэ","пропела хайку с веранды трижды и уверяет, что так оно звучит лучше."]);
+  if(has("insect"))o.push(["Каракаса","докладывает: сверчок под верандой перестал петь — боится сачка."]);
+  if(has("kimo"))o.push(["Тётин-обакэ","хвастается, что на кимодамэси моргнул особенно страшно. Муся не испугалась. Обидно."]);
+  if(has("rice"))o.push(["Тануки","уже приценивается к моти из нового риса. Предлагает листья. Ему отказали."]);
+  if(has("kite"))o.push(["Тэнгу","признаёт: «Для бумажной птицы летает неплохо»."]);
+  if(has("kamidana"))o.push(["Адзуки-арай","слышал, как на кухне по утрам хлопают в ладоши: два раза, ровно, без спешки."]);
+  if(has("snow"))o.push(["Юки-онна","заглядывала в камакуру и снеговику в глаза. Говорит, снеговик моргнул первым."]);
+  if(has("hide"))o.push(["Дзасики-вараси","обижена: в прятки Муся играет не с ней."]);
+  return o;}
 const SB_CAT={sleep:["sleep","Спала много и со вкусом: клубком, на спине, с лапой на носу. Специалисты по сну из редакции снимают шляпы."],
  groom:["groom","Умывалась так старательно, что шёрстка блестит даже в темноте. За ушами — идеальный порядок."],
  play:["yarn","Носилась по дому, гоняла клубок и сражалась с невидимыми врагами. Невидимые враги отступили."],
@@ -12586,26 +12725,26 @@ function sbTick(){sbW();if(++sbSecN<4)return;if(S.guest&&S.guest.state==="here"&
 // ── the page ──
 function sbRange(I){const A=new Date(I.a),B=new Date(Math.max(I.a,I.b-1));
   return A.getMonth()===B.getMonth()?`${A.getDate()}–${B.getDate()} ${SB_MON[B.getMonth()]}`:`${A.getDate()} ${SB_MON[A.getMonth()]} — ${B.getDate()} ${SB_MON[B.getMonth()]}`;}
-function sbHtml(I){const r=sbRnd(sbHash(I.k+"#"+I.n)),E=sbEv(I.a,I.b),y=new Date(I.b).getFullYear();
+function sbHtml(I){const r=sbRnd(sbHash(I.k+"#"+I.n)),E0=sbEv(I.a,I.b),E=sbGroup(E0),y=new Date(I.b).getFullYear();
   const top=E.slice().sort((p,q)=>sbWt(q)-sbWt(p)||q.t-p.t)[0],[ht,hl]=top?sbHead(top,I.cr):["Тихая неделя: ёкаи отдыхают","Редакция обошла дом от ворот до онсэна и не нашла ни одного громкого происшествия. Муся спала, ела и смотрела на луну — а это, как известно, тоже большое дело."];
   const hp=top?sbPic(top,120):`<img src="${sbCut("moon")}" alt="">`;
   // short news: the rest of the week by weight, padded with quiet notes
   const rest=E.filter(e=>e!==top).sort((p,q)=>sbWt(q)-sbWt(p)||q.t-p.t),seenL=new Set(),nw=[];
-  for(const e of rest){const l=sbLine(e);if(seenL.has(l))continue;seenL.add(l);nw.push([sbPic(e,44),l]);if(nw.length>=5)break;}
+  for(const e of rest){const l=sbLine(e);if(!l||seenL.has(l))continue;seenL.add(l);nw.push([sbPic(e,44),l]);if(nw.length>=5)break;}
   if(nw.length<3)for(const l of sbPick(r,SB_QUIET[I.se]||SB_QUIET.autumn,3-nw.length))nw.push([`<img src="${sbCut(["moon","wave","flower"][Math.floor(r()*3)])}" alt="">`,l]);
   // gossip: facts of the week first, then the general chatter
   const g1=[];if(I.f)g1.push(["Тануки",`шепчет, что Муся за неделю ${I.f[1]} ${sbPl(I.f[1],"раз","раза","раз")} лакомилась блюдом «${sbFoodN(I.f[0])}». «Я считал, у меня лапки!»`]);
   if(I.g){const gn=(GUESTS.find(q=>q.id===I.g[0])||{}).n;if(gn)g1.push([I.g[0]==="nekomata"?"Каракаса":"Нэкомата",`уверяет, что ${gn} ходит к воротам не ради угощения, а чтобы поглазеть на Мусю.`]);}
   if(I.cr)g1.push(["Каппа",`ворчит: «Журавликов уже ${I.cr}. Ещё немного — и дом улетит на юг вместе с ними».`]);
   if(I.cd)g1.push(["Тётин-обакэ",`подсчитал, что погасло ${I.cd} ${sbPl(I.cd,"свеча","свечи","свечей")} из ста. «Что будет на сотой — не скажу», — моргает он.`]);
-  if(E.length>=4)g1.push(["Дзасики-вараси",`хихикает: за неделю в доме случилось ${E.length} ${sbPl(E.length,"чудо","чуда","чудес")}, «и это только те, что я видела».`]);
-  const g2=sbPick(r,g1,2),gos=[...g2,...sbPick(r,SB_GOS.filter(q=>!g2.some(p=>p[0]===q[0])),4)].slice(0,4);
+  if(E0.length>=4)g1.push(["Дзасики-вараси",`хихикает: за неделю в доме случилось ${E0.length} ${sbPl(E0.length,"чудо","чуда","чудес")}, «и это только те, что я видела».`]);
+  const g0=sbGos(E),g2=[...sbPick(r,g0,Math.min(2,g0.length)),...sbPick(r,g1,2)].slice(0,2),gos=[...g2,...sbPick(r,SB_GOS.filter(q=>!g2.some(p=>p[0]===q[0])),4)].slice(0,4);
   // ratings
   const tg=I.g?[(GUESTS.find(q=>q.id===I.g[0])||{}).n,`${I.g[1]} ${sbPl(I.g[1],"визит","визита","визитов")}`]:(()=>{const b=GUESTS.map(q=>[q.n,(S.friends[q.id]||{}).n||0]).sort((p,q)=>q[1]-p[1])[0];return b&&b[1]?[b[0],`♥${Math.min(5,b[1])} — по сердечкам дружбы`]:null;})();
   const rows=[["門","Самый частый гость у ворот",tg?`<b>${tg[0]}</b> · ${tg[1]}`:"ворота пустовали — гости ещё в пути"],
    ["食","Любимая еда Муси",I.f?`<b>${sbFoodN(I.f[0])}</b> · ${I.f[1]} ${sbPl(I.f[1],"раз","раза","раз")}`:"редакция не успела подсчитать: Муся ела слишком быстро"],
    ["鶴","Журавлики на нитях",I.cr?`<b>${I.cr}</b>`:"пока ни одного — бумага ждёт"],["燭","Погасшие свечи",`<b>${I.cd}</b> из 100`],
-   ["新","Открытий за неделю",`<b>${E.length}</b>`]];
+   ["新","Открытий за неделю",`<b>${E0.length}</b>`]];
   if(I.c&&I.c.gm)rows.push(["遊","Сыграно игр",`<b>${I.c.gm}</b>`]);if(I.c&&I.c.fi)rows.push(["魚","Поймано рыбы",`<b>${I.c.fi}</b>`]);
   // weather for the coming week
   const P=SB_SEA[I.se]||SB_SEA.autumn,days=["Пн","Вт","Ср","Чт","Пт","Сб","Вс"].map((d,i)=>[d,i===0&&I.wx?SB_WXK(I.wx[0]):P[0][Math.floor(r()*P[0].length)]]);
@@ -12628,7 +12767,7 @@ function sbOpen(n){const I=SB.iss[n-1];if(!I)return;const W=S.ext.wx&&S.ext.wx.w
   openPanel("Вестник ёкаев",h,"sb"+n);$("xpBody").scrollTop=0;
   if(!I.r){I.r=1;disc("news",I.k);const N=SB.iss.filter(q=>q.r).length;award("sb_1");if(N>=4)award("sb_4");if(N>=10)award("sb_10");save();hubDot();tabDots();
     S.needs.joy=clamp(S.needs.joy+3,0,100);chime([784,988]);}}
-function sbArch(){sbFont();const L=SB.iss.slice().reverse().map(I=>{let t="";try{const E=sbEv(I.a,I.b),top=E.slice().sort((p,q)=>sbWt(q)-sbWt(p)||q.t-p.t)[0];t=top?sbHead(top,I.cr)[0]:"Тихая неделя: ёкаи отдыхают";}catch(e){}
+function sbArch(){sbFont();const L=SB.iss.slice().reverse().map(I=>{let t="";try{const E=sbGroup(sbEv(I.a,I.b)),top=E.slice().sort((p,q)=>sbWt(q)-sbWt(p)||q.t-p.t)[0];t=top?sbHead(top,I.cr)[0]:"Тихая неделя: ёкаи отдыхают";}catch(e){}
     return`<button class="sb-ar ${I.r?"":"new"}" data-x="sb:open:${I.n}"><i>№${I.n}</i><span><b>${t}</b><small>${sbRange(I)} ${new Date(I.b).getFullYear()} г.${I.r?"":" · не прочитан"}</small></span></button>`;}).join("");
   openPanel("Подшивка «Вестника»",`<p class="lead">Все номера «Вестника ёкаев». Новый выходит каждый понедельник утром и ждёт у почтового ящика у ворот.</p>${L||`<p class="lead">Номеров пока нет.</p>`}`,"sbA");}
 // ── paper texture + woodcut vignettes, painted once on canvas ──
@@ -12743,7 +12882,7 @@ hook("click",key=>{if(!key.startsWith("sb:"))return;const a=key.split(":");audio
   if(a[1]==="open")sbOpen(+a[2]);else if(a[1]==="arch")sbArch();return true;});
 hook("boot",()=>{sbTick();});
 hook("sec",()=>{sbTick();if(SB.tq&&!overlaysOpen()&&!scene.on&&!$("toast").classList.contains("on")){SB.tq=0;save();toast("📰 Вышел свежий «Вестник ёкаев»");chime([659,880]);}});
-X.sb={S:SB,pub:sbPublish,open:sbOpen,arch:sbArch,tick:sbTick,ev:sbEv,html:sbHtml,box:()=>sbBox,status:sbStatus,
+X.sb={S:SB,pub:sbPublish,open:sbOpen,arch:sbArch,tick:sbTick,ev:sbEv,html:sbHtml,box:()=>sbBox,status:sbStatus,nk:sbNK,pic:sbPicP,group:sbGroup,chap:sbChap,line:sbLine,head:sbHead,
   reset(){SB.iss=[];SB.w=null;SB.pw=null;SB.tq=0;},
   // test: tap the roll through the hit hook
   tap(){const r=sbBox;return r?hk("hit",r[0]+r[2]/2,r[1]+r[3]/2):false;}};
@@ -15222,11 +15361,10 @@ X.kite={S:taS,day:taIsDay,wind:taWind,line:taLine,next:taNext,open:taOpen,list:t
 HBLK="chest";
 {
 // ───────────────────────── «Сундук прабабушки»: a kiri chest that gives one old thing a week ─────────────────────────
-// An old paulownia nagamochi stands in the attic (in the kura while the attic is boarded up). Once per ISO week (the
-// first one at once) it gives a thing wrapped in furoshiki + a page of the family story: great-grandmother Haru and
+// An old paulownia nagamochi stands in the attic. Once a week, from Thursday (the first one at once) it gives a thing wrapped in furoshiki + a page of the family story: great-grandmother Haru and
 // her people through the 20th century, 12 weeks, 12 things — slowly explaining why the zashiki-warashi girl of the
 // first story lives in the house. Pictures: art/chest_art.py → assets/items/atlas_ob.webp (chest ×3, furoshiki ×3, 12 things).
-const OB=S.ext.chest||(S.ext.chest={n:0,wk:"",aw:""});   // n things given; wk = ISO week of the last one; aw = week already told on the postcard
+const OB=S.ext.chest||(S.ext.chest={n:0,wk:"",aw:""});   // n things given; wk = chest week of the last one (its Thursday); aw = week already told on the postcard
 const OB_AT={"closed":[700,289,320,160],"ajar":[536,0,320,215],"open":[0,0,320,287],"f0":[94,289,200,170],"f1":[296,289,200,170],"f2":[498,289,200,170],"ob_kanzashi":[182,621,200,120],"ob_koma":[232,469,130,140],"ob_notebook":[364,469,180,140],"ob_sakazuki":[0,621,180,130],"ob_letter":[546,469,190,140],"ob_fan":[0,469,230,150],"ob_photo":[858,0,150,196],"ob_kokeshi":[0,289,92,178],"ob_furin":[322,0,100,270],"ob_drawing":[738,469,180,140],"ob_chochin":[424,0,110,250],"ob_last":[920,469,170,140]};
 const OB_CAT="Сундук прабабушки",OB_N=12;
 // the twelve weeks: thing, year, brush kanji, Musya's face, the chapter and a short line for the tap in the room
@@ -15292,15 +15430,23 @@ const OB_W=[
   "«Не бойтесь её. Она не призрак. Она — то, чем дом помнит детей, которые в нём смеялись. Я обещала ей, что фонарь у ворот будет гореть. Если он погас — значит, я не вернулась. Пожалуйста, зажгите его снова. Оставляйте ей рис. И заведите кошку: она любит их с тех пор, как у нас жила Тора. Хару».",
   "Всё это в доме уже есть. Фонарь у тории зажгли в самом начале, ещё не зная, для кого. Рис в миске для духа к утру исчезает. А кошка лежит на письме и мурлычет. На лестнице чердака кто-то сидит, болтает босыми ногами и улыбается. В волосах у неё — шпилька с красной бусиной. Точно такая же, как первая."]}];
 addItems(OB_W.map(W=>{const a=OB_AT[W.id];return{id:W.id,n:W.n,c:OB_CAT,w:a[2],h:a[3],a:/furin|chochin/.test(W.id)?"t":"b",p:0,at:["ob",a[0],a[1]],
-  src:"🧰 сундук прабабушки",hint:"🧰 Сундук прабабушки на чердаке отдаёт одну вещь в неделю"};}),{ob:[1100,751]});
+  src:"🧰 сундук прабабушки",hint:"🧰 Сундук на чердаке отдаёт по вещи каждый четверг"};}),{ob:[1100,751]});
 STAMPS.push(["ob_first","簪","Сундук прабабушки","Получи первую вещь из сундука на чердаке"],["ob_six","扇","Полсундука","Шесть вещей из сундука прабабушки"],["ob_all","春","История Хару","Прочитай все 12 глав сундука прабабушки"]);
 
-// ── the week rhythm: one thing per ISO week (Monday to Sunday), the first one at once ──
-function obWeek(d=today()){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),wd=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-wd);
-  const y=t.getUTCFullYear();return y+"-W"+String(Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7)).padStart(2,"0");}
+// ── the week rhythm: a «shifted week» Thursday → Wednesday, key = its Thursday ("2026-10-08"); the first thing at once ──
+// (Monday is the newspaper's day, Wednesday the detective's — one weekly event per day)
+function obWeek(d=today()){return dayKey(new Date(d.getFullYear(),d.getMonth(),d.getDate()-(d.getDay()+3)%7));}
+// migration from ISO weeks: the thing of ISO week W counts for the chest week that starts on W's Thursday — a thing taken on
+// Monday 5 Oct 2026 (W41) → "2026-10-08", so the next one waits until Thursday 15 Oct: none given twice, none skipped
+function obIsoThu(k){const m=/^(\d{4})-W(\d\d)$/.exec(k||"");if(!m)return k;const j=new Date(+m[1],0,4);return dayKey(new Date(+m[1],0,4-(j.getDay()+6)%7+(m[2]-1)*7+3));}
+OB.wk=obIsoThu(OB.wk);OB.aw=obIsoThu(OB.aw);
+const OB_MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+// the Thursday of the next thing = a week after the last one's Thursday (a migrated W41 save → 15 Oct, not 8 Oct)
+function obNext(){const [y,m,d]=(OB.wk||obWeek()).split("-").map(Number),x=new Date(y,m-1,d+7),t=today(),dd=Math.round((x-new Date(t.getFullYear(),t.getMonth(),t.getDate()))/864e5);
+  return`${dd===1?"завтра, в четверг":"в четверг"}, ${x.getDate()} ${OB_MON[x.getMonth()]}`;}
 const obOpenR=id=>!!ROOMX[id]&&!(X.ro&&X.ro.locked&&X.ro.locked(id));
 function obRoom(){return obOpenR("attic")?"attic":null;}   // the kura is full (workshop, loom): the chest waits in the attic only
-function obWaits(){return OB.n<OB_N&&OB.wk!==obWeek();}
+function obWaits(){return OB.n<OB_N&&!(OB.wk>=obWeek());}
 function obNew(){return obWaits()&&!!obRoom();}
 const OB_KJ=["一","二","三","四","五","六","七","八","九","十","十一","十二"],obWk=k=>"第"+OB_KJ[k]+"週";
 // the brush font (Yuji Syuku) under its own name, only the glyphs used here
@@ -15327,7 +15473,7 @@ hook("draw",(t,front)=>{if(scene.on)return;const b=obSpot();if(!b||front!==(b.y>
   drawEmoji(ctx,"✨",gx+60*q.k*Math.sin(t*.9),gy-40*q.k-10*Math.sin(t*1.7),16*view.s,.35+.35*Math.sin(t*2.6));});
 function obHitBox(){const b=obSpot();if(!b)return null;const q=obQuad(b,"ajar");return{x:q.x+8*q.k,y:q.y+60*q.k,w:q.w-16*q.k,h:q.h-60*q.k};}
 hook("hit",(x,y)=>{if(scene.on)return;const z=obHitBox();if(!z||x<z.x||x>z.x+z.w||y<z.y||y>z.y+z.h)return;audioInit();obTap();return true;});
-function obTap(){const b=obSpot();if(!obWaits()){tone(150,.25,"sawtooth",.02);toast(OB.n>=OB_N?"Сундук пуст: история Хару прочитана":"🔒 Сундук закрыт до понедельника");
+function obTap(){const b=obSpot();if(!obWaits()){tone(150,.25,"sawtooth",.02);toast(OB.n>=OB_N?"Сундук пуст: история Хару прочитана":`🔒 Следующая вещь — ${obNext().replace("завтра, в четверг","завтра")}`);
     if(!petAway()&&b)walkTo({x:b.x+150},"peek","😼");return;}
   tone(140,.35,"sawtooth",.025);if(!petAway()&&b)walkTo({x:b.x+170},"peek","🧐");const k=obGive();if(k>=0)setTimeout(()=>obScene(k),650);}
 
@@ -15374,14 +15520,14 @@ function obDraw(){const cv=$("obCv"),q=obQ;if(!cv||!q)return;const g=cv.getConte
   // the week in brush kanji, the hint for the knot
   g.save();g.font=`48px ${OB_FONT}`;g.textAlign="left";g.textBaseline="top";g.fillStyle="rgba(236,224,196,.85)";g.fillText(obWk(q.k),28,22);g.restore();
   if(q.st===1&&e>2.2&&t-q.tt>1.2)drawEmoji(g,"👆",BX+84,BB-170+8*Math.sin(t*4),44,.85);}
-X.ob={OB,week:obWeek,room:obRoom,waits:obWaits,give:obGive,scene:obScene,tap:obDown,hit:obHitBox,
+X.ob={OB,W:OB_W,name:id=>((OB_W[+String(id).slice(1)-1])||{}).n||"",iso:obIsoThu,next:obNext,week:obWeek,room:obRoom,waits:obWaits,give:obGive,scene:obScene,tap:obDown,hit:obHitBox,
   at(e){if(obQ)obQ.t0=now()-e;},atf(e){if(obQ){obQ.ft=now()-e;obQ.tt=now()-9;}},q:()=>obQ,font:()=>obFontS+" "+document.fonts.check("40px ObBrush","第"),
   tapRoom(){const z=obHitBox();return z?hk("hit",z.x+z.w/2,z.y+z.h/2):"no box";},reset(){OB.n=0;OB.wk="";OB.aw="";obQ=null;}};
 
 // ── reading: the whole book, one page, the album ──
 function obBook(){obFontLoad();const rows=OB_W.map((W,k)=>k<OB.n?`<button class="ob-ch" data-x="ob:read:${k}"><span class="ob-th">${itemThumb(IT[W.id],60,50)}</span><span class="ob-tx"><b>Неделя ${k+1}. ${W.t}</b><small>${W.n} · ${W.y}</small></span></button>`
   :`<div class="ob-ch off"><span class="ob-th ob-q">?</span><span class="ob-tx"><b>Неделя ${k+1}</b><small>${k===OB.n&&obWaits()?"ждёт в сундуке":"откроется позже"}</small></span></div>`).join("");
-  openPanel(OB_CAT,`<p class="lead">История семьи, которая жила в доме до вас: прабабушка Хару и её родные. Раз в неделю — одна вещь и одна глава. Прочитано ${OB.n} из ${OB_N}.</p><div class="ob-list">${rows}</div>`,"obb");$("xpBody").scrollTop=0;}
+  openPanel(OB_CAT,`<p class="lead">История семьи, которая жила в доме до вас: прабабушка Хару и её родные. Каждый четверг — одна вещь и одна глава. Прочитано ${OB.n} из ${OB_N}.</p><div class="ob-list">${rows}</div>`,"obb");$("xpBody").scrollTop=0;}
 function obRead(k){if(k<0||k>=OB.n)return;obFontLoad();openPanel(OB_CAT,`<div class="ob-pg">${obPage(k)}${obBtns(k)}</div>`,"obr");$("xpBody").scrollTop=0;}
 hook("click",(key)=>{if(!key.startsWith("ob:"))return;const [,a,v]=key.split(":"),k=+v;
   if(a==="book")obBook();else if(a==="read")obRead(k);
@@ -15394,14 +15540,14 @@ hook("itemTap",(it)=>{const k=OB_W.findIndex(W=>W.id===it.id);if(k<0)return;cons
   if(!petAway()&&pet.action!=="sleep")walkTo(it,"peek",W.r);
   dlg({head:`${W.n} · ${W.y}`,text:W.s,img:itemThumb(IT[W.id],90,72),ok:"Читать главу",no:"Закрыть",onOk:()=>obRead(k)});return true;});
 hook("album",el=>{for(const h of [...el.querySelectorAll("h4.ch")])if(h.textContent===OB_CAT){const n=h.nextElementSibling;if(n&&n.classList.contains("coll"))n.remove();h.remove();}
-  el.insertAdjacentHTML("beforeend",`<h3 class="bh">${OB_CAT}</h3><p class="lead">${OB.n?`Прочитано глав: ${OB.n} из ${OB_N}. Нажми на вещь, чтобы перечитать её историю.`:"Старый сундук на чердаке: раз в неделю — одна вещь и одна глава истории дома."}</p>
+  el.insertAdjacentHTML("beforeend",`<h3 class="bh">${OB_CAT}</h3><p class="lead">${OB.n?`Прочитано глав: ${OB.n} из ${OB_N}. Нажми на вещь, чтобы перечитать её историю.`:"Старый сундук на чердаке: каждый четверг — одна вещь и одна глава истории дома."}</p>
   <div class="coll">${OB_W.map((W,k)=>k<OB.n?`<button class="ci on ob-ci" data-x="ob:read:${k}">${itemThumb(IT[W.id],70,52)}<small>${W.n}<br><i>${W.y}</i></small></button>`:`<div class="ci">${itemThumb(IT[W.id],70,52)}<small>???<br><i>неделя ${k+1}</i></small></div>`).join("")}</div>`);});
 
 // ── the hub card, dots, the tray, the postcard ──
 hook("hub",()=>{const r=obRoom(),w8=obWaits();
-  const st=!r?"Сундук стоит на чердаке — сначала открой чердак":OB.n>=OB_N?`Вся история прочитана: ${OB_N} вещей из ${OB_N}`:w8?`В сундуке новая вещь — неделя ${OB.n+1} из ${OB_N}`:"Следующая вещь — в понедельник";
+  const st=!r?"Сундук стоит на чердаке — сначала открой чердак":OB.n>=OB_N?`Вся история прочитана: ${OB_N} вещей из ${OB_N}`:w8?`В сундуке новая вещь — неделя ${OB.n+1} из ${OB_N}`:`Следующая вещь — ${obNext()}`;
   const where=r==="kura"?"Пока чердак заколочен, сундук ждёт в куре, у бочек.":"Он стоит на чердаке, у старого нагамоти.";
-  const body=`Старый сундук из павловнии с железными уголками. ${r?where+" ":""}Раз в неделю он отдаёт одну вещь, завёрнутую в фуросики, и страницу истории семьи, что жила в доме до вас.`;
+  const body=`Старый сундук из павловнии с железными уголками. ${r?where+" ":""}Каждый четверг он отдаёт одну вещь, завёрнутую в фуросики, и страницу истории семьи, что жила в доме до вас.`;
   const b=[r&&(w8||OB.n<OB_N)?`<button class="btn${w8?" primary":""}" data-x="ob:go">${w8?"Открыть сундук":"К сундуку"}</button>`:"",OB.n?`<button class="btn" data-x="ob:book">Читать историю</button>`:""].join("");
   return`<div class="hubc"><h4>🧰 ${OB_CAT} <i>桐の長持</i></h4><p>${st}</p><p class="ob-s">${body}${OB.n?` Прочитано глав: ${OB.n} из ${OB_N}.`:""}</p>${b?`<div class="row">${b}</div>`:""}</div>`;});
 hook("hubDot",obNew);
@@ -15660,8 +15806,16 @@ function rkTrack(){const quiet=!RK.init,L=(X.cd&&X.cd.st&&X.cd.st.log)||[],cdT={
 
 // ── events → milestones → scenes ──
 const RK_SKIP={chronicle:1,news:1};
-const RK_MAJ={room:10,q:9,chapter2:9,fe:8,holiday:8,birthday:9,rareguest:8,capsule:7,bloom:7,trust:6,season:6,snow:7,parade:7};
-const RK_FIRST1={haunt:6,postcard:6,dream:5,visitor:5,rumor:5,chest:5,kimo:5,forest:5,nurikabe:5};
+// the second and third story books (their chapters: X.story2.CH, X.story3.CH)
+const RK_BOOK={chapter2:["Кошачья гора",()=>(X.story2&&X.story2.CH)||[]],chapter3:["Шпилька Бэни",()=>(X.story3&&X.story3.CH)||[]]};
+const RK_MAJ={room:10,q:9,chapter2:9,chapter3:9,fe:8,holiday:8,birthday:9,rareguest:8,capsule:7,bloom:7,trust:6,season:6,snow:7,parade:7};
+const RK_FIRST1={haunt:6,postcard:6,dream:5,visitor:5,rumor:5,chest:6,kimo:5,forest:5,nurikabe:5,
+  cat:6,insect:5,sumo:6,kite:5,rice:6,loom:6,haiku:5,mystery:6,music:4,hide:4,kamidana:5};
+// every next one of these small collections still gets a line in its day's scene
+const RK_EACH={cat:3,sumo:3,chest:3,mystery:3,music:2,kite:2,loom:2,rice:3};
+// special milestones: a scene of their own
+const rkSpec=e=>{const {kind,id,n}=e;return kind==="cat"&&n===8?7:kind==="sumo"&&id==="yokozuna"?8:kind==="chest"&&id==="w12"?8:kind==="chest"&&id==="w6"?6:
+  kind==="kamidana"&&id==="d30"?7:kind==="kamidana"&&id==="d7"?5:kind==="music"&&n===7?6:kind==="mystery"&&n===8?7:kind==="kite"&&n===9?6:kind==="nurikabe"&&n===20?6:0;};
 const RK_RND=[10,25,50,100,200,500],RK_TOT=[50,100,200,300,500,1000];
 function rkStart(E){const B=S.ext.bd||{};let s=B.start&&/^\d{4}-\d\d-\d\d$/.test(B.start)?Date.parse(B.start+"T09:00:00"):0;
   if(!s)s=(RK.init||Date.now())+DATE_SHIFT;for(const e of E)if(e.g&&e.g<=s)s=e.g-60000;return s;}
@@ -15682,7 +15836,9 @@ function rkCls(e){const {kind,id,n}=e;let w=-1,m=0;
   else if(kind==="friend"){if(/_5$/.test(id)){w=7;m=1;}else if(n===1)w=4;}
   else if(RK_MAJ[kind]){w=RK_MAJ[kind];m=1;}
   else if(RK_FIRST1[kind]&&n===1){w=RK_FIRST1[kind];m=1;}
+  else if(rkSpec(e)){w=rkSpec(e);m=1;e.sp=1;}
   else if(n===1)w=4;
+  else if(RK_EACH[kind])w=RK_EACH[kind];
   else if(RK_RND.includes(n)&&RK_RN[kind]){w=n>=50?4:3;e.r=1;}
   if(e.tot&&w<5)w=5;e.w=w;e.m=m;}
 function rkBuild(){const E=rkEvents(),sc=[],day={},dk=e=>e.u?"u":dayKey(new Date(e.g)),D=k=>day[k]||(day[k]={maj:null,sm:null,more:0,last:null});
@@ -15701,9 +15857,10 @@ const rkNewN=()=>rkScenes().filter(s=>s.gm>RK.seen).length;
 const rkYear=()=>{const sc=rkScenes();return sc.length&&Date.now()+DATE_SHIFT-sc[0].g>=365*864e5;};
 
 // ── words ──
-function rkName(kind,id){try{
+const rkNK=(kind,id)=>{try{return X.sb&&X.sb.nk?X.sb.nk(kind,id):null;}catch(x){return null;}};
+function rkName(kind,id){try{const q=rkNK(kind,id);if(q&&q.n)return q.n;
   if(kind==="q")return(STORY[+id]||{}).title||"";if(kind==="k")return(KAIDAN[+id]||{}).t||"";
-  if(kind==="chapter2"){const C=X.story2&&X.story2.CH;const c=C&&C[+id];if(c&&c.title)return c.title;}
+  if(RK_BOOK[kind]){const C=RK_BOOK[kind][1]();const c=C&&C[+id];if(c&&c.title)return c.title;}
   if(kind==="fe"||kind==="holiday"){const f=kind==="fe"?String(id).replace(/-\d{4}$/,""):id;return(FEST.find(F=>F.id===f)||{}).n||"";}
   if(kind==="c")return(CROPS.find(c=>c.id===id)||{}).n||"";if(kind==="f")return(FOOD[id]||{}).n||"";if(kind==="r")return(RECIPES.find(r=>r.id===id)||{}).n||"";
   if(kind==="room")return(ROOMS.find(r=>r.id===id)||{}).ru||"";if(kind==="pet")return(S.ext.pet2||{}).name||"";
@@ -15737,14 +15894,40 @@ const RK_F={find:n=>`Муся впервые принесла в дом нахо
 const RK_SEA={winter:"пришла зима: на веранде и тории лежит снег",spring:"пришла весна: на ветках набухли почки",summer:"пришло лето: в саду звенят цикады",autumn:"пришла осень: клёны у ворот покраснели"};
 function rkBd(id){id=String(id);let m;if(/^w/.test(id))return"неделя вместе";if(id==="d100")return"сто дней вместе";if(id==="h")return"полгода вместе";
   if((m=id.match(/^m(\d+)$/)))return+m[1]===1?"месяц вместе":`${m[1]} ${rkPl(+m[1],"месяц","месяца","месяцев")} вместе`;if((m=id.match(/^y(\d+)$/)))return+m[1]===1?"год вместе — день рождения Муси":`${m[1]} ${rkPl(+m[1],"год","года","лет")} вместе — день рождения Муси`;return"праздник Муси";}
+Object.assign(RK_RN,{nurikabe:N=>`у ворот разгадано уже ${N} ${rkPl(N,"загадка","загадки","загадок")} нурикабэ`,haiku:N=>`в тетради уже ${N} хайку`,
+  hide:N=>`Мусю нашли уже в ${N} ${rkPl(N,"укромном месте","укромных местах","укромных местах")}`,kamidana:N=>`у камиданы получено уже ${N} ${rkPl(N,"благословение","благословения","благословений")}`});
+// the newer add-ons: the first one, every next one and the special ones (names and grammar from the newspaper's table)
+function rkSayNK(e){const {kind,id}=e,q=rkNK(kind,id),first=e.n===1;if(!q)return null;const n=q.n||"";
+  switch(kind){
+   case"cat":return e.sp?`теперь Муся знакома со всеми восемью соседскими кошками — последн${q.f?"ей":"им"} ${q.f?"пришла":"пришёл"} ${n}`:
+     first?`Муся познакомилась с ${q.f?"первой соседкой":"первым соседом"} — ${n}, ${q.whoI}`:`новое знакомство на заборе: ${n}, ${q.who}`;
+   case"insect":return first?`в сачок попалась первая добыча — ${rkLc(n)}`:null;
+   case"sumo":return q.yk?`Муся одолела на басё самого ${q.acc} — кубок императора теперь стоит дома`:first?`первая победа на ночном басё у реки — над ${q.ins}`:`победа на басё над ${q.ins}`;
+   case"nurikabe":return e.sp?"у ворот разгадано двадцать загадок нурикабэ — стена зовёт Мусю умной кошкой":first?`у ворот выросла стена-нурикабэ и загадала загадку: «${n}» Муся ответила верно, и стена ушла в землю`:null;
+   case"kite":return e.sp?"в небе побывали все девять воздушных змеев":first?`в небо над крышами поднялся первый воздушный змей${n?` — ${n}`:""}`:`взлетел новый змей${n?` — ${n}`:""}`;
+   case"rice":return first?"собран первый урожай риса с террас на холме: снопы сохнут на хасагакэ":`собран ${q.n}`;
+   case"loom":return first?`на станке в куре соткан первый отрез — узор «${n}»${q.kim?", и из него сшито первое своё кимоно Муси":""}`:`соткан новый узор — «${n}»`;
+   case"chest":return id==="w12"?"сундук прабабушки опустел: история Хару прочитана до последней строчки":first?`в сундуке прабабушки нашлась первая вещь — «${n}», ${q.y} год`:
+     `сундук прабабушки отдал ещё одну вещь — «${n}», ${q.y} год`;
+   case"haiku":return first?(q.x?`на веранде повешено первое хайку: «${q.x.join(" / ")}»`:"на веранде повешено первое хайку"):null;
+   case"mystery":return e.sp?"раскрыты все восемь дел о пропажах в доме":first?`раскрыто первое дело о пропаже — «${n}»: вещь брал${q.f?"а":""} ${q.cul}`:`раскрыто «${n}»`;
+   case"music":return e.sp?"в доме собраны все семь старинных мелодий":first?`в доме впервые зазвучала музыка — мелодия «${n}»`:`граммофон выучил мелодию «${n}»`;
+   case"hide":return first?`Муся впервые сыграла в прятки и спряталась ${n||"где-то в доме"}`:null;
+   case"kamidana":return id==="d30"?"месяц утренних подношений у камиданы подряд":id==="d7"?"неделя утренних подношений у камиданы подряд":
+     first?`на кухонной камидане сделано первое утреннее подношение — ками послали «${n}»`:null;
+   case"kimo":return first?`первая ночная прогулка смелости — кимодамэси; звание — «${n}»`:null;
+   case"snow":return q.km?"во дворе игр построена камакура — снежный домик со свечой внутри":`во дворе игр слеплен ${first?"первый ":""}снеговик`;}
+  return null;}
 function rkSay(e){const {kind,id}=e,n=rkName(kind,id);let s;
   if(e.r)s=RK_RN[kind](e.n);
+  else if((s=rkSayNK(e))){}
   else switch(kind){
    case"start":s="Муся пришла в дом. В пустых комнатах снова зажглись фонари";break;
    case"room":s=`открылась ${n?`комната «${n}»`:"новая комната"}. Муся первой обнюхала все углы`;break;
    case"q":{const t=String(n).match(/^(Глава \d+|Пролог|Эпилог)\.\s*(.+)$/),p=t?`${t[1].startsWith("Глава")?"пройдена":"пройден"} ${rkLc(t[1])} — «${t[2]}»`:`пройдена глава «${n}»`;
      s=+id===0?`началась история дома: ${p}`:+id===STORY.length-1?`история дома дописана: ${p}`:p;break;}
-   case"chapter2":s=`новая глава второй истории${n?` — «${n}»`:""}`;break;
+   case"chapter2":case"chapter3":{const B=RK_BOOK[kind],t=String(n).match(/^(Глава \d+|Пролог|Эпилог)\.\s*(.+)$/);
+     s=t?`${t[1].startsWith("Глава")?"пройдена":"пройден"} ${rkLc(t[1])} истории «${B[0]}» — «${t[2]}»`:`новая глава истории «${B[0]}»${n?` — «${n}»`:""}`;break;}
    case"fe":case"holiday":s=`в доме праздновали ${n?`«${n}»`:"праздник"}: фонари, сладости и гости`;break;
    case"birthday":s=`праздник в доме: ${rkBd(id)}`;break;
    case"rareguest":s=`к дому заглянул редкий гость${n?` — ${n}`:""}`;break;
@@ -15765,11 +15948,18 @@ function rkText(s){const m=s.main,ex=s.ev.filter(e=>e!==m).sort((a,b)=>b.w-a.w);
 const rkWhen=s=>s.u?"В первые дни в доме":rkDate(s.g);
 
 // ── pictures: monsters, things, food, Musya's own frames, the kitten; plus a painted motif ──
-function rkPic(e){const {kind,id}=e,M=m=>m&&MIMG[m]?m:null;
+// the newer add-ons: their picture (from the newspaper's table) + Musya's frame + a motif
+const RK_NKP={cat:[["rest",2],"moon",.24],insect:[["gaze9",3],"sea",.13],mystery:[["gaze9",2],"moon"],sumo:[["highfive",3],"torii"],nurikabe:[null,"torii"],kite:[["gaze9",0],"moon"],
+  rice:[["treat",1],"br_autumn"],loom:[["stretch",2],"house"],chest:[["gift",2],"house"],haiku:[["gaze10",1],"scroll"],kimo:[["hide",2],"lantern"],snow:[["stretch",2],"br_winter"],
+  hide:[["box",3],"house"],music:[["purr",2],"moon"],kamidana:[["rest",2],"torii"]};
+const rkSeaMot=g=>{const m=new Date(g).getMonth()+1;return"br_"+(m===12||m<3?"winter":m<6?"spring":m<9?"summer":"autumn");};
+function rkPicNK(e){const P=RK_NKP[e.kind];if(!P)return null;const q=rkNK(e.kind,e.id);if(!q||!q.p)return null;const p=q.p,o={mot:P[1]==="sea"?rkSeaMot(e.g):P[1]};
+  if(p.mon&&!P[0])o.mon=p.mon;else if(p.mon)o.mon2=p.mon;if(p.it&&IT[p.it])o.it=p.it;if(p.atl){o.atl=p.atl;o.ah=P[2]||.2;}if(p.cv)o.cv=p.cv;if(P[0])o.cat=P[0];else if(p.cat)o.cat=p.cat;return o;}
+function rkPic(e){const {kind,id}=e,M=m=>m&&MIMG[m]?m:null;const nk=rkPicNK(e);if(nk)return nk;
   switch(kind){
    case"start":return{cat:["rest",2],mot:"house"};case"room":return{cat:["moveLeft",3],mot:"house"};
    case"q":{const C=STORY[+id]||{},ch=((C.intro||{}).chars||[])[0],m=ch&&typeof ch.id==="string"&&M(ch.id);return m?{mon:m,mot:"scroll"}:{cat:["gaze9",0],it:C.reward&&IT[C.reward]?C.reward:null,mot:"scroll"};}
-   case"chapter2":return{cat:["gaze10",0],mot:"scroll"};case"fe":case"holiday":return{cat:["highfive",3],mot:"lantern"};
+   case"chapter2":case"chapter3":return{cat:["gaze10",0],mot:"scroll"};case"fe":case"holiday":return{cat:["highfive",3],mot:"lantern"};
    case"birthday":return{cat:["treat",2],mot:"lantern"};case"season":return{cat:["butterfly",2],mot:"br_"+String(id).split("-")[0]};
    case"snow":return{cat:["stretch",2],mot:"br_winter"};case"bloom":return{cat:["butterfly",4],mot:"br_spring"};
    case"pet":return{kit:1,cat:["rest",0],mot:"house"};case"crane":return{cat:["play",1],mot:"crane"};case"trust":return{cat:["purr",2],mot:"moon"};
@@ -15786,8 +15976,12 @@ function rkSrc(p,what){try{
   if(what==="it"){const c=DIMG[p.it];if(c&&c.width)return{im:c,sx:0,sy:0,sw:c.width,sh:c.height};loadItem(p.it);rkPend=1;return null;}
   if(what==="food"){const A=fAtlas(p.food);if(!A)return null;const im=FIMG[A[0]];if(!im){fLoad(A[0]);rkPend=1;return null;}const r=A[1].r[p.food];return{im,sx:r[0],sy:r[1],sw:r[2],sh:r[3]};}
   if(what==="cat"){const im=IMG[p.cat[0]];if(!im){rkPend=1;return null;}return{im,sx:p.cat[1]*384,sy:0,sw:384,sh:416};}
-  if(what==="kit"){const im=MIMG.m_pt_atlas;return im?{im,sx:0,sy:0,sw:280,sh:250}:null;}}catch(x){}return null;}
-function rkPicHtml(e){const p=rkPic(e);try{if(p.mon)return`<img src="assets/mon/${p.mon}.webp" alt="" style="max-height:56px;max-width:62px">`;
+  if(what==="kit"){const im=MIMG.m_pt_atlas;return im?{im,sx:0,sy:0,sw:280,sh:250}:null;}
+  if(what==="mon2"){const im=MIMG[p.mon2];return im&&im.width?{im,sx:0,sy:0,sw:im.width,sh:im.height}:null;}
+  if(what==="atl"){const [k,r]=p.atl;let im=null;atlasImg(k,x=>{im=x;});if(!im){rkPend=1;return null;}return{im,sx:r[0],sy:r[1],sw:r[2],sh:r[3]};}
+  if(what==="cv"){const c=p.cv;return c&&c.width?{im:c,sx:0,sy:0,sw:c.width,sh:c.height}:null;}}catch(x){}return null;}
+function rkPicHtml(e){const p=rkPic(e);try{if(p.mon||p.mon2)return`<img src="assets/mon/${p.mon||p.mon2}.webp" alt="" style="max-height:56px;max-width:62px">`;
+  if((p.atl||p.cv)&&X.sb&&X.sb.pic){const h=X.sb.pic(p.atl?{atl:p.atl}:{cv:p.cv},52);if(h)return h;}
   if(p.it&&IT[p.it])return itemThumb(IT[p.it],56,56);if(p.food){const h=fThumb(p.food,56,56);if(h)return h;}}catch(x){}
   const c=p.cat||["rest",0];return`<span class="rk-cat" style="background-image:url(assets/${c[0]}@2x.webp);background-position:-${c[1]*52}px 0"></span>`;}
 
@@ -15861,15 +16055,17 @@ function rkRender(s,newest){const {SW:W,PH:H,dpr}=rkV,c=rkMk(W*dpr,H*dpr),g=c.ge
   rkMot(g,p.mot||"moon",cx,yF,Math.min(1,aw/230),r);
   const put=(src,hh,x,y,maxw,a)=>{if(!src)return 0;let w=src.sw*hh/src.sh;if(maxw&&w>maxw){hh*=maxw/w;w=maxw;}rkPaint(g,src,x-w/2,y-hh,w,hh,dpr,a);return w;};
   if(p.mon)put(rkSrc(p,"mon"),H*.4,cx,yF+6,aw*.98);
-  else{const two=(p.it||p.food||p.kit)&&p.cat,cw=two?aw*.55:aw*.95;
+  else{const two=(p.it||p.food||p.kit||p.atl||p.cv||p.mon2)&&p.cat,cw=two?aw*.55:aw*.95;
     if(p.cat)put(rkSrc(p,"cat"),H*(two?.27:.34),two?cx+aw*.2:cx,yF+H*.035,cw);
     if(p.kit)put(rkSrc(p,"kit"),H*.2,cx-aw*.26,yF+8,aw*.5);
     if(p.it)put(rkSrc(p,"it"),Math.min(H*.2,DIMG[p.it]&&DIMG[p.it].height||H*.2),cx-aw*.22,yF+4,aw*.48);
-    if(p.food)put(rkSrc(p,"food"),H*.11,cx-aw*.22,yF+6,aw*.4);}
+    if(p.food)put(rkSrc(p,"food"),H*.11,cx-aw*.22,yF+6,aw*.4);
+    if(p.mon2)put(rkSrc(p,"mon2"),H*.3,cx-aw*.24,yF+6,aw*.52);if(p.atl)put(rkSrc(p,"atl"),H*(p.ah||.2),cx-aw*.22,yF+(p.ah<.15?-H*.06:4),aw*.46);
+    if(p.cv)put(rkSrc(p,"cv"),H*.22,cx-aw*.22,yF+4,aw*.48);}
   // the other events of that day: small pictures in front
   let j=0;for(const e of s.ev){if(e===s.main||j>=3)continue;const q2=rkPic(e),sz=H*.1;let src=null;
-    if(q2.mon)src=rkSrc(q2,"mon");else if(q2.it)src=rkSrc(q2,"it");else if(q2.food)src=rkSrc(q2,"food");if(!src)continue;
-    put(src,q2.mon?sz*1.35:sz,ax+16+j*(aw-30)/2.4,yF+H*.12,sz*1.3,.95);j++;}
+    if(q2.mon)src=rkSrc(q2,"mon");else if(q2.mon2)src=rkSrc(q2,"mon2");else if(q2.atl)src=rkSrc(q2,"atl");else if(q2.it)src=rkSrc(q2,"it");else if(q2.food)src=rkSrc(q2,"food");if(!src)continue;
+    put(src,q2.mon||q2.mon2?sz*1.35:sz,ax+16+j*(aw-30)/2.4,yF+H*.12,sz*1.3,.95);j++;}
   if(ink)g.drawImage(ink,0,0,W,H);return{c,ink,pend:rkPend,at:performance.now()};}
 function rkEndR(){const {TW:W,PH:H,dpr}=rkV,c=rkMk(W*dpr,H*dpr),g=c.getContext("2d");g.scale(dpr,dpr);rkWall(g,H,0,0);
   const bx=32;g.fillStyle="#1e2a3e";g.fillRect(bx,0,W-bx,H);g.fillStyle="rgba(212,176,96,.5)";for(let y=8,k=0;y<H;y+=17,k++)for(let x=bx+10+(k%2)*8.5;x<W;x+=17){g.beginPath();g.moveTo(x,y-4);g.lineTo(x+4,y);g.lineTo(x,y+4);g.lineTo(x-4,y);g.fill();}
@@ -15965,7 +16161,7 @@ hook("disc",kind=>{if(kind!=="chronicle")rkMemo=null;});
 hook("boot",()=>{rkTrack();if(!RK.seen){const E=rkEvents();RK.seen=E.length?E[E.length-1].g:0;}save();});
 let rkTk=0;
 hook("sec",()=>{if(++rkTk%5)return;rkTrack();const n=rkScenes().length;for(const m of [10,25,50])if(n>=m)disc("chronicle","len"+m);if(n>=25)award("rk_25");if(RK.n&&rkYear())award("rk_year");});
-X.rk={st:RK,scenes:rkScenes,events:rkEvents,text:rkText,when:rkWhen,open:rkOpen,V:rkV,track:rkTrack,status:rkStatus,
+X.rk={st:RK,scenes:rkScenes,events:rkEvents,text:rkText,say:rkSay,when:rkWhen,open:rkOpen,V:rkV,track:rkTrack,status:rkStatus,
   reset(){rkMemo=null;},go(i){rkV.tgt=null;rkV.vel=0;rkV.off=i==="start"?rkV.mx:i==="end"?rkAt(rkV.sc.length-1):i==="edge"?rkV.mn:rkAt(i);},
   // test: drag the paper by dx px through the real pointer handlers
   drag(dx){const cv=$("rkCv");if(!cv)return;const r=cv.getBoundingClientRect(),y=r.top+r.height/2,x=r.left+r.width/2;

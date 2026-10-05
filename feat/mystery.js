@@ -1,5 +1,5 @@
 // ───────────────────────── «Пропажа в доме» (prefix dt): a small weekly detective ─────────────────────────
-// Once a week (Monday from 6:00, or the first visit of the week) a thing vanishes from the house: one of the
+// Once a week (Wednesday from 6:00, or the first visit on/after it) a thing vanishes from the house: one of the
 // player's placed things, else a decor piece (the veranda furin…), else a core prop. Nothing is deleted for good:
 // the original record lives in S.ext.mystery.c.thing and is ALWAYS put back — on solve, at the week's end, or at
 // boot if anything looks wrong. Three clues lie in three rooms (fresh ones = the culprit, an old one = a red
@@ -88,8 +88,18 @@ const DT_HOUSE=Object.keys(DT_SPOT),DT_SKIP=/^(mp_|dm_|bn_|dt_)/;
 const rt={im:null,box:{},sc:null,lyK:"",ly:0};
 const dt=()=>{const m=S.ext.mystery||(S.ext.mystery={});m.n=m.n||0;m.hist=m.hist||[];return m;};
 const dtYmd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-const dtWk=()=>{const d=today();return dtYmd(new Date(d.getFullYear(),d.getMonth(),d.getDate()-(d.getDay()+6)%7));};
-const dtDow=()=>(today().getDay()+6)%7;
+// the «shifted week»: a case week runs Wednesday 6:00 → next Wednesday 6:00; its key is that Wednesday's date
+// (the week of the newspaper stays Monday, the chest's is Thursday — one weekly event per day, no crowd on Monday)
+const DT_WD=3,dtDay=()=>{const d=today(),h=hourNow()<6?1:0;return new Date(d.getFullYear(),d.getMonth(),d.getDate()-h);};
+const dtWk=()=>{const d=dtDay();return dtYmd(new Date(d.getFullYear(),d.getMonth(),d.getDate()-(d.getDay()-DT_WD+7)%7));};
+const dtDow=()=>(dtDay().getDay()-DT_WD+7)%7;   // 0 = Wednesday (from 6:00) … 6 = Tuesday
+const dtAdd=(k,n)=>{const [y,m,d]=k.split("-").map(Number);return dtYmd(new Date(y,m-1,d+n));};
+const DT_MON=["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const dtEnd=c=>{const [y,m,d]=dtAdd(c.wk,7).split("-").map(Number);return`${d} ${DT_MON[m-1]}`;};   // the case closes by itself that Wednesday morning
+// migration of saves from the Monday rhythm: a Monday key K → the Wednesday K+2 (the case opened on Monday 5 Oct 2026 lives
+// on until Wednesday 14 Oct 6:00 and no second case opens on 7 Oct); keys only grow, so «<» compares weeks
+function dtMig(){const m=dt();if(m.v===2)return;const f=k=>{if(typeof k!=="string"||!/^\d{4}-\d\d-\d\d$/.test(k))return k;const [y,mo,d]=k.split("-").map(Number);return new Date(y,mo-1,d).getDay()===1?dtAdd(k,2):k;};
+  m.wk=f(m.wk);if(m.c)m.c.wk=f(m.c.wk);for(const h of m.hist)h.wk=f(h.wk);m.v=2;save();}
 const dtShuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 const dtG=s=>{const w=s.toLowerCase().replace(/[«»"]/g,"").split(/[\s]+/)[0]||"";
   if(/(ый|ий|ой)$/.test(w))return"m";if(/(ая|яя)$/.test(w))return"f";if(/(ое|ее)$/.test(w))return"n";if(/(ые|ие)$/.test(w))return"p";
@@ -121,7 +131,7 @@ function dtRestore(c){const th=c&&c.thing;if(!th||th.back)return;
   th.back=1;save();try{ui();}catch(e){}}
 // boot: re-hide a prop (runtime only) or notice the player has put the thing back by hand; anything odd → restore
 function dtCheck(){const m=dt(),c=m.c;if(!c)return;
-  const ok=c.thing&&c.thing.id&&DT_TPL[c.id]&&Array.isArray(c.clues)&&Array.isArray(c.sus)&&Array.isArray(c.wrong)&&c.wk&&c.wk<=dtWk();
+  const ok=c.thing&&c.thing.id&&DT_TPL[c.id]&&Array.isArray(c.clues)&&Array.isArray(c.sus)&&Array.isArray(c.wrong)&&c.wk&&c.wk<=dtAdd(dtWk(),7);
   if(!ok){dtRestore(c);m.c=null;save();return;}
   const th=c.thing;if(th.back)return;
   if(th.k==="placed"&&S.placed[th.id])th.back=1;
@@ -150,9 +160,10 @@ function dtSelf(c){const m=dt(),Y=dtGuest(DT_TPL[c.id].cul);dtRestore(c);
   m.hist.unshift({id:c.id,no:c.no,n:c.thing.n,how:"self",wk:c.wk});m.hist.length=Math.min(m.hist.length,12);
   m.msg=`Прошлое дело закрылось само: пропажа вернулась на место с запиской «Простите, это был${DT_YK[Y.id]&&DT_YK[Y.id].f?"а":""} я». Подпись — ${Y.n}.`;m.c=null;save();}
 function dtRoll(){const m=dt(),wk=dtWk();
-  if(m.c&&m.c.wk!==wk&&!m.c.solved)dtSelf(m.c);
-  if(m.c&&m.c.solved&&m.c.wk!==wk)m.c=null;
-  if(m.wk!==wk&&!(dtDow()===0&&hourNow()<6)){m.wk=wk;if(!dtOpen())save();}}
+  if(m.c&&m.c.wk<wk&&!m.c.solved)dtSelf(m.c);
+  if(m.c&&m.c.solved&&m.c.wk<wk)m.c=null;
+  if(!m.wk&&!m.cases&&dtDow()>=5){m.wk=wk;save();return;}   // a brand-new detective on Monday/Tuesday waits for Wednesday
+  if(!(m.wk>=wk)){m.wk=wk;if(!dtOpen())save();}}
 
 // ── in the room: small painted tells on the floor, softly glinting; tap one to take it into the notebook
 const dtOn=()=>{const c=dt().c;return c&&!c.solved;};
@@ -201,11 +212,11 @@ document.head.insertAdjacentHTML("beforeend",`<style>
 function dtThumb(p,mw,mh){const r=DT_AT[p];if(!r)return"";const f=Math.min(mw/r[2],mh/r[3],1),q=v=>Math.round(v*f);
   return`<span style="display:inline-block;width:${q(r[2])}px;height:${q(r[3])}px;background:url(assets/items/atlas_dt.webp) -${q(r[0])}px -${q(r[1])}px/${q(1024)}px ${q(350)}px no-repeat"></span>`;}
 const dtMonImg=(id,h)=>`<img src="assets/mon/${dtGuest(id).mon}.webp" alt="" style="height:${h}px">`;
-function dtNb(){const m=dt(),c=m.c;if(!c){openPanel("Тетрадь сыщика",`<p class="lead">${m.msg||"Тихая неделя: в доме всё на месте."} Следующее дело — в понедельник.</p>`+dtCases(),"dt");return;}
+function dtNb(){const m=dt(),c=m.c;if(!c){openPanel("Тетрадь сыщика",`<p class="lead">${m.msg||"Тихая неделя: в доме всё на месте."} Новое дело — в среду.</p>`+dtCases(),"dt");return;}
   c.seen=1;c.clues.forEach(q=>{if(q.f)q.seen=1;});save();hubDot();tabDots();
   const T=DT_TPL[c.id],th=c.thing,f=dtFound(c),n=dtNeed(c),can=!c.solved&&f>=n,thumb=th.k==="placed"&&IT[th.id]?`<div style="float:right;margin:0 0 6px 8px">${itemThumb(IT[th.id],64,56)}</div>`:"";
   let h=`<p class="lead">${thumb}Дело № ${c.no}. ${dtCap(DT_IN[th.room]||"")} ${dtVerb(th.g)} ${dtLow(th.n)}. Найди улики, расспроси подозреваемых и назови виновного.</p>`+
-    `<p class="dt-tip">Свежие улики виновный оставил этой ночью. Старые — давний след кого-то другого. Если не раскрыть дело до воскресенья, пропажа вернётся сама.</p>`;
+    `<p class="dt-tip">Свежие улики виновный оставил этой ночью. Старые — давний след кого-то другого. Если не раскрыть дело до утра среды, ${dtEnd(c)}, пропажа вернётся сама.</p>`;
   if(m.say&&!c.solved)h+=`<div class="dt-say">${dtMonImg(m.say.id,64)}<div><b>${dtGuest(m.say.id).n}</b><p class="dt-t">«${m.say.t}»</p><p class="dt-t" style="opacity:.8">Улика: появилась ещё одна — ${DT_IN[m.say.room]||""}.</p></div></div>`;
   h+=`<h4 class="bh">Улики · ${f} из ${n}</h4>`+c.clues.map(q=>q.f?`<div class="dt-c"><div class="dt-th">${dtThumb(q.p,76,50)}</div><div><b>${DT_CL[q.p][0]}</b> <span style="opacity:.65">· ${dtRm(q.room)}</span><p class="dt-t">${q.again?"Ещё одна такая же. ":""}${DT_CL[q.p][1]} <i>${DT_CL[q.p][q.cul?2:3]}</i></p></div></div>`
     :`<div class="dt-c off"><div class="dt-th"><span class="dt-q">?</span></div><div><b>Улика ещё не найдена</b><p class="dt-t">Ищи ${DT_IN[q.room]} — Муся чует её носом.</p><div class="row"><button class="btn" data-x="dt:go:${q.room}">Пойти туда</button></div></div></div>`).join("");
@@ -237,9 +248,9 @@ function dtSolve(){const m=dt(),c=m.c,T=DT_TPL[c.id],Y=dtGuest(T.cul),th=c.thing
 // ── hub, dots, tray, clicks, album, «while you were away»
 hook("hub",()=>{dtRoll();const m=dt(),c=m.c;let st,more;
   if(c&&!c.solved){const f=dtFound(c),n=dtNeed(c),th=c.thing;
-    st=`🔍 Дело недели: ${dtVerb(th.g)} ${dtLow(th.n)} ${DT_FROM[th.room]||""} — ${f>=n?"улики собраны, пора назвать виновного":"найдено улик "+f+" из "+n}`;
-    more=`Подозреваемые: ${c.sus.map(id=>dtGuest(id).n).join(", ")}. Не раскроешь до воскресенья — пропажа вернётся сама.`;}
-  else{st=dtDow()===0&&hourNow()<6&&m.wk!==dtWk()?"Тихо… Утром в доме что-то пропадёт":"Тихая неделя — следующее дело в понедельник";
+    st=`🔍 ${dtCap(dtVerb(th.g))} ${dtLow(th.n)} ${DT_FROM[th.room]||""} · ${f>=n?"пора назвать виновного":"улики "+f+" из "+n}`;   // the folded card shows ~50 chars
+    more=`Дело недели. Подозреваемые: ${c.sus.map(id=>dtGuest(id).n).join(", ")}. Не раскроешь до утра среды, ${dtEnd(c)}, — пропажа вернётся сама.`;}
+  else{const w=today().getDay()===DT_WD&&hourNow()<6;st=w?"Тихо… Утром в доме что-то пропадёт":c&&c.solved?"Дело недели раскрыто — новое в среду":"Тихо… Новое дело — в среду";
     more=(m.msg?m.msg+" ":"")+`Раскрыто дел: ${m.n}. Награды — в «🧺 Вещи» → ${DT_CAT}.`;}
   return`<div class="hubc"><h4>🔍 Пропажа в доме <i>探偵</i></h4><p>${st}</p><p style="opacity:.75;margin:6px 0 0">${more}</p><div class="row"><button class="btn${c&&!c.solved?" primary":""}" data-x="dt:nb">Тетрадь сыщика</button></div></div>`;});
 hook("hubDot",()=>{const c=dt().c;return !!c&&!c.solved&&(!c.seen||c.clues.some(q=>q.f&&!q.seen));});
@@ -256,10 +267,10 @@ hook("sec",()=>{dtRoll();const c=dt().c;if(!c||c.toast||c.solved||scene.on||over
   const th=c.thing,s=`🔍 ${dtCap(DT_FROM[th.room]||"")} ${dtVerb(th.g)} ${dtLow(th.n)}!`;toast(s.length<=46?s:`🔍 Пропажа ${DT_IN[th.room]||"в доме"}!`);c.toast=1;save();});
 hook("away",()=>{const c=dt().c;if(!c||c.solved||!saved.t||c.t<saved.t)return null;return{i:"🔍",t:`${dtCap(DT_FROM[c.thing.room]||"")} ${dtVerb(c.thing.g)} ${dtLow(c.thing.n)}. Кто-то оставил следы…`};});
 hook("album",el=>{const got=(S.ext.disc||{}).mystery||{};el.insertAdjacentHTML("beforeend",`<h3 class="bh">🔍 Дела сыщика · ${Object.keys(got).length} из ${DT_IDS.length}</h3><p class="lead">${DT_IDS.map(id=>got[id]?DT_TPL[id].t:"Дело ???").join(" · ")}</p>`);});
-hook("boot",()=>{atlasImg("dt",im=>rt.im=im);dtCheck();dtRoll();});
+hook("boot",()=>{atlasImg("dt",im=>rt.im=im);dtMig();dtCheck();dtRoll();});
 
 // test handles
-X.mystery={st:dt,rt,wk:dtWk,tpl:DT_TPL,roll:dtRoll,nb:dtNb,accuse:dtAccuse,restore:()=>dtRestore(dt().c),
+X.mystery={st:dt,rt,wk:dtWk,tpl:DT_TPL,yk:DT_YK,name:id=>(DT_TPL[id]||{}).t||"",mig:dtMig,dow:dtDow,roll:dtRoll,nb:dtNb,accuse:dtAccuse,restore:()=>dtRestore(dt().c),
   force(id){const m=dt();if(m.c&&!m.c.solved)dtRestore(m.c);m.c=null;m.wk="";m.last="";return dtOpen(id);},
   find(i){dtFind(i);},
   here(){const c=dt().c;if(!c)return;const q=c.clues.find(q=>!q.f);if(q)goRoom(q.room);return q&&q.room;},
