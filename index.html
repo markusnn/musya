@@ -396,7 +396,7 @@ addEventListener("pagehide",save);
 // Every add-on system is its own { … } block before «Boot» and plugs in with hook(name,fn):
 // hk(name,…) asks the handlers in order and returns the first truthy answer; hkAll(name,…) calls them all and collects the answers.
 const HK={},X={};   // X.<addon> — handles one add-on shares with others (and with tests)
-function hook(name,fn){(HK[name]||(HK[name]=[])).push(fn);}
+let HBLK="core";function hook(name,fn){fn.blk=HBLK;(HK[name]||(HK[name]=[])).push(fn);}   // fn.blk = the add-on that registered it (set by tools/build.py)
 function hk(name,...a){for(const f of HK[name]||[]){try{const r=f(...a);if(r)return r;}catch(e){console.error("hook "+name,e);}}}
 function hkAll(name,...a){const out=[];for(const f of HK[name]||[]){try{const r=f(...a);if(r)out.push(r);}catch(e){console.error("hook "+name,e);}}return out;}
 // Musya is out of the house (a trip): she is not drawn, does not react, and her needs stand still
@@ -541,18 +541,22 @@ function emit(sp,t,dur){
 }
 
 // ───────────────────────── Sakura ─────────────────────────
-const sakura={until:0,next:now()+rand(12,30),list:[],acc:0};
+const sakura={until:0,next:now()+rand(12,30),list:[],acc:0,k:"sakura"};
+// the ambient shower follows the real season: sakura in spring, ume in February, young leaves in summer (rarer), maples in autumn, none in Dec–Jan
+function petalKind(){const d=today(),md=(d.getMonth()+1)*100+d.getDate();return md>=315&&md<=515?"sakura":md>=201&&md<315?"ume":md>515&&md<=831?"aoba":md>=901&&md<=1130?"momiji":null;}
 function burst(n){const [hx,hy]=cellToStage(97,160);for(let i=0;i<n;i++)sakura.list.push({x:hx+rand(-30,30)*view.s,y:hy+rand(-20,10)*view.s,vx:rand(-30,30),vy:rand(-60,-20),rot:rand(0,6),vr:rand(-3,3),size:rand(5,8)*view.s,ph:rand(0,6),life:rand(2.5,4)});}
 function updateSakura(t,dt){
-  if(t>sakura.next&&t>sakura.until){sakura.until=t+rand(9,15);award("hanami");sakura.next=sakura.until+rand(35,90);}
+  if(t>sakura.next&&t>sakura.until){const k=petalKind();sakura.next=t+rand(35,90)*(k==="aoba"?2:1);if(k){sakura.k=k;sakura.until=t+rand(9,15);sakura.next+=sakura.until-t;if(k==="sakura"||k==="ume")award("hanami");}}
   if(t<sakura.until){sakura.acc+=dt*7;while(sakura.acc>1){sakura.acc--;const fromTop=Math.random()<.65;
-    sakura.list.push({x:fromTop?rand(-view.W*.2,view.W*.9):-10,y:fromTop?-10:rand(0,view.H*.6),vx:rand(25,60),vy:rand(20,45),rot:rand(0,6),vr:rand(-2.5,2.5),size:rand(4,8)*Math.max(.8,view.s),ph:rand(0,6),life:30});}}
+    sakura.list.push({x:fromTop?rand(-view.W*.2,view.W*.9):-10,y:fromTop?-10:rand(0,view.H*.6),vx:rand(25,60),vy:rand(20,45),rot:rand(0,6),vr:rand(-2.5,2.5),size:rand(4,8)*Math.max(.8,view.s),ph:rand(0,6),life:30,k:sakura.k});}}
   for(const p of sakura.list){p.ph+=dt;p.x+=(p.vx+Math.sin(p.ph*1.7)*18)*dt;p.y+=p.vy*dt;if(p.vy<40)p.vy+=40*dt;p.rot+=p.vr*dt;p.life-=dt;}
   sakura.list=sakura.list.filter(p=>p.life>0&&p.y<view.H+20&&p.x<view.W+30);
 }
-function drawPetal(g,x,y,sz,rot,alpha){
+const PETAL_C={sakura:["#f7c6d4","#e48aa8"],ume:["#fbf3f1","#ecc8d2"],aoba:["#c4d595","#7d9a4e"],momiji:["#ec9a4a","#b63a22"]};
+function drawPetal(g,x,y,sz,rot,alpha,k){
   g.save();g.translate(x,y);g.rotate(rot);g.globalAlpha=alpha;
-  const gr=g.createLinearGradient(0,-sz,0,sz);gr.addColorStop(0,"#f7c6d4");gr.addColorStop(1,"#e48aa8");g.fillStyle=gr;
+  const c=PETAL_C[k]||PETAL_C.sakura,gr=g.createLinearGradient(0,-sz,0,sz);gr.addColorStop(0,c[0]);gr.addColorStop(1,c[1]);g.fillStyle=gr;
+  if(k==="momiji"){g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?sz*.42:sz*1.05;g.lineTo(Math.cos(a)*r,Math.sin(a)*r);}g.closePath();g.fill();g.strokeStyle=c[1];g.lineWidth=Math.max(.8,sz*.12);g.beginPath();g.moveTo(0,0);g.lineTo(0,sz*1.25);g.stroke();g.restore();return;}
   g.beginPath();g.moveTo(0,sz);g.bezierCurveTo(sz*1.1,sz*.3,sz*.7,-sz*.9,sz*.18,-sz);g.lineTo(0,-sz*.72);g.lineTo(-sz*.18,-sz);g.bezierCurveTo(-sz*.7,-sz*.9,-sz*1.1,sz*.3,0,sz);g.fill();g.restore();
 }
 
@@ -868,8 +872,8 @@ function render(t,dt){
   if(!face&&pet.action==="idle"){const n=S.needs,low=Math.min(n.food,n.clean,n.energy,n.joy);if(low<22&&Math.floor(t/7)%2===0){face=n.food===low?"😿":n.energy===low?"😪":n.clean===low?"🙀":"😿";age=(t%7);left=7-age;}}
   if(face&&!away)drawBubble(face,.55+.45*easeOutBack(age/.3),clamp(Math.min(age/.12,left/.3),0,1));
   // sakura petals drift over everything
-  for(const q of sakura.list)drawPetal(ctx,q.x,q.y,q.size,q.rot,Math.min(1,q.life)*.92);
-  if(t<sakura.until){const k=clamp(Math.min(t-(sakura.until-12),sakura.until-t),0,1);ctx.fillStyle=`rgba(238,163,187,${.06*k})`;ctx.fillRect(0,0,W,H);}
+  for(const q of sakura.list)drawPetal(ctx,q.x,q.y,q.size,q.rot,Math.min(1,q.life)*.92,q.k);
+  if(t<sakura.until&&sakura.k==="sakura"){const k=clamp(Math.min(t-(sakura.until-12),sakura.until-t),0,1);ctx.fillStyle=`rgba(238,163,187,${.06*k})`;ctx.fillRect(0,0,W,H);}
   ctx.drawImage(bg,0,0,W,H);
   drawFloatFx(t);drawSpook(t,true);drawFlash(t);hkAll("overlay",t);
   // film grain
@@ -1947,7 +1951,7 @@ function gTick(g,t,dt){
   if(!G.over&&G.def.step)G.def.step(G,t,dt);
   g.save();const sh=clamp(1-(t-G.scareT)/.4,0,1)*8;g.translate((Math.random()-.5)*sh,(Math.random()-.5)*sh);
   g.clearRect(-10,-10,G.W+20,G.H+20);g.drawImage(G.bgc,0,0,G.W,G.H);G.def.draw(G,g,t);
-  if(!G.def.scary)for(const q of sakura.list.slice(0,20))drawPetal(g,q.x*(G.W/Math.max(1,view.W)),q.y*(G.H/Math.max(1,view.H)),q.size,q.rot,.7);
+  if(!G.def.scary)for(const q of sakura.list.slice(0,20))drawPetal(g,q.x*(G.W/Math.max(1,view.W)),q.y*(G.H/Math.max(1,view.H)),q.size,q.rot,.7,q.k);
   drawScare(g,t);g.restore();
   if(G.running)$("gStat").textContent=G.def.stat(G);
 }
@@ -3019,6 +3023,7 @@ function plugBoot(){buildTabs();ui();tabDots();hkAll("boot");hubDot();setInterva
 
 // ═════ add-ons (built from feat/*.js by tools/build.py — edit them there) ═════
 // ── rooms.js
+HBLK="rooms";
 {
 // ───────────────────────── «Дом открывается постепенно»: rooms that open one by one ─────────────────────────
 // The kura (storehouse), the attic, the tea house and the shrine stand closed. The first one still closed is being
@@ -3157,6 +3162,7 @@ document.head.insertAdjacentHTML("beforeend",`<style>.ro-prev{width:100%;height:
 X.ro={RS,cur:roCur,panel:roPanel,tick:roTick,locked:roLocked,ready:roReady,act:roAct,newDay(){RS.day="";delete RS.act.chest;delete RS.act.miso;}};
 }
 // ── rooms2.js
+HBLK="rooms2";
 {
 // ───────── Rooms 2 (idea #10): the tea house 茶室 and the forest shrine 祠 — painted depth layers (art/rooms2_art.py),
 // ~30 things each (atlases cha/hok), tray actions: matcha and the scroll; the bell and an offering for the stone foxes.
@@ -3273,6 +3279,7 @@ hook("boot",()=>{for(const id of ["ch_kama","ch_matcha","ch_chasen"])loadItem(id
 X.rooms2={brew,admireScroll,ringBell,giveFox,M:R2M,st:R2};
 }
 // ── story2.js
+HBLK="story2";
 {
 // ───────────────────────── Second story «Кошачья гора» (Nekodake): one chapter per calendar day ─────────────────────────
 // A book in the 物語 tab (BOOKS): opens after the first story; the next chapter's beginning unlocks on a later dayKey()
@@ -3423,6 +3430,7 @@ hook("boot",note);hook("sec",()=>{if(last!==null)note();});
 X.story2={B,st,CH,gate:()=>gate(st),state:()=>bkState(B),vis};
 }
 // ── return.js
+HBLK="return";
 {
 // ───────────────────────── «Пока тебя не было»: a painted diary page on return + Musya's finds ─────────────────────────
 // Away ≥ 45 min → one postcard: how long, what Musya did (narrator, she never talks), news from other systems (hook "away"),
@@ -3592,6 +3600,7 @@ hook("panelClose",id=>{if(id==="ret")R.find=null;});
 X.ret={show,awayText,pickFind,news,doing,R,FD};
 }
 // ── lanterns.js
+HBLK="lanterns";
 {
 // ───────────────────────── «Фонарики дней»: seven paper lanterns under the veranda eaves ─────────────────────────
 // Every calendar day the player opens the game one more lantern lights (up to 7); every missed day puts one out.
@@ -3764,6 +3773,7 @@ X.lan={S:LAN,day:()=>{const ev=lanDay();if(ev){EV=ev;}return ev;},arrive:()=>{if
   set:o=>Object.assign(LAN,o),back:n=>{const d=today();d.setDate(d.getDate()-n);LAN.day=dayKey(d);}};
 }
 // ── visitors.js
+HBLK="visitors";
 {
 // ───────────────────────── Night visitors: yōkai come to things + a treat left on the floor (like Neko Atsume) ─────────────────────────
 // A room with the right things placed (S.placed) and a plate with a liked treat → 3–10 min later (real time, also while the game is
@@ -3979,6 +3989,7 @@ X.vs={VS,D:vsD,step:vsStep,meet:vsMeet,pos:r=>{const R=vsD().r[r];return R&&vsPo
   tap(room){const b=vsBox(room,vsD().r[room]),r=cv.getBoundingClientRect();cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:r.left+(b.x0+b.x1)/2,clientY:r.top+(b.y0+b.y1)/2,pointerId:9,bubbles:true}));}};
 }
 // ── rumors.js
+HBLK="rumors";
 {
 // ───────────────────────── «Слухи и час быка»: guests whisper rumours; at the right hour, in the right room, a quiet sign appears ─────────────────────────
 MON.m_rm_tengu=[440,580];MON.m_rm_okiku=[300,620];MON.m_rm_kosode=[520,540];MON.m_rm_chagama=[360,380];
@@ -4164,6 +4175,7 @@ X.rm={RUM,st,live,here,moonAge,unlockAll(){const R=st();for(const r of RUM)if(!R
   spot(id){const r=RI[id];return rmPt(...r.pt());},tap(id){const b=cv.getBoundingClientRect(),[x,y]=this.spot(id);cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:b.left+x,clientY:b.top+y,bubbles:true,pointerId:1,isPrimary:true}));},reveal(id){reveal(RI[id]);},wake(){roomT=now()-10;}};
 }
 // ── haunt.js
+HBLK="haunt";
 {
 // ───────────────────────── Одержимая комната (idea #13): once a day a yōkai hides in one room ─────────────────────────
 // S.ext.haunt = {day,room,yk,spot,found,wrong,told,n (catches in total),got:[yōkai ids found]}
@@ -4341,6 +4353,7 @@ X.hn={H:hnH,rt,spots:HN_SPOTS,yk:HN_YK,roomFor:hnRoomFor,
   tell(k){rt.tellAt=now();if(k!=null)rt.tellKind=k;},flick(){rt.flick=now();}};
 }
 // ── dreams.js
+HBLK="dreams";
 {
 // ───────────────────────── «Сны Муси» (prefix dr): a thought bubble over sleeping Musya opens her dream ─────────────────────────
 // Six dream worlds drawn on the mini-game canvas (static layers cached per open), glowing fragments to catch, nightmare shadows
@@ -4613,6 +4626,7 @@ hook("album",el=>{const D=drS(),n=DRK.filter(k=>D.seen[k.id]).length;
 X.dream={next:k=>{drNext=k;},open:k=>{drRun=null;drNap=pet.start;drRun={kind:k||drPickKind(),en:S.needs.energy};openPlace("dream");},avail:drAvail,bubble:drB,kinds:DRK.map(k=>k.id),end:()=>{if(G.id==="dream"){G.st.e=G.st.dur;G.st.t0=now()-G.st.dur;}}};
 }
 // ── candles.js
+HBLK="candles";
 {
 // ───────────────────────── «Сто свечей» (hyakumonogatari): every discovery in the game puts out one candle ─────────────────────────
 // Sources: kaidan read, bestiary, fish, recipes, crops, guest friends, festivals, story chapters + every disc(kind,id) of the add-ons.
@@ -4789,6 +4803,7 @@ X.cd={n:()=>CD.log.length,out:cdOut,open:cdOpen,finale:cdFinale,check:cdCheck,st
     ()=>{for(const i of ITEMS)if(disc("find",i.id))return 1;}];let i=0,guard=0;while(cdAll().length<n&&guard++<600)add[i++%add.length]();cdCheck(false);}};
 }
 // ── trust.js
+HBLK="trust";
 {
 // ───────────────────────── «Доверие Муси»: care over time unlocks new habits ─────────────────────────
 // Points come from petting, feeding, bathing, play, mini-games, time together and daily visits (daily caps, never decay).
@@ -4868,6 +4883,7 @@ X.ts={name:id=>tsName(+String(id).replace(/\D/g,"")||1),lv:()=>T.lv,st:T,greet:t
   set(p){T.p=p;T.init=1;tsLevel(true);}};
 }
 // ── travel.js
+HBLK="travel";
 {
 // ───────────────────────── «Путешествия Муси» (add-on tv, idea #9, like Tabikaeru) ─────────────────────────
 // Pack a bento (+ omamori, lantern) → she walks out through the torii and is away 1–3 h (the first trip 30 min);
@@ -5070,6 +5086,7 @@ X.tv={T:()=>T,pk,pack:tvPack,leave:tvLeave,album:tvAlbum,card:tvCard,call:tvCall
   skip(min){const c=T.cur,d=min*60e3;if(!c)return;for(const k of["t0","t1","call","gateAt"])if(c[k])c[k]-=d;for(const L of c.legs){L.at-=d;if(L.got)L.got-=d;}tvSync(false);}};
 }
 // ── sakura.js
+HBLK="sakura";
 {
 // ───────────────────────── «Дерево, которое растёт месяц»: a sakura stone in the courtyard grows by watered days ─────────────────────────
 // S.ext.tree = {pl: dayKey planted, days: watered days, last: dayKey of the last watering, bd: dayKey the tree first bloomed}
@@ -5169,6 +5186,7 @@ X.sk={plant:skPlant,water:skWater,look:skLook,pos:skPos,frame:skFrame,st:skS,
   set(n){if(!skS())S.ext.tree={pl:dayKey(),days:0,last:null};const tr=S.ext.tree;tr.days=n;tr.last=null;if(n<30)delete tr.bd;skLoad();ui();tabDots();}};
 }
 // ── gacha.js
+HBLK="gacha";
 {
 // ───────────────────────── «Гатяпон на ярмарке»: one free capsule a day, 18 figurines in three series ─────────────────────────
 // S.ext.gacha = {day: dayKey of the last free capsule, extra: capsules from swapped duplicates, got: {figurineId: copies}}
@@ -5301,6 +5319,7 @@ X.gc={open:gcOpen,give:gcGive,swap:gcSwap,st:gcS,left:gcLeft,frame:gcFrame,force
   turn(){if(G.id==="gc_gacha")G.st.goal=Math.PI*2;},crankTap(){if(G.id!=="gc_gacha")return;const L=gcLay(G);G.def.down(G,L.hx,L.hy,now());G.def.up(G);},tap(){if(G.id==="gc_gacha"&&G.st.ph==="ready")G.def.down(G,G.st.cx,G.st.cy,now());}};
 }
 // ── kimono3d.js
+HBLK="kimono3d";
 {
 // Volumetric kimono. art/wear/kimono.py paints each kimono per pixel onto a body model measured from the sitting frames
 // (cell = frame px 84..316 × 176..392, 1:1). Here, once per (kimono, strip, frame): the cell is fitted to the frame,
@@ -5350,6 +5369,7 @@ hook("drawBody",(g,st,f,k,id)=>{
 X.kimono3d={cache:k3cache,build:k3build};
 }
 // ── ema.js
+HBLK="ema";
 // ───────────────────────── Доска эма: three small wishes a day from yōkai Musya knows ─────────────────────────
 // A wooden ema rack stands in the entrance (left of the torii, behind the travel post box). Every dayKey() three known
 // yōkai hang a plaque with a wish; game events (hook ev) fulfil them; done plaques glow; the player collects small gifts
@@ -5568,6 +5588,7 @@ X.em={D:emD,gen:emGen,ev:emEv,collect:emCollect,open:emOpen,T:EM_T,
   hit:()=>emHit};
 }
 // ── parade.js
+HBLK="parade";
 {
 // ───────────────────────── «Ночной парад ста демонов» (百鬼夜行): on the real new moon every yōkai Musya has met walks past the torii ─────────────────────────
 // The parade walks on the three dark nights around the new moon (D−1, D, D+1; 20:00–04:00), once per lunation; it is announced 3 days before.
@@ -5735,6 +5756,7 @@ X.pd={now:pdNow,st:pdS,reset(){Object.assign(pdS(),{pass:null,done:false,saw:fal
     cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:b.left+x,clientY:b.top+y,bubbles:true,pointerId:1}));return r.k;}};
 }
 // ── forest.js
+HBLK="forest";
 {
 // ───────────────────────── «Лес за тории» (add-on fo) ─────────────────────────
 // An old hand-painted map of the forest behind the house, hidden in fog (a hidden full-screen GAME, opened from the 門 tray
@@ -5912,6 +5934,7 @@ X.forest={open:foOpen,state:foS,left:foLeft,
   reveal(list,at){const f=foS();for(const i of list)if(!f.rev.includes(i)){f.rev.push(i);const l=FOLI[i];if(l)foGive(l);}if(at!=null)f.at=at;save();}};
 }
 // ── seasons.js
+HBLK="seasons";
 {
 // ───────────────────────── «Настоящая погода и времена года»: the real weather outside (Open-Meteo) and the seasons by the real month ─────────────────────────
 // S.ext.wx = {city:"nn"|…|"off", w:{code,temp,pr,sn,day,at,city}|null}. The weather hook drives rain only while the 🌦 button is on «авто».
@@ -6095,6 +6118,7 @@ X.wx={sea(v){wxSt.sea=v||null;},st:wxS,real:wxReal,season:wxSeason,fetch:()=>wxF
   force(code,temp=5,day=1){const W=wxS();if(!WX_CITY[W.city])W.city="nn";W.w={code,temp,pr:0,sn:0,day,at:Date.now(),city:W.city};wxTry=Date.now();}};
 }
 // ── birthday.js
+HBLK="birthday";
 {
 // ───────────────────────── Musya's birthday and «months together» ─────────────────────────
 // S.ext.bd = {start:"YYYY-MM-DD" (the day Musya came; guessed from the save on first boot, the player can correct it),
@@ -6272,6 +6296,7 @@ document.addEventListener("change",e=>{const el=e.target;if(!el.classList||!el.c
 X.bd={B,ms:bdMs,next:bdNext,guess:bdGuess,friends:bdFriends,party:()=>bdParty(bdMs()),set:k=>{B.start=k;B.auto=0;save();},ban:()=>bdBan};
 }
 // ── pet2.js
+HBLK="pet2";
 {
 // ───────────────────────── «Питомец Муси»: a little bakeneko kitten that lives with her ─────────────────────────
 // It turns up in a wet box at the gate, gets a name, follows Musya from room to room, sits or sleeps beside her on her
@@ -6448,6 +6473,7 @@ X.pt={st:PT,pk,feed:ptFeed,adopt:ptAdopt,found:ptFound,tap:ptTap,
   nap(){ptSet("sleep",now());},boxXY(){const b=pk.boxHit;return b?[(b[0]+b[2])/2,(b[1]+b[3])/2]:null;},kitXY(){const b=pk.box;return b?[(b[0]+b[2])/2,(b[1]+b[3])/2]:null;}};
 }
 // ── zen.js
+HBLK="zen";
 {
 // ───────────────────────── «Сад камней» (karesansui): rake white gravel, set the stones, smooth it all again ─────────────────────────
 // S.ext.zen = {o:[[key,x,y]…] moss+stones in garden units (600×900), st:[strokes] the raked pattern (replayed on open),
@@ -6654,6 +6680,7 @@ X.zn={open:znOpen,st:znS,
   walk(){G.st.nextWalk=0;},cb(){return G.st.cb;},quad:znQuad};
 }
 // ── stars.js
+HBLK="stars";
 {
 // ───── «Звездопад и телескоп» (st): shooting stars on clear nights, real meteor showers by date, a telescope with Japanese constellations
 // Shooting stars live in the 3D sky (two additive meshes right after the sky layer, so roofs and trees cover them); 2D fallback + the attic's round window.
@@ -6900,6 +6927,7 @@ X.st={state:stS,fly:()=>stFly,shower:stShowerNow,next:stNextSh,
   pan(v){G.st.pan=clamp(v,0,G.st.pmax);}};
 }
 // ── hanafuda.js
+HBLK="hanafuda";
 {
 // ───────────────────────── «Ханафуда с тануки»: real koi-koi against yōkai, Musya watches from the side ─────────────────────────
 // S.ext.hanafuda = {w:{opp:wins}, l:{opp:losses}, y:{yakuKey:times scored}, len:3|6, opp:last chosen, n:matches}
@@ -7245,6 +7273,7 @@ X.hf={open:hfOpen,intro:hfIntro,S:hfS,yaku:hfYaku,
     R.w[w<0?2:w]++;if(w>=0)R.pts[w]+=q.yk[w];}return R;}};
 }
 // ── workshop.js
+HBLK="workshop";
 {
 // ───────────────────────── «Мастерская» (prefix ws): a craft workbench, materials from everyday life, 16 hand-made things ─────────────────────────
 // Materials come from what the player already does (harvest, fishing, watering, guests, forest steps, other add-ons' discoveries);
@@ -7435,6 +7464,7 @@ X.ws={S:wsS,gain:wsGain,make:wsMake,open:wsOpen,room:wsRoom,ready:wsReady,flush:
   tap(){const b=wsBench();if(!b)return false;const q=wsQuad(b);return !!hk("hit",q.x+q.w/2,q.y+q.h*.7);}};
 }
 // ── cranes.js
+HBLK="cranes";
 {
 // ───────────────────────── «Тысяча журавликов» (senbazuru) ─────────────────────────
 // The player folds paper cranes in a short swipe mini-game (up to 10 a day: the first counts ×3, the 2nd–3rd ×2), every
@@ -7674,6 +7704,7 @@ X.cr={C:CR,add:crAdd,open:crOpen,friends:crFriends,tick:crFriendsTick,wish:crWis
   tap(){if(!crHit)return false;const x=(crHit[0]+crHit[2])/2,y=(crHit[1]+crHit[3])/2;return hk("hit",x,y);}};
 }
 // ── birds.js
+HBLK="birds";
 {
 // ───────────────────────── «Кормушка для птиц»: a feeder in the courtyard; birds of Japan come by season, hour and weather ─────────────────────────
 // S.ext.birds = {full: ms the seeds were poured (they last 2 h), mk: ms a mandarin slice was put, seen:{id:ms first sighting}, day: dayKey, td:[ids seen today],
@@ -7877,6 +7908,7 @@ X.birds={st:biS,list:biB,spawn:biSpawn,fill:biFill,mikan:biMikan,card:biCard,cal
   land(){for(const b of biB)if(b.ph==="in"){b.t0=now()-b.dur;}},reset(){biNext=now()+999;}};
 }
 // ── koi.js
+HBLK="koi";
 {
 // ───────────────────────── «Пруд с карпами»: breed koi in a wooden tub, raise the fry, release them into the big pond, Sunday koi show ─────────────────────────
 // S.ext.koi = {f:[fish], n:next id, br:dayKey of the last spawning, fed:dayKey the fry were fed, sel:[ids picked for a pair], show:{d,f,pl,sc,rv}, wins:[1st,2nd,3rd,4th], shows}
@@ -8164,6 +8196,7 @@ X.ko={open:koOpen,show:koShow,st:KS,start:koStart,img:koImg,rivals:koRivals,tub:
   enter(i){koEnter(i);koShow();},pond(i){koPond(i);}};
 }
 // ── serial.js
+HBLK="serial";
 {
 // ───────────────────────── «Фонарь на перевале»: a serial kaidan the fox bride tells at the kitchen hearth, one episode a week ─────────────────────────
 // S.ext.serial = {start: dayKey the player met the fox, heard: episodes heard to the end (0..10), told: episodes already announced}
@@ -8381,6 +8414,7 @@ X.sr={visit:srVisit,st:srS,avail:srAvail,open:srOpen,list:srList,go:srGo,here:sr
   tap(){const B=srBox(),r=cv.getBoundingClientRect();cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:r.left+B.x,clientY:r.top+B.y-B.h*.5,pointerId:1,bubbles:true}));}};
 }
 // ── ryokan.js
+HBLK="ryokan";
 {
 // ───────────────────────── Рёкан для ёкаев: travelling yōkai ask to stay the night ─────────────────────────
 // After 18:00 (hourNow) 1–2 known yōkai come to the gate; the lantern sign «宿» lights up, a dlg asks for a corner for the night
@@ -8648,6 +8682,7 @@ X.ry={D:ryD,step:ryStep,host:ryHost,ok:ryOk,review:ryReview,book:ryBook,ask:ryAs
   reset:()=>{const R=ryD();R.day="";R.g=[];ryArr=0;}};
 }
 // ── kanji.js
+HBLK="kanji";
 {
 // ───────────────────────── «Слово дня»: one kanji a day, traced with a brush on washi; the notebook «Тетрадь» ─────────────────────────
 // S.ext.kanji = {d:{"猫":[bestStars,firstDayKey]}, last: dayKey of the last day whose word was traced, streak, best (longest streak),
@@ -8984,6 +9019,7 @@ X.kj={S:kjS,today:kjToday,open:()=>kjOpen(kjToday(),"day"),book:kjBook,card:kjCa
   btn(id){const b=G.st.L.btns.find(b=>b.id===id);G.def.down(G,b.x+b.w/2,b.y+b.h/2,now());},score:()=>kjScore(G.st),scrollRedo(){kjScD=0;}};
 }
 // ── friends.js
+HBLK="friends";
 {
 // ───────────────────────── «Истории друзей»: letters from the seven gate guests, then a visit ─────────────────────────
 // Each guest has 5 episodes: letters 1–4 (episode k needs ♥k: S.friends[id].n ≥ k) and a note + a visit scene (♥5).
@@ -9331,6 +9367,7 @@ X.yu={S:yuS,F:yuF,mail:yuMail,open:yuOpen,list:yuList,visit:yuVisit,status:yuSta
   skip(id,e,ans=0){const F=yuF(id);F.n=e;F.rd=e;for(let k=0;k<Math.min(e,4);k++)F.a[k]=ans;for(let k=0;k<e;k++)F.d[k]="2026-01-01";save();}};
 }
 // ── shop.js
+HBLK="shop";
 {
 // ───────────────────────── «Лавка тануки» (prefix tn): a night barter cart at the fair ─────────────────────────
 // Open 17:00–03:00: the tanuki stands behind the counter; by day the cart is shut («Закрыто — тануки спит до вечера»).
@@ -9517,6 +9554,7 @@ X.tn={st:tnS,stock:tnStock,buy:tnBuy,open:tnPanel,frame:tnFrame,can:i=>tnCan(tnS
   regen(){const s=tnS();s.day="";s.wk=null;return tnStock();},tap(){const F=tnFrame();return !!hk("hit",F.x0+220*F.k,F.y0+250*F.k);}};
 }
 // ── capsule.js
+HBLK="capsule";
 {
 // ───────────────────────── «Капсула времени»: a letter to the future, sealed in a kiri box ─────────────────────────
 // The player writes a letter (≤800 chars) to her future self and picks when it opens: in a month, half a year or a year
@@ -9714,6 +9752,7 @@ X.capsule={st:TC,write:tcWrite,seal(txt,sp,f=1){TC.draft=txt;TC.sp=sp||"m";TC.f=
   fix(e){tcFix=e;},where(w){tcTestW=w;},hits:()=>tcHits,add:tcAdd,facts:tcFacts};
 }
 // ── daruma.js
+HBLK="daruma";
 {
 // ───────────────────────── «Дарума желаний»: the player's real goals on daruma ─────────────────────────
 // A goal → a daruma with the first eye painted by the player's own brush stroke; the goal comes true → the second eye.
@@ -9917,6 +9956,7 @@ X.dm={S:dmS,open:dmNew,eye:dmEye,burn:dmBurn,fire:dmFire,home:dmHome,draft:()=>d
   tap(id){const q=S.placed[id];return hk("itemTap",{id,x:q.x,y:q.y,item:true},IT[id],now())?$("toast").textContent:null;}};
 }
 // ── bonsai.js
+HBLK="bonsai";
 {
 // ───────────────────────── «Бонсай» 盆栽: a procedural tree in a pot on the veranda — grows every day; prune, wire and water it on the bench ─────────────────────────
 // S.ext.bonsai = {sp:"momiji"|"matsu", pot:0..2, born:dayKey, sd:seed, n:next seg id, g:[[parent,relAngle,len,bornDay,id,wireDay+1]…] (parents first),
@@ -10256,6 +10296,7 @@ X.bn={open:bnOpen,st:bnS,style:()=>bnS()&&bnStyle(bnS()),png:bnPng,thumb(){const
   pos(){const q=S.placed.bn_tree;if(!q)return null;curRow=q.y;const a=imgToStage(q.x,q.y,CAT_D);curRow=null;return{stage:a,vis:[visX(-1e5),visX(1e5)],cat:catLineY()};}};
 }
 // ── ikebana.js
+HBLK="ikebana";
 {
 // ───────────────────────── «Икебана» (add-on ik) ─────────────────────────
 // Once a day Musya gathers 3 seasonal stems in the courtyard (+1 if the forest was explored today). The arranging game
@@ -10531,6 +10572,7 @@ X.ik={S:ikS,gather:ikGather,open:ikOpen,score:ikScore,wilt:ikWilt,here:ikJHere,t
   tapAlcove(){return ikBox?hk("hit",(ikBox[0]+ikBox[2])/2,(ikBox[1]+ikBox[3])/2):"no box";},box:()=>[ikBox,ikJBox]};
 }
 // ── tea.js
+HBLK="tea";
 {
 // ───────── «Чайная церемония» 茶道: every third day (from the add-on's first day) a yōkai sends word that they will come
 // for tea in the evening (from 17:00). The guest waits in the tea house (or on the veranda with a travel tea box while the
@@ -10818,6 +10860,7 @@ X.tea={open:teOpen,st:teS,guest:teGuest,here:teHere,room:teRoom,G:TE_GAME,P:TE_P
   tap(u,v){X.tea.drag([[u,v]]);X.tea.lift();}};
 }
 // ── shadow.js
+HBLK="shadow";
 {
 // ───────────────────────── «Теневой театр» (kage-e 影絵) ─────────────────────────
 // A full-screen hidden game: a paper shōji screen lit from behind by a flickering candle. The player takes black cut-paper
@@ -11109,6 +11152,7 @@ X.kg={K:KG,open:kgOpen,q:()=>G.st,L:()=>kgL(G),key:k=>kgKey(G.st,kgL(G),k,now())
   release(){G.held=false;KG_GAME.up(G);}};
 }
 // ── paint.js
+HBLK="paint";
 {
 // ───────────────────────── «Картины Муси»: Musya walks over washi with inky paws; a finished painting gets a title, a hanko and a frame ─────────────────────────
 // S.ext.paint = {n: paintings finished, fr: paintings ever framed, u:[ink ids used in finished paintings],
@@ -11422,6 +11466,7 @@ X.mp={S:mpS,open:mpOpen,gal:mpGal,one:mpOne,sync:mpSync,
   btn(id){const L=G.st.L,b=[...L.btns,...L.fb,...L.kb].find(b=>b.id===id);G.def.down(G,b.x+b.w/2,b.y+b.h/2,now());},q:()=>G.st};
 }
 // ── holidays.js
+HBLK="holidays";
 {
 // ───────────────────────── New holidays: Cat Day, Japanese Halloween, Japanese Christmas, Omisoka ─────────────────────────
 // Four festivals are spliced into FEST, so the calendar 暦, the chip, tasks, shop items, rewards and stamps all run on the
@@ -11576,6 +11621,7 @@ X.holidays={HS,carve:()=>{for(let i=0;i<5;i++)hk("itemTap",{id:"hl_kab0",...S.pl
   prog:id=>{const F=hlFest(id);return{key:festKey(F),...festProg(F)};},order:()=>FEST.map(f=>f.id).join(",")};
 }
 // ── cats.js
+HBLK="cats";
 {
 // ───────────────────────── «Кошки соседей»: 8 ordinary neighbour cats visit the garden wall, the onsen fence and the torii by schedule ─────────────────────────
 // S.ext.cats = {c:{id:{met:ms first acquaintance, fr:0..5 friendship, fed:dayKey of the last fish, seen:dayKey greeted, down:dayKey came down to Musya}}}
@@ -11772,6 +11818,7 @@ X.cats={st:nkS,rt:nkRT,box:nkBox,force(id,on=true,arr=false){if(on)nkForce[id]=1
   down(id){const r=nkRT[id];if(r){r.mode="jump";r.back=0;r.t0=now();r.dur=.9;}},sched:()=>NK.map(c=>c.id+":"+(nkNext(c)?nkWhen(nkNext(c)):"-")).join(" | ")};
 }
 // ── mystery.js
+HBLK="mystery";
 // ───────────────────────── «Пропажа в доме» (prefix dt): a small weekly detective ─────────────────────────
 // Once a week (Monday from 6:00, or the first visit of the week) a thing vanishes from the house: one of the
 // player's placed things, else a decor piece (the veranda furin…), else a core prop. Nothing is deleted for good:
@@ -12040,6 +12087,7 @@ X.mystery={st:dt,rt,wk:dtWk,tpl:DT_TPL,roll:dtRoll,nb:dtNb,accuse:dtAccuse,resto
   tap(){const c=dt().c;for(let i=0;i<c.clues.length;i++){const q=c.clues[i],b=rt.box[i];if(!q.f&&q.room===S.room&&b)return hk("hit",b[0]+b[2]/2,b[1]+b[3]/2);}return"no box";}};
 }
 // ── insects.js
+HBLK="insects";
 {
 // ───────────────────────── «Сачок и насекомые»: insects of Japan by real season, hour and room; a net, a card, a singing cricket cage ─────────────────────────
 // S.ext.insects = {seen:{id:ms first recorded}, n:{id:times caught}, cage:"suzumushi"|"matsumushi"|null, net:0|1 (net mode), day, td:[ids caught today]}
@@ -12279,6 +12327,7 @@ X.insects={st:muS,list:muB,sp:MU_SP,spawn:muSpawn,card:muCard,record:muRecord,st
   swing(i=0,ok=1){const b=muB[i];if(!b)return;const r=Math.random;if(ok)Math.random=()=>0;muSwing(b.sx,b.sy,b);Math.random=r;}};
 }
 // ── news.js
+HBLK="news";
 {
 // ───────────────────────── «Вестник ёкаев» (妖怪新聞): a weekly kawaraban about the player's week ─────────────────────────
 // Every Monday after 6:00 (week of today()) a new issue comes out about the previous Mon–Sun; the very first one at once
@@ -12596,6 +12645,7 @@ X.sb={S:SB,pub:sbPublish,open:sbOpen,arch:sbArch,tick:sbTick,ev:sbEv,html:sbHtml
   tap(){const r=sbBox;return r?hk("hit",r[0]+r[2]/2,r[1]+r[3]/2):false;}};
 }
 // ── music.js
+HBLK="music";
 {
 // ───────────────────────── «Музыка дома» 音楽: quiet procedural Japanese music (WebAudio synth, no audio files) ─────────────────────────
 // Moods by room and time: koto (yo) by day, shakuhachi (in-sen) at night, shamisen (miyako-bushi) in the kitchen, a koto lullaby in the
@@ -12792,6 +12842,7 @@ X.og={M,st:()=>({c:!!og.c,state:og.c&&og.c.state,mood:og.mood,tune:og.tune&&og.t
       X.og.res={id,notes:q.length,peak:+pk.toFixed(3),rms:+Math.sqrt(s/(2*sr*sec)).toFixed(4),nan};});}};
 }
 // ── hide.js
+HBLK="hide";
 {
 // ───────────────────────── «Прятки с Мусей»: she runs off and hides in another open room ─────────────────────────
 // Start: the 🙈 button on the veranda, the 家 card, or Musya's own invitation (once a day, daytime: «hide» pose + 🙈, tap her).
@@ -12944,6 +12995,7 @@ X.kb={st:()=>kb,K:KB,spots:KB_SP,start:kbStart,found:kbFound,end:kbEnd,dbg:kbDbg
   age(s){if(kb)kb.t0-=s*1000;},invite(){KB.inv="";kbInvite(true);return kbInv>0;}};
 }
 // ── kimodameshi.js
+HBLK="kimodameshi";
 {
 // ───────────────────────── «Кимодамэси» (肝試し) — the summer-night test of courage ─────────────────────────
 // A hidden full-screen game: Musya takes a small paper lantern and walks the dark corridor of the old house, out through
@@ -13262,6 +13314,7 @@ X.km={K:KM,open:kmOpen,begin(){closePanel();openPlace("km_walk");},q:()=>G.st,
   key:k=>kmKey(G,G.st,k),tap(){KM_GAME.down(G,5,G.H*.5,now());KM_GAME.up(G);},plan:kmPlan};
 }
 // ── sumo.js
+HBLK="sumo";
 // ───────────────────────── Сумо с каппой (sm): a weekly basho Fri–Sun on the night dohyō ─────────────────────────
 // Kappa love sumo and challenge passers-by; bow to one and he bows back, spilling the water of his head plate — and his strength.
 // Basho = Friday, Saturday, Sunday: one official bout a day against the next opponent of the ladder; other days only training.
@@ -13508,6 +13561,7 @@ X.sumo={S:smS,opp:smOpp,open:smOpen,rank:smRank,
   st:()=>{const q=G.st;return q&&q.o?{ph:q.ph,p:+q.p.toFixed(2),water:q.water,res:q.res,clk:+q.clk.toFixed(1),ch:!!q.ch,bow:q.bowRes}:null;}};
 }
 // ── kamidana.js
+HBLK="kamidana";
 {
 // ───────────────────────── «Камидана»: the household Shinto altar high on the kitchen wall ─────────────────────────
 // A shelf with a shinmei-style miniature shrine, a mirror, a shimenawa with shide, sakaki in two vases and a tiny candle
@@ -13702,6 +13756,7 @@ document.head.insertAdjacentHTML("beforeend",`<style>
 </style>`);
 }
 // ── haiku.js
+HBLK="haiku";
 {
 // «Хайку недели» (prefix hi, S.ext.haiku). Every ISO week a new set of 26 word tiles: kigo of the season, pauses, small words and words about
 // the house, Musya, the night and yōkai. The player lays them into three lines (5-7-5, ±1 allowed with a softer rating) or types the lines,
@@ -13970,6 +14025,7 @@ X.hi={S:hiS,tiles:hiTiles,week:hiWk,comp:hiComp,book:hiBook,show:hiShow,check:hi
     P("pointerdown",x0,y0,b);P("pointermove",x0+20,y0+12);P("pointermove",x1,y1);P("pointerup",x1,y1);return hiDr().l.map(hiJoin);},tap(){const b=hiBox;return b?!!hk("hit",(b[0]+b[2])/2,(b[1]+b[3])/2):false;}};
 }
 // ── snow.js
+HBLK="snow";
 {
 // ───────────────────────── «Зимние забавы»: a snowman (yukidaruma — two balls) and a kamakura in the games yard ─────────────────────────
 // S.ext.snow = {men:[{r1,r2,e,m,h,a,slot,ml,at}], km:{ml,at}|null, n:{<winter>:snowmen made}, kn:{<winter>:kamakuras}, wk:"<winter of the snow toast>", tot, melted}
@@ -14270,6 +14326,7 @@ X.snow={S:ykS,on:ykSnow,line:ykLine,melt(i,v){const s=ykS();if(i==="km"){if(s.km
   pack(){if(G.id!=="yk_kama")return;const f=ykFit(G);G.st.lx=null;for(let i=0;i<80;i++){const x=YK_KX+Math.sin(i*.6)*300,y=YK_KB-180+Math.cos(i*.9)*90;ykKamaMove(G,f.ox+x*f.k,f.oy+y*f.k,true);}}};
 }
 // ── loom.js
+HBLK="loom";
 {
 // «Ткацкий станок» (prefix ht): a taka-bata floor loom in the kura. Tap → a hidden full-screen game: pick the warp and weft
 // dyes and a traditional pattern, weave 24 rows with rhythmic taps (throw the shuttle — beat with the reed), then sew the
@@ -14477,6 +14534,7 @@ X.loom={S:htS,open:htOpenLoom,cell:htCell,compose:htCompose,tile:htTile,HT,
   btn(sx,sy){const {k,ox,oy}=htL(G);G.def.down(G,ox+sx*k,oy+sy*k,now());}};
 }
 // ── rice.js
+HBLK="rice";
 { // «Рисовое поле» (add-on rice): three terraced paddies on the hill behind the house, one cycle ≈ 3 weeks of real days.
 // Steps: flood the paddies → plant seedlings along the rows → pull weeds (every 2–3 days; skipping only slows growth)
 // → rice grows by real days → reap with a sickle → 2 days on the hasa-gake rack → thresh → own rice → mochitsuki with a yōkai.
@@ -14732,6 +14790,7 @@ X.ri={st:riS,tick:riTick,open:riOpen,line:riLine,due:riDue,
   birds(){if(G.id!=="ri_field")return;G.st.spT=0;}};
 }
 // ── kite.js
+HBLK="kite";
 {
 // ───────────────────────── «Воздушный змей» (tako-age) on windy days ─────────────────────────
 // Real wind from Open-Meteo for the city of the seasons add-on (S.ext.wx.city): a kite day when the wind is ≥ 12 km/h and
@@ -15029,6 +15088,7 @@ X.kite={S:taS,day:taIsDay,wind:taWind,line:taLine,next:taNext,open:taOpen,list:t
   rk:()=>taRK,fake(sp,dir=270,rain=false){const K=taS();K.w={city:taCity()||"nn",at:Date.now(),sp,dir,rain,day:dayKey(),f:[]};K.try=Date.now();taCheck();}};
 }
 // ── chest.js
+HBLK="chest";
 {
 // ───────────────────────── «Сундук прабабушки»: a kiri chest that gives one old thing a week ─────────────────────────
 // An old paulownia nagamochi stands in the attic (in the kura while the attic is boarded up). Once per ISO week (the
@@ -15245,6 +15305,7 @@ button.ci.ob-ci{font:inherit;color:inherit;cursor:pointer}.ci small i{font-style
 </style>`);
 }
 // ── nurikabe.js
+HBLK="nurikabe";
 {
 // «Нурикабэ у ворот» — the wall yōkai with a riddle. On every other evening (odd day numbers since 1970 — 5 Oct 2026 is one;
 // 18:00–01:00, the hour after midnight still belongs to that evening) an old whitewashed wall with sleepy eyes grows across
@@ -15416,6 +15477,7 @@ X.nu={st:nuS,R:NU_R,ord:NU_ORD,eve:nuEve,here:nuHere,waits:nuWaits,stands:nuStan
   geo(){const G=nuGeo();return[G.x0,G.y0,G.w,G.h,G.gY].map(v=>Math.round(v));}};
 }
 // ── chronicle.js
+HBLK="chronicle";
 {
 // ───────────────────────── «Свиток-летопись» (絵巻): the house's history as a hand scroll ─────────────────────────
 // Milestones: disc() stamps (S.ext.disc), the day Musya came (S.ext.bd.start), the candle log (X.cd.st.log) and my own
@@ -15779,6 +15841,7 @@ X.rk={st:RK,scenes:rkScenes,events:rkEvents,text:rkText,when:rkWhen,open:rkOpen,
     cv.dispatchEvent(new PointerEvent("pointerdown",{clientX:x,clientY:y,pointerId:7,bubbles:true}));for(let k=1;k<=10;k++)cv.dispatchEvent(new PointerEvent("pointermove",{clientX:x+dx*k/10,clientY:y,pointerId:7,bubbles:true}));
     cv.dispatchEvent(new PointerEvent("pointerup",{clientX:x+dx,clientY:y,pointerId:7,bubbles:true}));return rkV.off;}};
 }
+HBLK="core";
 // ═════ end of add-ons ═════
 
 // ───────────────────────── Boot ─────────────────────────
@@ -15787,7 +15850,7 @@ new ResizeObserver(()=>resize()).observe(cv);
 init3D();
 const LI=loadImages();regItems();for(const sl in S.wear)if(S.wear[sl]&&WSPR[S.wear[sl]])loadWear(WSPR[S.wear[sl]].im);LI.then(()=>{
   resize();ui();hudTick();weatherLabel();pet.idle.next=now()+1.5;
-  react("😺",2.2);sakura.until=now()+8;sakura.next=now()+rand(40,80);
+  react("😺",2.2);{const k=petalKind();if(k){sakura.k=k;sakura.until=now()+8;}}sakura.next=now()+rand(40,80);
   $("loading").style.opacity=0;setTimeout(()=>$("loading").remove(),500);
   requestAnimationFrame(frame);storyBoot();festBoot();plugBoot();
 });

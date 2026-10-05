@@ -17,7 +17,7 @@ ORDER = ['rooms', 'rooms2', 'story2', 'return', 'lanterns', 'visitors', 'rumors'
          'stars', 'hanafuda', 'workshop', 'cranes', 'birds', 'koi', 'serial', 'ryokan', 'kanji',
          'friends', 'shop', 'capsule', 'daruma', 'bonsai', 'ikebana', 'tea', 'shadow', 'paint',
          'holidays', 'cats', 'mystery', 'insects', 'news', 'music', 'hide', 'kimodameshi', 'sumo', 'kamidana', 'haiku',
-         'snow', 'loom', 'rice', 'kite', 'chest', 'nurikabe', 'chronicle']
+         'snow', 'loom', 'rice', 'kite', 'chest', 'nurikabe', 'chronicle', 'story3', 'notice', 'hubplus']
 
 s = open(HTML, encoding='utf-8').read()
 if BEGIN not in s:
@@ -35,7 +35,8 @@ for f in files + extra:
     code = open(f, encoding='utf-8').read().strip()
     body_ = re.sub(r'^(\s*//[^\n]*\n)+', '', code + '\n').strip()   # leading comment lines are fine
     assert body_.startswith('{') and body_.endswith('}'), os.path.basename(f) + ' must be one { … } block'
-    body += '// ── %s\n%s\n' % (os.path.basename(f), code)
+    body += '// ── %s\nHBLK="%s";\n%s\n' % (os.path.basename(f), os.path.basename(f)[:-3], code)
+body += 'HBLK="core";\n'
 i, j = s.index(BEGIN) + len(BEGIN), s.index(END)
 if '--check-only' not in sys.argv:
     s = s[:i] + '\n' + body + s[j:]
