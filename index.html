@@ -273,18 +273,54 @@ const STRIPS=["rest","moveRight","moveLeft","sleep","play","purr","yarn","treat"
 const ANCH={"rest":[[98,32.5],[86.2,35],[94.8,35],[96.8,34.5],[99,33],[97.8,36],[92.8,33],[98.8,31]],"moveRight":[[146.8,67],[149.8,70.5],[139.5,72],[143.5,71.5],[151.2,72],[146.8,77],[146.8,74],[144.8,77.5]],"moveLeft":[[75.5,63.5],[65.2,62],[67.2,67.5],[75.2,63.5],[69,64],[65.5,61.5],[69.5,65],[71,63.5]],"sleep":[[94,27.5],[102.2,39.5],[98.2,77],[101.8,102.5],[96,85.5],[98.8,91.5],[101.5,93],[105,92]],"play":[[99.2,58],[97.5,56.5],[105,63],[102,58.5],[118,55],[105.5,60.5],[104.8,53],[103,58.5]],"purr":[[97.5,33],[96.2,35],[94.8,37.5],[96.5,38],[101.2,36.5],[97,34.5],[91,35.5],[96.5,33.5]],"yarn":[[102,26.5],[116.8,29.5],[110,44],[119.8,47],[98.2,30],[96.8,21.5],[96.2,44],[132.2,36.5]],"treat":[[101.5,29.5],[100.2,30.5],[101,34],[102.8,30.5],[102.8,30.5],[102,30],[98.5,29.5],[99.5,27]],"highfive":[[98.5,36],[97.2,34.5],[106.2,30],[106.8,34],[103.5,31],[104,32],[97.8,33],[98,37]],"stretch":[[96.2,45.5],[89.5,53.5],[110,55.5],[136.8,19],[67.8,24.5],[100.2,36.5],[95.5,47],[95.2,45.5]],"groom":[[97.2,36],[102.5,36.5],[105.2,39.5],[101.5,39.5],[94.8,32],[97.8,34.5],[101.5,34.5],[100,40]],"knead":[[105,25.5],[98.2,32],[89.8,29.5],[103.2,26],[110.8,32.5],[101,38],[100.8,37.5],[104.8,34.5]],"house":[[103.5,65],[105,77],[113.5,58],[104,71.5],[105.2,81.5],[105.2,78.5],[105.2,70],[105.8,73]],"butterfly":[[103.2,56],[92,55.5],[107.8,108],[115.8,64.5],[113,30],[103,56.5],[92.5,112],[94.2,61]],"box":[[101.2,49],[127.5,46.5],[118.2,75],[113,67],[117.5,111],[137.8,95],[118.5,116],[108.5,78.5]],"gift":[[105,57],[100.2,59.5],[96,66.5],[117.2,61.5],[108.5,68.5],[119.2,74.5],[103.2,61],[102.5,49.5]],"hide":[[99,29],[99.8,29.5],[96,33],[98,36.5],[96,29.5],[103,31],[100.5,29.5],[101.2,28.5]],"sulk":[[94.2,26.5],[92.8,31],[104.5,29.5],[100.8,37],[115.2,26],[88,27.5],[102,29.5],[112,32]],"gaze9":[[97.8,33.5],[93.2,36],[93.8,38],[95.8,39.5],[111.5,44],[108,43],[107,44],[104.8,48.5]],"gaze10":[[94.5,47],[94,47.5],[91.8,48.5],[82.5,47.5],[89.8,51.5],[90.8,50.5],[92.5,47.5],[101.5,45.5]]};
 const EYES={"rest":[[166,128,223,130],[183,128,233,108],[157,136,212,138],[211,136,256,134],[215,133,260,131],[170,152,221,152],[166,138,223,136],[166,124,222,128]],"moveRight":[0,0,0,0,0,0,0,0],"moveLeft":[[90,190,133,196],[72,188,114,193],[76,198,117,203],[91,190,132,196],[80,192,121,196],[72,186,115,191],[81,194,122,198],[84,190,126,195]],"sleep":[[156,122,215,124],[163,166,220,174],0,0,0,0,0,0],"play":[[172,171,217,174],[167,165,211,173],[172,174,214,185],[178,170,222,176],[210,161,254,167],[216,176,255,160],[181,145,225,153],[178,171,223,177]],"purr":[[164,132,222,134],[164,142,221,143],[161,147,218,148],[172,134,221,164],[181,131,230,161],[165,138,222,139],[164,158,210,126],[164,136,221,136]],"yarn":[[170,124,230,128],[207,154,264,171],[196,196,249,196],[212,200,266,205],[172,183,227,174],[170,140,226,157],[174,214,228,214],[218,164,278,174]],"treat":[[168,126,224,134],[161,130,217,140],[152,146,205,158],[156,139,209,151],[164,130,219,138],[162,129,217,137],[163,126,220,130],[162,124,219,128]],"highfive":[[167,136,223,138],[160,132,215,138],[175,122,231,132],[178,131,234,141],[170,124,227,134],[171,126,228,136],[163,131,218,134],[166,137,221,140]],"stretch":[[165,151,217,153],[152,167,202,170],[181,176,232,186],0,0,[173,133,225,135],[164,154,216,156],[163,151,215,153]],"groom":[[165,136,220,139],[167,138,222,147],[172,144,227,153],0,0,0,[159,161,211,171],[156,172,208,182]],"knead":[[169,132,231,138],[161,162,218,165],[159,172,212,166],[170,150,228,155],[182,172,236,180],[176,186,228,186],[170,178,223,178],[178,172,231,172]],"house":[[188,182,232,184],0,0,0,0,0,[174,262,219,258],[190,240,233,240]],"butterfly":[[217,155,259,144],[186,142,228,128],0,0,0,0,0,[195,163,234,148]],"box":[[171,158,215,166],0,0,0,0,0,[183,283,230,285],[188,214,235,219]],"gift":[[180,176,230,177],[166,207,215,205],[160,196,209,200],0,0,0,[178,178,225,183],[180,156,226,158]],"hide":[[166,126,224,130],[163,132,221,138],0,0,0,0,[167,128,227,132],[170,126,228,128]],"sulk":[[159,128,217,128],[145,147,201,147],[168,144,224,144],0,0,0,[162,101,229,133],0],"gaze9":[0,0,0,0,0,0,0,0],"gaze10":[[166,190,213,188],[147,184,193,190],[137,188,178,198],0,0,0,0,0]};
 const EYE0=(()=>{const e=EYES.rest[0],a=ANCH.rest[0];return{a:Math.atan2(e[3]-e[1],e[2]-e[0]),d:Math.hypot(e[2]-e[0],e[3]-e[1]),ox:(e[0]+e[2])/2-a[0]*2,oy:(e[1]+e[3])/2-a[1]*2};})();
-const IMG={};
+// ── Picture loader: one queue with priorities, so the first screen does not wait for the whole house.
+// ≤0 = needed now (the first screen, the room being entered — the latest room first —, a picture something tries to draw): up to 6 at once.
+// Everything else trickles in 3 at a time once the game is on screen, in the order set by loadImages().
+// The picture maps (IMG, LIMG, DIMG, MIMG, BGI, KOI_IMG) are proxies: reading a picture that is still queued moves it to the front.
+const LQ={jobs:new Map(),q:[],run:0,run0:0,open:false,dflt:3,track:null,miss:null,seq:0};
+function lqMap(path){return new Proxy({},{get(o,k){const v=o[k];if(v===undefined&&typeof k==="string"){const src=path(k),j=LQ.jobs.get(src);if(j&&j.st!==2){lqBump(j,0);if(LQ.miss)LQ.miss.add(src);}}return v;}});}
+function lqPump(){while(LQ.q.length){let b=LQ.q[0];for(const j of LQ.q)if(j.pri<b.pri)b=j;
+  if(b.pri<=0?LQ.run0>=6:!LQ.open||LQ.run0>0||LQ.run>=3)return;LQ.q.splice(LQ.q.indexOf(b),1);lqGo(b);}}
+function lqGo(j){j.st=1;j.u=j.pri<=0;j.u?LQ.run0++:LQ.run++;const im=new Image();
+  const fin=ok=>{j.u?LQ.run0--:LQ.run--;
+    if(ok){j.st=2;j.im=im;for(const f of j.sets.splice(0))try{f(im);}catch(e){console.error(e);}lqDone(j);}
+    else{j.st=3;if(j.n++<3)setTimeout(()=>{j.st=0;LQ.q.push(j);lqPump();},1500*j.n);}   // retries a failed picture a few times
+    j.res();lqPump();};
+  im.onload=()=>fin(true);im.onerror=()=>fin(false);im.src=j.src;}
+function lqBump(j,pri){if(typeof j==="string")j=LQ.jobs.get(j);if(!j||j.st===2)return;if(pri<j.pri){j.pri=pri;if(j.st===0)lqPump();}
+  if(pri<=0&&LQ.track&&!LQ.track.includes(j.p))LQ.track.push(j.p);}
+// a picture someone waits for: still loading and not failed yet (a failed one is drawn without, as before)
+function picWait(src){const j=LQ.jobs.get(src);return !!j&&j.st!==2&&!j.n;}
+// the promise resolves when the picture arrives (or fails once); the game starts anyway and the picture appears when it arrives
+function ldImg(src,set,pri=LQ.dflt){let j=LQ.jobs.get(src);
+  if(!j){j={src,pri:9,sets:[],n:0,st:0};j.p=new Promise(r=>j.res=r);LQ.jobs.set(src,j);LQ.q.push(j);}
+  if(j.st===2)return Promise.resolve().then(()=>set(j.im));
+  j.sets.push(set);lqBump(j,pri);return j.p;}
+// a mini-game background painted while its pictures were missing is repainted once they are all here
+function lqDone(j){const m=G.bgMiss;if(m&&m.s.delete(j.src)&&!m.s.size){G.bgMiss=null;if(!$("game").hidden&&G.def&&G.def.bg===m.st&&G.bgc===m.c)G.bgc=gPaint(m.st);}}
+const IMG=lqMap(k=>"assets/"+k+"@2x.webp");
 const BG_FILES=["g_forest","g_temple","g_river","g_field","g_room"];
-// retries a failed image a few times; the game starts anyway and the picture appears when it arrives
-function ldImg(src,set){return new Promise(res=>{let n=0;const go=()=>{const im=new Image();im.onload=()=>{set(im);res();};im.onerror=()=>{res();if(n++<3)setTimeout(go,1500*n);};im.src=src;};go();});}
+// what a room shows: its painted layers (both lamps of the bedroom), props, the chosen decor, the koi
+function roomFiles(r){const out=[];for(const n of r==="bedroom"?["bedroom_on","bedroom_off"]:[r])for(const [ln] of LAYERS[n]||[])out.push("assets/layers/"+n+"_"+ln+".webp");
+  for(const p of PROPS)if(p.room===r)for(const v of p.v?["_on","_off"]:[""])out.push("assets/decor/"+p.id+v+".webp");
+  const sel=S.decor[r]||{};for(const sl of DECOR[r]||[])if(sel[sl.k])out.push("assets/decor/"+sel[sl.k]+".webp");
+  if(r==="courtyard")for(const n of KOI_NAMES)out.push("assets/koi/"+n+".webp");return out;}
+function roomWant(r,pri=-++LQ.seq){for(const src of roomFiles(r))lqBump(src,pri);
+  for(const id in S.placed||{})if(S.placed[id].r===r){const i=IT[id];lqBump(i&&i.at?"assets/items/atlas_"+i.at[0]+".webp":"assets/items/"+id+".webp",pri);}}
+// Boot waits only for the first screen (priority 0: this room, Musya at rest). The rest is queued in this order:
+// her reactions → the other rooms in tab order → what add-ons asked for at boot → her other moves → yōkai → mini-game backgrounds;
+// decor nobody has chosen yet comes last.
 function loadImages(){
-  const bgs=BG_FILES.map(n=>ldImg("assets/bg/"+n+".webp",im=>{BGI[n]=im;}));
   for(const p of PROPS){for(const v of p.v?["_on","_off"]:[""])DMETA[p.id+v]=[p.w,p.h,"b"];}
-  const decs=Object.keys(DMETA).map(n=>ldImg("assets/decor/"+n+".webp",im=>{DIMG[n]=im;}));
-  const kois=KOI_NAMES.map(n=>ldImg("assets/koi/"+n+".webp",im=>{KOI_IMG[n]=im;}));
-  const lays=Object.entries(LAYERS).flatMap(([r,L])=>L.map(([ln])=>ldImg("assets/layers/"+r+"_"+ln+".webp",im=>{LIMG[r+"_"+ln]=im;})));
-  const mons=Object.keys(MON).map(n=>ldImg("assets/mon/"+n+".webp",im=>{MIMG[n]=im;}));
-  return Promise.all([...bgs,...lays,...mons,...decs,...kois,...STRIPS.map(n=>ldImg("assets/"+n+"@2x.webp",im=>{IMG[n]=im;}))]);
+  const core=new Set(Object.keys(DMETA).filter(n=>PROPS.some(p=>n.startsWith(p.id))||Object.values(DECOR).some(L=>L.some(sl=>sl.items.some(i=>i.id===n)))));
+  for(const [r,L] of Object.entries(LAYERS))for(const [ln] of L)ldImg("assets/layers/"+r+"_"+ln+".webp",im=>{LIMG[r+"_"+ln]=im;},8);
+  for(const n of Object.keys(DMETA))if(!loadItem[n])ldImg("assets/decor/"+n+".webp",im=>{DIMG[n]=im;},core.has(n)?8:3);
+  for(const n of KOI_NAMES)ldImg("assets/koi/"+n+".webp",im=>{KOI_IMG[n]=im;},8);
+  const R1=["gaze9","gaze10","purr","play","highfive","sleep","moveRight","moveLeft"];
+  for(const n of STRIPS)ldImg("assets/"+n+"@2x.webp",im=>{IMG[n]=im;},n==="rest"?0:R1.includes(n)?1:4);
+  for(const n of Object.keys(MON))ldImg("assets/mon/"+n+".webp",im=>{MIMG[n]=im;},5);
+  for(const n of BG_FILES)ldImg("assets/bg/"+n+".webp",im=>{BGI[n]=im;},6);
+  roomWant(S.room,0);ROOMS.forEach((r,i)=>roomWant(r.id,2+i/100));
 }
 const EMOJI='"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 
@@ -412,11 +448,15 @@ const view={W:0,H:0,s:1,floor:0,dpr:1};
 const pointer={x:0,y:0,known:false,moved:0};
 
 // ───────────────────────── Pet behaviour ─────────────────────────
+// the strips each action shows (pose()); an action whose strip is still loading waits for it — see update()
+const ACT_ST={idle:["rest"],cursor:["play","moveRight","moveLeft"],refuse:["gaze9","gaze10"],peek:["rest"],zoomies:["moveRight","moveLeft"],poke:["play"],washed:["sulk"],
+  firefly:["play","gaze9","gaze10"],petals:["play","gaze9","gaze10"],cucumber:["gaze9","gaze10","play","sulk"],meow:["stretch"],music:["rest"],beg:["gaze9","gaze10","highfive"],walkto:["moveRight","moveLeft"],wash:["rest"]};
+function stripsOK(a){let ok=true;for(const st of ACT_ST[a]||(STRIPS.includes(a)?[a]:[]))if(!IMG[st]&&picWait("assets/"+st+"@2x.webp"))ok=false;return ok;}
 function start(a,auto=false){
   if(petAway()&&a!=="idle"){if(!auto)toast("Муся в путешествии — скоро вернётся");return;}
   const t=now();if(!auto)try{qev("act",a);}catch(e){}
   pet.action=a;pet.start=t;pet.auto=auto;pet.home=pet.x;pet.walk=0;pet.napUntil=0;pet.variant=Math.floor(Math.random()*1000);
-  pet.idle.kind="none";pet.idle.next=t+1.2;
+  pet.idle.kind="none";pet.idle.next=t+1.2;pet.hold=0;stripsOK(a);
   if(!auto)pet.lastInput=t;
   if(a!=="idle"){pet.face=null;}
   const n=S.needs;
@@ -596,10 +636,10 @@ function torii(g,x,base,w,h,col){g.fillStyle=col;const p=w*.07;g.fillRect(x-w*.3
 function sakuraBranch(g,r,x,y,len,s,dir){g.strokeStyle="#2a1c16";g.lineCap="round";const pts=[];const grow=(x0,y0,ang,l,wd,d)=>{if(d>4||l<5*s)return;const x1=x0+Math.cos(ang)*l,y1=y0+Math.sin(ang)*l;g.lineWidth=wd;g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();pts.push([x1,y1]);grow(x1,y1,ang+(r()-.5)*.9,l*.7,wd*.7,d+1);if(r()<.7)grow(x1,y1,ang+(r()<.5?-1:1)*(.5+r()*.5),l*.55,wd*.6,d+1);};
   grow(x,y,dir,len,5*s,0);for(const [px,py] of pts){for(let k=0;k<3;k++){const bx=px+(r()-.5)*14*s,by=py+(r()-.5)*14*s;g.fillStyle=r()<.5?"#e9a1b8":"#f3c3d1";g.beginPath();g.arc(bx,by,(2.2+r()*2.2)*s,0,Math.PI*2);g.fill();}}}
 
-const BGI={};
+const BGI=lqMap(k=>"assets/bg/"+k+".webp");
 let BGM={k:1,dx:0,dy:0};
 // ── 2.5D diorama: every room is a stack of painted depth layers; the camera sways with tilt / mouse / idle drift
-const LAYERS={"engawa":[["sky",0.06],["far",0.2],["mid",0.42],["floor",0.8],["frame",0.92],["near",1.5]],"kitchen":[["garden",0.15],["wall",0.5],["floor",0.8],["near",1.5]],"onsen":[["sky",0.06],["fence",0.28],["pool",0.55],["floor",0.82],["near",1.5]],"bedroom_on":[["wall",0.4],["alcove",0.5],["floor",0.8],["near",1.4]],"bedroom_off":[["wall",0.4],["alcove",0.5],["floor",0.8],["near",1.4]],"wardrobe":[["wall",0.3],["screen",0.5],["floor",0.8],["near",1.5]],"games":[["sky",0.06],["forest",0.22],["torii",0.45],["floor",0.8],["cedars",1.0],["near",1.5]],"courtyard":[["sky",0.08],["cliff",0.3],["pool",0.55],["floor",0.8],["frame",0.95],["near",1.5]],"entrance":[["sky",0.08],["torii",0.38],["path",0.7],["shrine",0.85],["trunks",1.05],["near",1.5]],"matsuri":[["sky",0.06],["far",0.25],["stalls",0.5],["floor",0.8],["lanterns",0.95],["near",1.5]]},LIMG={};
+const LAYERS={"engawa":[["sky",0.06],["far",0.2],["mid",0.42],["floor",0.8],["frame",0.92],["near",1.5]],"kitchen":[["garden",0.15],["wall",0.5],["floor",0.8],["near",1.5]],"onsen":[["sky",0.06],["fence",0.28],["pool",0.55],["floor",0.82],["near",1.5]],"bedroom_on":[["wall",0.4],["alcove",0.5],["floor",0.8],["near",1.4]],"bedroom_off":[["wall",0.4],["alcove",0.5],["floor",0.8],["near",1.4]],"wardrobe":[["wall",0.3],["screen",0.5],["floor",0.8],["near",1.5]],"games":[["sky",0.06],["forest",0.22],["torii",0.45],["floor",0.8],["cedars",1.0],["near",1.5]],"courtyard":[["sky",0.08],["cliff",0.3],["pool",0.55],["floor",0.8],["frame",0.95],["near",1.5]],"entrance":[["sky",0.08],["torii",0.38],["path",0.7],["shrine",0.85],["trunks",1.05],["near",1.5]],"matsuri":[["sky",0.06],["far",0.25],["stalls",0.5],["floor",0.8],["lanterns",0.95],["near",1.5]]},LIMG=lqMap(k=>"assets/layers/"+k+".webp");
 const cam={x:0,y:0,tx:0,ty:0,last:-9,trans:-9,tilt:false,hold:0};
 const CAT_D=.8,REDUCED=matchMedia("(prefers-reduced-motion: reduce)").matches;let curD=CAT_D;
 function camOff(d){
@@ -638,7 +678,7 @@ const VS3="varying vec4 vh;uniform mat4 HV;void main(){vec4 w=modelMatrix*vec4(p
 const FS3="uniform sampler2D map;uniform float dark,ym;varying vec4 vh;void main(){if(vh.w<=0.)discard;vec2 uv=vh.xy/vh.w*.5+.5;uv.x=1.-abs(1.-mod(uv.x,2.));uv.y=ym>.5?1.-abs(1.-mod(uv.y,2.)):clamp(uv.y,.0004,.9996);vec4 c=texture2D(map,uv);if(c.a<.003)discard;gl_FragColor=vec4(c.rgb*(1.-dark),c.a);}";
 function init3D(){
   if(G3.T||G3.fail||init3D.busy)return;init3D.busy=1;
-  import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js").then(T=>{
+  G3.ready=import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js").then(T=>{
     try{const c=document.createElement("canvas"),ren=new T.WebGLRenderer({canvas:c,alpha:true,antialias:false,premultipliedAlpha:true,powerPreference:"high-performance"});
       ren.setClearColor(0x000000,0);c.addEventListener("webglcontextlost",ev=>{ev.preventDefault();G3.on=false;G3.fail=true;});
       Object.assign(G3,{T,ren,glcv:c,cam:new T.PerspectiveCamera(FOV3,ASP3,.05,500),HV:new T.PerspectiveCamera(FOV3,ASP3,.05,500).projectionMatrix.clone(),
@@ -807,6 +847,7 @@ function resize(){
 function frameImg(st,f,g){const im=IMG[st];if(im)g.drawImage(im,f*384,0,384,416,0,0,384,416);}
 const TINT={matsuri:"rgba(40,22,12,.2)",courtyard:"rgba(20,28,26,.22)",entrance:"rgba(8,12,14,.42)",engawa:"rgba(18,26,22,.2)",kitchen:"rgba(40,22,10,.2)",onsen:"rgba(20,28,26,.24)",bedroom:"rgba(12,14,22,.32)",wardrobe:"rgba(30,20,10,.18)",games:"rgba(18,24,22,.24)"};
 function renderCat(p,t){
+  if(!IMG[p.strip]){p.strip="rest";p.frame=0;}   // that strip is still loading (reading IMG moved it to the front)
   const key=p.strip+":"+p.frame;
   if(key!==pet.curKey){if(p.fade&&pet.curKey){pet.prev=pet.cur;pet.fadeStart=t;pet.fadeLen=clamp((t-pet.lastChange)*.5,.06,.16);}else pet.prev=null;pet.cur={st:p.strip,f:p.frame};pet.curKey=key;pet.lastChange=t;}
   const g=cx2;g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation="source-over";g.globalAlpha=1;g.clearRect(0,0,384,416);
@@ -834,7 +875,24 @@ function drawBubble(face,scale,alpha){
   ctx.beginPath();ctx.arc(tx+2*s,ty-5*s,3.2*s,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.beginPath();ctx.arc(tx-3*s,ty+1*s,1.8*s,0,Math.PI*2);ctx.fill();
   drawEmoji(ctx,face,cx,cy+1,22*s);ctx.restore();
 }
+// a room whose paintings are still on the way: hold the last frame, dimmed, with three soft dots; fade the room in when it is here
+const RW={wait:null,skip:null,t0:0,at:-9,snap:null,has:false,ok:{}};
+function roomReady(n){if(RW.ok[n])return true;   // once a room was complete it stays so (pictures never unload)
+  for(const [ln] of LAYERS[n]||[])if(!LIMG[n+"_"+ln]&&picWait("assets/layers/"+n+"_"+ln+".webp"))return false;   // reading LIMG moves a missing layer up
+  for(const src of roomFiles(S.room))if(!src.includes("/layers/")&&picWait(src))return false;   // props, chosen decor, koi
+  return RW.ok[n]=true;}
+function roomSnap(){RW.has=false;try{if(!cv.width||!cv.height)return;const c=RW.snap||(RW.snap=document.createElement("canvas")),w=Math.max(2,cv.width>>2),h=Math.max(2,cv.height>>2);
+  c.width=w;c.height=h;const g=c.getContext("2d");g.filter="blur(3px) brightness(.6)";g.drawImage(cv,0,0,w,h);RW.has=true;}catch(e){}}
+function drawWait(t){const {W,H,s}=view;ctx.setTransform(view.dpr,0,0,view.dpr,0,0);ctx.fillStyle="#0d1210";ctx.fillRect(0,0,W,H);if(RW.has)ctx.drawImage(RW.snap,0,0,W,H);
+  for(let i=0;i<3;i++){ctx.fillStyle=`rgba(232,200,150,${.2+.6*Math.max(0,Math.sin(t*3.2-i*.8))})`;ctx.beginPath();ctx.arc(W/2+(i-1)*16*s,H*.5,3.4*s,0,Math.PI*2);ctx.fill();}}
 function render(t,dt){
+  const n=bgName();
+  if(RW.skip!==n&&!roomReady(n)){if(!RW.wait){roomSnap();RW.t0=t;}if(RW.wait!==n){RW.wait=n;roomWant(S.room);}if(t-RW.t0>12)RW.skip=n;else{drawWait(t);return;}}   // a network that never delivers: show what there is
+  if(RW.wait){RW.wait=null;RW.at=t;cam.trans=t;}   // the room is here: play the entrance swoop and fade it in
+  renderRoom(t,dt);
+  const a=1-smooth((t-RW.at)/.5);if(a>0){ctx.save();ctx.globalAlpha=a;if(RW.has)ctx.drawImage(RW.snap,0,0,view.W,view.H);else{ctx.fillStyle="#0d1210";ctx.fillRect(0,0,view.W,view.H);}ctx.restore();}
+}
+function renderRoom(t,dt){
   const {W,H,s}=view;ctx.setTransform(view.dpr,0,0,view.dpr,0,0);ctx.clearRect(0,0,W,H);ctx.fillStyle="#0d1210";ctx.fillRect(0,0,W,H);if(G3.on){cam3D(t);skyTick();}if(draw3D(t,false))atmoFx(t,true);else drawLayers(t,false);festBack(t);fairAmbient(t,dt);
   // drifting fog behind the cat
   if(S.room==="kitchen"&&!kitLampOff){const fl=.85+.1*Math.sin(t*7)+.06*Math.sin(t*13.3),[lx,ly]=imgToStage(...propAt("p_kit_lantern",1560,300),.5),R=520*BGM.k;const gr=ctx.createRadialGradient(lx,ly,0,lx,ly,R);gr.addColorStop(0,`rgba(235,160,80,${.22*fl})`);gr.addColorStop(1,"rgba(235,160,80,0)");ctx.fillStyle=gr;ctx.fillRect(0,0,W,H);}
@@ -887,6 +945,7 @@ function update(t,dt){
   if(!away){n.food=clamp(n.food-dt*2.2/60,0,100);n.clean=clamp(n.clean-dt*1.2/60,0,100);n.joy=clamp(n.joy-dt*(sleeping?.6:2.4)/60,0,100);
   n.energy=clamp(n.energy+dt*(sleeping?(S.lampOff?30:14):-1.6)/60,0,100);}
   if(pet.action==="purr")n.joy=clamp(n.joy+dt*3,0,100);
+  if((pet.hold||0)<5&&!stripsOK(pet.action)){pet.start+=dt;pet.hold+=dt;}
   const e=t-pet.start,d=DUR[pet.action];
   if(d&&e>=d)start("idle",true);
   if(pet.action==="sleep"&&pet.napUntil&&t>pet.napUntil)start("stretch",true);
@@ -933,7 +992,7 @@ let strokeDist=0,strokeT=0;
 function stroke(x,y,px,py){const t=now(),d=Math.hypot(x-px,y-py);if(t-strokeT>.8)strokeDist=0;strokeT=t;strokeDist+=d;
   if(strokeDist>24*view.s){strokeDist=0;if(["idle","purr","sulk","music","beg","sleep"].includes(pet.action)){if(pet.action==="purr")pet.start=Math.max(pet.start,t-5);else if(pet.action==="sleep"&&S.lampOff){}else start("purr");}}}
 cv.addEventListener("pointerdown",ev=>{
-  audioInit();const [x,y]=local(ev);if(visitHit(x,y)||guestHit(x,y)||hk("hit",x,y))return;cv.setPointerCapture(ev.pointerId);
+  audioInit();if(RW.wait)return;const [x,y]=local(ev);if(visitHit(x,y)||guestHit(x,y)||hk("hit",x,y))return;cv.setPointerCapture(ev.pointerId);
   pointer.x=x;pointer.y=y;pointer.known=true;pet.gazeUntil=now()+2.8;pet.lastInput=now();
   drag.active=true;drag.sx=x;drag.sy=y;drag.px=x;drag.py=y;drag.dist=0;drag.startX=pet.x;
   if(S.room==="onsen"&&S.tool==="soap"&&hitCat(x,y)){drag.mode="soap";if(pet.action!=="wash")start("wash");}
@@ -989,7 +1048,7 @@ $("soundBtn").addEventListener("click",()=>{audioInit();snd.on=!snd.on;$("soundB
 buildTabs();
 $("tabs").addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;if(b.dataset.tab){audioInit();openStoryTab();return;}goRoom(b.dataset.room);});
 function goRoom(id){
-  if(S.room===id)return;if(hk("gate",id))return;$("gdlg").hidden=true;$("xdlg").hidden=true;S.room=id;S.tool=null;
+  if(S.room===id)return;if(hk("gate",id))return;$("gdlg").hidden=true;$("xdlg").hidden=true;S.room=id;S.tool=null;roomWant(id);
   if(id!=="bedroom"&&S.lampOff){S.lampOff=false;}
   if(pet.action==="wash"||pet.action==="sleep"&&!pet.napUntil)start("idle");
   pet.foam=[];pet.x=view.W/2;pet.home=pet.x;cam.trans=now();G3.dir=-G3.dir;paint();ui();hkAll("room",id);
@@ -1064,7 +1123,7 @@ $("scaryBtn").addEventListener("click",()=>{S.scary=!S.scary;weatherLabel();toas
 
 // ───────────────────────── Room decor (Angela-style furnishing) ─────────────────────────
 const DMETA={"d_bonsai":[320,340,"b"],"d_ikebana":[340,460,"b"],"d_kokedama":[260,260,"b"],"d_bamboo":[260,460,"b"],"d_zab_indigo":[320,120,"b"],"d_zab_red":[320,120,"b"],"d_zab_moss":[320,120,"b"],"d_furin_glass":[110,300,"t"],"d_furin_blue":[110,300,"t"],"d_furin_iron":[110,300,"t"],"d_chochin":[180,320,"t"],"d_andon":[170,320,"b"],"d_okeya":[260,230,"b"],"d_shishi_base":[380,300,"b"],"d_shishi_tube":[300,60,"c"],"d_kaeru":[220,170,"b"],"d_yukimi":[240,260,"b"],"d_yuzu":[620,130,"c"],"d_petals":[620,130,"c"],"d_futon_waves":[900,150,"b"],"d_futon_red":[900,150,"b"],"d_futon_bamboo":[900,150,"b"],"d_futon_moon":[900,150,"b"],"d_scroll_moon":[180,580,"t"],"d_scroll_koi":[180,580,"t"],"d_scroll_neko":[180,580,"t"],"d_scroll_mount":[180,580,"t"],"d_daruma":[190,210,"b"],"d_kokeshi":[110,250,"b"],"d_maneki":[200,240,"b"],"d_cranes":[280,460,"t"],"d_bowl_red":[180,80,"b"],"d_bowl_blue":[180,80,"b"],"d_masu":[150,110,"b"],"d_tetsubin":[230,210,"b"],"d_donabe":[250,180,"b"],"d_teru":[110,230,"t"],"d_hoshigaki":[130,380,"t"],"d_kingyo":[190,170,"b"],"d_ume":[200,280,"b"],"d_koi_pole":[120,760,"b"],"d_koi_black":[300,90,"l"],"d_koi_red":[300,90,"l"],"d_koi_blue":[300,90,"l"],"d_tsukubai":[300,230,"b"],"d_sakura_tree":[420,520,"b"],"d_sake":[230,130,"c"],"d_towels":[200,110,"b"],"d_teaset":[280,140,"b"],"d_koro":[150,150,"b"],"d_goban":[320,170,"b"],"d_kimono_cranes":[380,540,"b"],"d_kimono_sakura":[380,540,"b"],"d_kimono_black":[380,540,"b"],"d_kyodai":[260,340,"b"],"d_kiku":[240,320,"b"]};
-const DIMG={};
+const DIMG=lqMap(k=>"assets/decor/"+k+".webp");
 const DECOR={
   engawa:[
     {k:"plant",n:"Растение",items:[{id:"d_bonsai",n:"Бонсай",p:140,x:520,y:1262},{id:"d_ikebana",n:"Икебана",p:120,x:520,y:1262},{id:"d_kokedama",n:"Кокедама",p:90,x:520,y:1262},{id:"d_bamboo",n:"Бамбук",p:110,x:520,y:1262}]},
@@ -1233,7 +1292,7 @@ function drawSpook(t,front){
 
 
 // ───────────────────────── Yōkai (painted monsters for the scary happenings) ─────────────────────────
-const MON={"m_bettari":[460,960],"m_bettari_open":[460,960],"m_rokuro":[260,300],"m_onryo":[320,860],"m_peek":[420,300],"m_okubi":[760,660],"m_onryo_face":[800,800],"m_warashi":[300,640],"m_warashi_back":[280,620],"m_akaname":[380,440],"m_kappa":[340,480],"m_kitsune":[400,450],"m_obake":[280,440]},MIMG={};
+const MON={"m_bettari":[460,960],"m_bettari_open":[460,960],"m_rokuro":[260,300],"m_onryo":[320,860],"m_peek":[420,300],"m_okubi":[760,660],"m_onryo_face":[800,800],"m_warashi":[300,640],"m_warashi_back":[280,620],"m_akaname":[380,440],"m_kappa":[340,480],"m_kitsune":[400,450],"m_obake":[280,440]},MIMG=lqMap(k=>"assets/mon/"+k+".webp");
 const BESTIARY=[
  ["bettari","m_bettari_open","Охагуро-бэттари","Женщина в нарядном кимоно без лица — только огромный рот с чернёными зубами. Из «Эхон хякумоногатари», 1841."],
  ["rokuro","m_rokuro","Рокурокуби","Днём обычная женщина, ночью её шея тянется бесконечно, а голова бродит по дому."],
@@ -1483,7 +1542,7 @@ function placeAction(a){
 
 
 // ───────────────────────── Koi pond (volumetric painted fish) ─────────────────────────
-const KOI_NAMES=["koi_kohaku","koi_showa","koi_ogon","koi_asagi","koi_kohaku2","koi_tancho"],KOI_IMG={};
+const KOI_NAMES=["koi_kohaku","koi_showa","koi_ogon","koi_asagi","koi_kohaku2","koi_tancho"],KOI_IMG=lqMap(k=>"assets/koi/"+k+".webp");
 const POND={x0:880,x1:1460,y0:1035,zMax:220,flat:.36,fish:.62};                 // plane coords: x, z (depth into the pond)
 const koiPond=KOI_NAMES.map((n,i)=>({n,x:rand(900,1440),z:rand(40,280),h:rand(0,6.28),v:30,ph:rand(0,6),d:rand(.3,.9),dT:.6,wx:0,wz:0,next:0,size:rand(.8,1.08),on:i<3,fade:i<3?1:0,rip:0}));
 const pellets=[],ripples=[];
@@ -1536,7 +1595,7 @@ const hearts=()=>G.lives==null?"":" · "+"♥".repeat(Math.max(0,G.lives))+"♡"
 function tone(freq,d=.35,type="sine",vol=.08){if(!snd.on||!snd.ctx)return;const c=snd.ctx,t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+d+.02);}
 function scare(t,kind="yurei"){G.scareT=t;G.scareKind=kind;G.scareImg=pick(["m_onryo_face","m_bettari_open","m_okubi","m_peek"]);if(!snd.on||!snd.ctx)return;const c=snd.ctx,n=c.currentTime,b=c.createBuffer(1,c.sampleRate*.6,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,1.5);const s=c.createBufferSource();s.buffer=b;const f=c.createBiquadFilter();f.type="lowpass";f.frequency.value=900;const g=c.createGain();g.gain.value=.35;s.connect(f);f.connect(g);g.connect(c.destination);s.start(n);tone(70,.6,"sawtooth",.09);}
 function hurt(t,kind){G.lives--;scare(t,kind);}
-function drawCatG(g,st,f,x,floor,sc,alpha=1){const im=IMG[st];if(!im)return;g.save();g.globalAlpha=alpha;g.drawImage(im,f*384,0,384,416,x-96*sc,floor-195*sc,192*sc,208*sc);g.restore();}
+function drawCatG(g,st,f,x,floor,sc,alpha=1){let im=IMG[st];if(!im){im=IMG.rest;f=0;}if(!im)return;g.save();g.globalAlpha=alpha;g.drawImage(im,f*384,0,384,416,x-96*sc,floor-195*sc,192*sc,208*sc);g.restore();}
 function textC(g,txt,x,y,size,color="#d8d2c3",font){g.save();g.font=`${font||600} ${size}px ${getComputedStyle(document.body).fontFamily}`;g.textAlign="center";g.textBaseline="middle";g.fillStyle=color;g.fillText(txt,x,y);g.restore();}
 function jpText(g,txt,x,y,size,color){g.save();g.font=`500 ${size}px "Noto Serif JP","Hiragino Mincho ProN","Yu Mincho",serif`;g.textAlign="center";g.textBaseline="middle";g.fillStyle=color;g.fillText(txt,x,y);g.restore();}
 function btnRect(g,x,y,w,h,label,hot){g.save();g.fillStyle=hot?"rgba(216,210,195,.95)":"rgba(16,21,19,.88)";g.strokeStyle="rgba(216,210,195,.35)";g.beginPath();g.roundRect(x,y,w,h,12);g.fill();g.stroke();textC(g,label,x+w/2,y+h/2,Math.min(16,h*.38),hot?"#0d1210":"#d8d2c3");g.restore();}
@@ -1569,7 +1628,8 @@ function drawScare(g,t){
   else drawYurei(g,W/2,H*.02,H*1.6,al,true,true);
   g.restore();
 }
-function gPaint(style){
+function gPaint(style){LQ.miss=new Set();let c;try{c=gPaint0(style);}finally{const m=LQ.miss;LQ.miss=null;G.bgMiss=m.size?{st:style,c,s:m}:null;}return c;}
+function gPaint0(style){
   if(style==="garden")return gardenBg();if(style==="fishpond")return fishBg();if(style==="cookroom")return sceneBg("kitchen",.5)[0];if(style==="fair")return fairBg();if(style==="fairsky")return fairSkyBg();
   const c=document.createElement("canvas"),d=Math.min(2,devicePixelRatio||1);c.width=G.W*d;c.height=G.H*d;const g=c.getContext("2d");g.setTransform(d,0,0,d,0,0);const W=G.W,H=G.H,s=G.s,r=rng(style.length*31+7);
   const GB={pond:"g_river",river:"g_river",forest:"g_forest",temple:"g_temple",room:"g_room",field:"g_field"}[style];
@@ -1980,7 +2040,7 @@ function itemScale(i){return ROOMCATS.has(i.c)?1.45:1.25;}
 function regItems(){for(const i of ITEMS){const k=itemScale(i);DMETA[i.id]=[i.w*k,i.h*k,i.a==="t"?"t":"b"];}for(const id of Object.keys(S.placed))loadItem(id);}
 // the second batch of room things lives in one picture per room (the Claude copy allows ~500 files); each item is cut out once
 const IATL={"bed":[1400,614],"crt":[1400,786],"ent":[1400,774],"gam":[1400,786],"ons":[1400,604],"ver":[1400,584],"war":[1400,946],"kit":[1400,1008],"ver1":[1400,462],"bed1":[1400,432],"ons1":[1400,242],"war1":[1400,452],"crt1":[1400,432],"ent1":[1400,502],"gam1":[1400,402],"omm":[1400,150],"ema":[1400,262],"lan":[1400,462],"lit":[1400,310],"fur":[1400,270],"kok":[1400,288],"dar":[1400,354],"mnk":[1400,186],"msk":[1400,354],"fan":[1400,342],"dish":[1400,292],"scr":[1400,942],"pla":[1400,964],"zab":[1400,402],"toy":[1400,362],"umb":[1400,482],"tsu":[1400,280],"rel":[1400,552],"fst":[1400,1772],"gft":[1400,504]},IATL_IM={},IATL_Q={};
-function atlasImg(s,cb){if(IATL_IM[s])return cb(IATL_IM[s]);if(IATL_Q[s]){IATL_Q[s].push(cb);return;}IATL_Q[s]=[cb];ldImg("assets/items/atlas_"+s+".webp",im=>{IATL_IM[s]=im;for(const f of IATL_Q[s])f(im);});}
+function atlasImg(s,cb){if(IATL_IM[s])return cb(IATL_IM[s]);if(IATL_Q[s]){IATL_Q[s].push(cb);lqBump("assets/items/atlas_"+s+".webp",LQ.dflt);return;}IATL_Q[s]=[cb];ldImg("assets/items/atlas_"+s+".webp",im=>{IATL_IM[s]=im;for(const f of IATL_Q[s])f(im);});}
 function loadItem(id){if(DIMG[id]||loadItem[id])return;loadItem[id]=1;const i=IT[id];
   if(i&&i.at){atlasImg(i.at[0],im=>{const c=document.createElement("canvas");c.width=i.w;c.height=i.h;c.getContext("2d").drawImage(im,i.at[1],i.at[2],i.w,i.h,0,0,i.w,i.h);DIMG[id]=c;});return;}
   ldImg("assets/items/"+id+".webp",im=>{DIMG[id]=im;});}
@@ -16206,11 +16266,14 @@ HBLK="core";
 grainPat=ctx.createPattern(makeGrain(),"repeat");fogTex=makeFog();
 new ResizeObserver(()=>resize()).observe(cv);
 init3D();
-const LI=loadImages();regItems();for(const sl in S.wear)if(S.wear[sl]&&WSPR[S.wear[sl]])loadWear(WSPR[S.wear[sl]].im);LI.then(()=>{
-  resize();ui();hudTick();weatherLabel();pet.idle.next=now()+1.5;
+// pictures: boot waits only for the first screen (this room, Musya at rest, what she wears) and for 3D (≤6 s); the rest comes after
+LQ.track=[];loadImages();regItems();roomWant(S.room);LQ.dflt=0;for(const sl in S.wear)if(S.wear[sl]&&WSPR[S.wear[sl]])loadWear(WSPR[S.wear[sl]].im);LQ.dflt=3;
+const LI=Promise.all(LQ.track);LQ.track=null;
+Promise.all([LI,Promise.race([G3.ready,new Promise(r=>setTimeout(r,6000))])]).then(()=>{
+  LQ.open=true;lqPump();resize();ui();hudTick();weatherLabel();pet.idle.next=now()+1.5;
   react("😺",2.2);{const k=petalKind();if(k){sakura.k=k;sakura.until=now()+8;}}sakura.next=now()+rand(40,80);
   $("loading").style.opacity=0;setTimeout(()=>$("loading").remove(),500);
-  requestAnimationFrame(frame);storyBoot();festBoot();plugBoot();
+  requestAnimationFrame(frame);storyBoot();festBoot();plugBoot();LQ.dflt=0;   // from now on a picture someone asks for is needed now
 });
 })();
 </script>
